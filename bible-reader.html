@@ -1171,6 +1171,55 @@
       color: var(--green); vertical-align: super; margin-right: 4px;
       font-style: normal;
     }
+
+    /* ── NOTES INTRO EDITOR ── */
+    .notes-intro-wrap {
+      flex-shrink: 0;
+      padding: 10px 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .notes-intro-toolbar {
+      display: flex; align-items: center; gap: 3px;
+      margin-bottom: 6px;
+    }
+    .intro-fmt-btn {
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      border: 1.5px solid var(--line); border-radius: 3px;
+      background: var(--white); color: var(--charcoal-light);
+      padding: 3px 9px; cursor: pointer; line-height: 1.4;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .intro-fmt-btn:hover { border-color: var(--green); color: var(--green-dark); }
+    .intro-fmt-btn.active { background: var(--green); border-color: var(--green); color: #fff; }
+    .intro-fmt-sep {
+      width: 1px; height: 16px; background: var(--line); margin: 0 3px; flex-shrink: 0;
+    }
+    .intro-fmt-hint {
+      font-family: 'Nunito', sans-serif; font-size: 0.62rem; color: var(--charcoal-light);
+      letter-spacing: 0.04em; margin-left: 4px; white-space: nowrap;
+    }
+    .notes-intro-area {
+      min-height: 68px; max-height: 220px; overflow-y: auto;
+      padding: 8px 10px; margin-bottom: 10px;
+      border: 1px solid var(--line); border-radius: 4px;
+      background: var(--cream); color: var(--charcoal);
+      font-family: 'Nunito', sans-serif; font-size: 0.88rem; line-height: 1.65;
+      outline: none;
+    }
+    .notes-intro-area:focus { border-color: var(--green); }
+    .notes-intro-area:empty::before {
+      content: attr(data-placeholder);
+      color: var(--charcoal-light); font-style: italic; pointer-events: none;
+    }
+    /* Tiered bullet styles */
+    .notes-intro-area ul { list-style-type: disc;        padding-left: 1.3em; margin: 1px 0; }
+    .notes-intro-area ul ul { list-style-type: circle;   padding-left: 1.3em; }
+    .notes-intro-area ul ul ul { list-style-type: square; padding-left: 1.3em; }
+    /* Tiered number styles */
+    .notes-intro-area ol { list-style-type: decimal;         padding-left: 1.5em; margin: 1px 0; }
+    .notes-intro-area ol ol { list-style-type: lower-alpha;  padding-left: 1.5em; }
+    .notes-intro-area ol ol ol { list-style-type: lower-roman; padding-left: 1.5em; }
     .notes-entry-textarea {
       width: 100%; border: 1px solid var(--line); border-radius: 4px;
       padding: 8px 10px; font-family: 'Nunito', sans-serif; font-size: 0.85rem;
@@ -4735,6 +4784,23 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
         <span class="notes-date" id="notes-date"></span>
       </div>
     </div>
+    <!-- INTRO EDITOR — always visible, persistent (not re-rendered) -->
+    <div class="notes-intro-wrap" id="notes-intro-wrap">
+      <div class="notes-intro-toolbar">
+        <button class="intro-fmt-btn" id="ifmt-ul" onclick="notesIntroFmt('insertUnorderedList','ifmt-ul')" title="Bullet list  •  ◦  ▪">● List</button>
+        <button class="intro-fmt-btn" id="ifmt-ol" onclick="notesIntroFmt('insertOrderedList','ifmt-ol')" title="Numbered list  1.  a.  i.">① Numbered</button>
+        <div class="intro-fmt-sep"></div>
+        <button class="intro-fmt-btn" onclick="notesIntroIndent(1)"  title="Increase tier">⇥</button>
+        <button class="intro-fmt-btn" onclick="notesIntroIndent(-1)" title="Decrease tier">⇤</button>
+        <div class="intro-fmt-sep"></div>
+        <span class="intro-fmt-hint">• ◦ ▪ &nbsp;·&nbsp; 1. a. i.</span>
+      </div>
+      <div class="notes-intro-area" id="notes-intro-area" contenteditable="true"
+           data-placeholder="Introduction, context, or general notes…"
+           oninput="notesIntroInput()"
+           onkeyup="syncIntroToolbar()"
+           onmouseup="syncIntroToolbar()"></div>
+    </div>
     <div class="notes-list" id="notes-list"></div>
     <div class="notes-export-bar">
       <span class="notes-export-label">Export</span>
@@ -4774,7 +4840,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 
   function notesNewObj() {
     return { id: 'n' + Date.now(), title: '', date: todayDate(),
-             translation: currentTranslation, entries: [], closed: false };
+             translation: currentTranslation, entries: [], intro: '', closed: false };
   }
 
   function toggleNotesPanel() {
@@ -4799,9 +4865,13 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   function renderNotesPanel() {
     document.getElementById('notes-title').value = notesSession.title;
     document.getElementById('notes-date').textContent = notesSession.date;
+    // Sync intro area without rebuilding (preserves cursor/focus)
+    const introArea = document.getElementById('notes-intro-area');
+    const savedIntro = notesSession.intro || '';
+    if (introArea && introArea.innerHTML !== savedIntro) introArea.innerHTML = savedIntro;
     const list = document.getElementById('notes-list');
     if (!notesSession.entries.length) {
-      list.innerHTML = '<div class="notes-empty">No verses yet.<br>Tap a verse number and choose <strong>Add to Notes</strong>, or select verses and tap <strong>Notes</strong>.</div>';
+      list.innerHTML = '<div class="notes-empty">Select verse numbers then tap <strong>Notes</strong> to add them here.</div>';
       return;
     }
     list.innerHTML = '';
@@ -4882,6 +4952,51 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     hideVerseCtxMenu();
   }
 
+  // ── INTRO EDITOR ─────────────────────────────────────────────────────────
+  function notesIntroInput() {
+    notesSession.intro = document.getElementById('notes-intro-area').innerHTML;
+    clearTimeout(notesSaveTimer);
+    notesSaveTimer = setTimeout(notesSave, 600);
+  }
+
+  function notesIntroFmt(cmd, btnId) {
+    const area = document.getElementById('notes-intro-area');
+    area.focus();
+    document.execCommand(cmd);
+    syncIntroToolbar();
+    notesIntroInput();
+  }
+
+  function notesIntroIndent(dir) {
+    const area = document.getElementById('notes-intro-area');
+    area.focus();
+    document.execCommand(dir > 0 ? 'indent' : 'outdent');
+    syncIntroToolbar();
+    notesIntroInput();
+  }
+
+  function syncIntroToolbar() {
+    document.getElementById('ifmt-ul').classList.toggle('active', document.queryCommandState('insertUnorderedList'));
+    document.getElementById('ifmt-ol').classList.toggle('active', document.queryCommandState('insertOrderedList'));
+  }
+
+  function introToText() {
+    const div = document.createElement('div');
+    div.innerHTML = notesSession.intro || '';
+    function walk(node, depth) {
+      let t = '';
+      node.childNodes.forEach(c => {
+        if (c.nodeType === 3) { t += c.textContent; }
+        else if (c.tagName === 'LI') { t += '  '.repeat(depth) + '• ' + walk(c, depth).trim() + '\n'; }
+        else if (c.tagName === 'UL' || c.tagName === 'OL') { t += walk(c, depth + 1); }
+        else if (/^(P|DIV|BR)$/.test(c.tagName)) { t += walk(c, depth) + '\n'; }
+        else { t += walk(c, depth); }
+      });
+      return t;
+    }
+    return walk(div, 0).trim();
+  }
+
   function formatGroupRef(verses) {
     if (verses.length === 1) return verses[0].ref;
     const nums = verses.map(v => parseInt(v.ref.match(/:(\d+)$/)[1]));
@@ -4926,6 +5041,8 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     const title = notesSession.title || 'Sermon Notes';
     const trans = TRANSLATIONS[notesSession.translation] || notesSession.translation;
     const lines = [title.toUpperCase(), `${notesSession.date}  ·  ${trans}`, '═'.repeat(50), ''];
+    const introText = introToText();
+    if (introText) lines.push(introText, '', '─'.repeat(50), '');
     notesSession.entries.forEach(e => {
       if (e.verses) {
         lines.push(`[ ${formatGroupRef(e.verses)} ]`);
@@ -4953,13 +5070,22 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       }
       return `<div class="entry"><div class="ref">${notesEsc(e.ref)}</div><blockquote>${notesEsc(e.text)}</blockquote><div class="notes">${e.notes ? notesEsc(e.notes).replace(/\n/g,'<br>') : '<em>No notes</em>'}</div></div>`;
     }).join('');
+    const introHtml = notesSession.intro
+      ? `<div class="intro">${notesSession.intro}</div>` : '';
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>${notesEsc(title)}</title>
       <style>
         body{font-family:Georgia,serif;max-width:660px;margin:40px auto;color:#222;font-size:14px}
         h1{font-size:22px;margin-bottom:4px}
-        .meta{color:#666;font-size:12px;border-bottom:2px solid #7DC243;padding-bottom:10px;margin-bottom:28px}
+        .meta{color:#666;font-size:12px;border-bottom:2px solid #7DC243;padding-bottom:10px;margin-bottom:20px}
+        .intro{margin-bottom:24px;padding-bottom:20px;border-bottom:1px dashed #ccc;line-height:1.7}
+        .intro ul{list-style-type:disc;padding-left:1.4em;margin:4px 0}
+        .intro ul ul{list-style-type:circle;padding-left:1.4em}
+        .intro ul ul ul{list-style-type:square;padding-left:1.4em}
+        .intro ol{list-style-type:decimal;padding-left:1.6em;margin:4px 0}
+        .intro ol ol{list-style-type:lower-alpha;padding-left:1.6em}
+        .intro ol ol ol{list-style-type:lower-roman;padding-left:1.6em}
         .entry{margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid #e0e0e0}
         .ref{font-weight:bold;font-size:15px;color:#5f9a2e;margin-bottom:8px}
         blockquote{margin:0 0 12px;padding:10px 16px;background:#f8f7f2;border-left:3px solid #7DC243;font-style:italic;color:#444}
@@ -4969,7 +5095,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       </style></head><body>
       <h1>${notesEsc(title)}</h1>
       <div class="meta">${notesSession.date} &nbsp;·&nbsp; ${notesEsc(trans)}</div>
-      ${entriesHtml}</body></html>`);
+      ${introHtml}${entriesHtml}</body></html>`);
     w.document.close();
     setTimeout(() => w.print(), 400);
   }
@@ -4992,6 +5118,18 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
         new Paragraph({ children: [new TextRun({ text: `${notesSession.date}  ·  ${trans}`, color: '888888', size: 22 })] }),
         new Paragraph({ text: '' }),
       ];
+      // Add intro as plain text paragraphs
+      const introText = introToText();
+      if (introText) {
+        introText.split('\n').forEach(line =>
+          children.push(new Paragraph({ text: line }))
+        );
+        children.push(
+          new Paragraph({ text: '' }),
+          new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'cccccc' } }, text: '' }),
+          new Paragraph({ text: '' }),
+        );
+      }
       notesSession.entries.forEach(e => {
         if (e.verses) {
           children.push(new Paragraph({ children: [new TextRun({ text: formatGroupRef(e.verses), bold: true, color: '5f9a2e', size: 26 })] }));
