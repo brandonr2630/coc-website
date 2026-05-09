@@ -31,7 +31,12 @@ jobs:
           fi
 
           # Skip internals that don't belong on the server
-          FILES=$(echo "$FILES" | grep -Ev '^\.github/|^\.cpanel\.yml$')
+          FILES=$(echo "$FILES" | grep -Ev '^\.github/|^\.cpanel\.yml$' || true)
+
+          if [ -z "$FILES" ]; then
+            echo "No deployable files changed. Done."
+            exit 0
+          fi
 
           echo "=== Files to deploy ==="
           echo "$FILES"
