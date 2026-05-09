@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/terranre/public_html/toddsroadcoctt
+    - /bin/cp -R * $DEPLOYPATH
