@@ -4,7 +4,7 @@
 //   Local JSONs → cached on first fetch (cache-on-demand)
 //   External APIs (bolls.life, fonts) → network only
 
-const CACHE = 'coc-bible-v1';
+const CACHE = 'coc-bible-v2';
 
 const SHELL = [
   '/bible-reader.html',
