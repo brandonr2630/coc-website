@@ -25,7 +25,8 @@
   <meta name="twitter:description" content="Read the Bible online — multiple translations, Strong's numbers, cross-references, and commentaries.">
   <meta name="twitter:image" content="og_banner.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Literata:ital,opsz,wght@0,7..72,300;0,7..72,400;1,7..72,300;1,7..72,400&family=Noto+Serif:ital,wght@0,400;1,400&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet" />
   <style>
     :root {
       --green: #7DC243;
@@ -37,6 +38,7 @@
       --line: #e0ddd5;
       --highlight: rgba(125,194,67,0.18);
       --highlight-border: rgba(125,194,67,0.6);
+      --reading-font: 'Cormorant Garamond', Georgia, serif;
     }
 
     /* ── DARK MODE ── */
@@ -520,7 +522,7 @@
     }
     .verse-num:hover { background: var(--green); color: #fff; }
     .verse-text {
-      font-family: 'Cormorant Garamond', serif;
+      font-family: var(--reading-font);
       font-size: 1.1rem;
       font-weight: 400;
       color: var(--charcoal);
@@ -579,6 +581,17 @@
     }
     .tool-btn:hover { border-color: var(--green); color: var(--green-dark); }
     .tool-btn.active { background: var(--charcoal); color: var(--cream); border-color: var(--charcoal); }
+
+    /* ── FONT SELECT ── */
+    .font-select {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+      background: var(--white); border: 1.5px solid var(--line); border-radius: 3px;
+      color: var(--charcoal-light); padding: 6px 10px; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      appearance: auto;
+    }
+    .font-select:hover, .font-select:focus { border-color: var(--green); color: var(--charcoal); outline: none; }
 
     /* ── SELECTION ACTION BAR ── */
     .selection-bar {
@@ -875,7 +888,7 @@
       margin-right: 6px; user-select: none;
     }
     .pres-verse-text {
-      font-family: 'Cormorant Garamond', serif;
+      font-family: var(--reading-font);
       font-weight: 400; color: var(--charcoal);
       line-height: 1.65;
     }
@@ -1147,7 +1160,7 @@
     }
     .notes-entry-remove:hover { color: var(--charcoal); }
     .notes-entry-quote {
-      font-family: 'Cormorant Garamond', serif;
+      font-family: var(--reading-font);
       font-size: 0.95rem; font-style: italic; color: var(--charcoal-light);
       margin-bottom: 8px; padding-left: 10px;
       border-left: 2px solid var(--green);
@@ -1473,7 +1486,7 @@
       margin-right: 4px; user-select: none;
     }
     .parallel-verse-text {
-      font-family: 'Cormorant Garamond', serif;
+      font-family: var(--reading-font);
       color: var(--charcoal); line-height: 1.7;
     }
 
@@ -1913,19 +1926,29 @@
           </div>
         </div>
       </div>
+      <!-- Notes button — same tier as study tools -->
+      <button class="tool-btn" id="btn-notes" onclick="toggleNotesPanel()">📝 Notes</button>
     </div>
 
-    <!-- ROW 4: Text Size | Reading Mode | Presentation Mode -->
+    <!-- ROW 4: Text Size | Font | Reading Mode | Presentation Mode | Dark -->
     <div class="reader-toolbar" id="reader-toolbar">
       <div class="toolbar-left">
         <span class="toolbar-label">Text Size</span>
         <button class="tool-btn" id="btn-font-down" onclick="adjustFont(-1)">A−</button>
         <button class="tool-btn" id="btn-font-up" onclick="adjustFont(1)">A+</button>
+        <span class="toolbar-label" style="margin-left:8px;">Font</span>
+        <select class="font-select" id="sel-reading-font" onchange="applyReadingFont(this.value)" title="Reading font">
+          <option value="cormorant">Cormorant</option>
+          <option value="bookerly">Lora</option>
+          <option value="georgia">Georgia</option>
+          <option value="literata">Literata</option>
+          <option value="opendyslexic">OpenDyslexic</option>
+          <option value="noto">Noto Serif</option>
+        </select>
       </div>
       <div class="toolbar-right">
         <button class="tool-btn reading-mode-btn" id="btn-reading-mode" onclick="toggleReadingMode()">⊞ Reading Mode</button>
         <button class="tool-btn" id="btn-pres-mode" onclick="enterPresentationMode()">⛶ Present</button>
-        <button class="tool-btn" id="btn-notes" onclick="toggleNotesPanel()">📝 Notes</button>
         <button class="tool-btn" id="btn-dark" onclick="toggleDarkMode()" title="Toggle dark mode">🌙 Dark</button>
       </div>
     </div>
@@ -3177,15 +3200,13 @@ async function renderPassage() {
       const num = document.createElement('sup');
       num.className = 'verse-num';
       num.textContent = v.verse;
-      num.title = 'Click for options';
+      num.title = 'Click to select · Right-click for more';
       num.addEventListener('click', e => {
         e.stopPropagation();
-        if (selectedVerses.size > 0) {
-          // In selection mode — just add to selection
-          toggleVerseSelection(v.verse);
-        } else {
-          showVerseCtxMenu(e, v.verse);
-        }
+        toggleVerseSelection(v.verse);
+      });
+      num.addEventListener('contextmenu', e => {
+        e.preventDefault(); e.stopPropagation(); showVerseCtxMenu(e, v.verse);
       });
 
       let txt;
@@ -3559,7 +3580,8 @@ async function renderCommentaryPassage(area) {
       num.className = 'parallel-verse-num';
       num.textContent = v.verse;
       num.style.cursor = 'pointer';
-      num.addEventListener('click', e => { e.stopPropagation(); if (selectedVerses.size > 0) toggleVerseSelection(v.verse); else showVerseCtxMenu(e, v.verse); });
+      num.addEventListener('click', e => { e.stopPropagation(); toggleVerseSelection(v.verse); });
+      num.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showVerseCtxMenu(e, v.verse); });
       let txt;
       if (STRONGS_TRANSLATIONS.has(currentTranslation) && v.rawHtml) {
         txt = document.createElement('span');
@@ -3687,8 +3709,10 @@ async function renderParallelPassage(area) {
       numA.style.cursor = 'pointer';
       numA.addEventListener('click', e => {
         e.stopPropagation();
-        if (selectedVerses.size > 0) toggleVerseSelection(v.verse);
-        else showVerseCtxMenu(e, v.verse);
+        toggleVerseSelection(v.verse);
+      });
+      numA.addEventListener('contextmenu', e => {
+        e.preventDefault(); e.stopPropagation(); showVerseCtxMenu(e, v.verse);
       });
 
       let txtA;
@@ -3784,8 +3808,10 @@ async function renderInterlinearPassage(area) {
       num.style.cursor = 'pointer';
       num.addEventListener('click', e => {
         e.stopPropagation();
-        if (selectedVerses.size > 0) toggleVerseSelection(v.verse);
-        else showVerseCtxMenu(e, v.verse);
+        toggleVerseSelection(v.verse);
+      });
+      num.addEventListener('contextmenu', e => {
+        e.preventDefault(); e.stopPropagation(); showVerseCtxMenu(e, v.verse);
       });
       let txt;
       if (STRONGS_TRANSLATIONS.has(currentTranslation) && v.rawHtml) {
@@ -4955,6 +4981,29 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   function todayDate() {
     return new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   }
+
+  // ── Reading font ──
+  const FONT_MAP = {
+    cormorant:    "'Cormorant Garamond', Georgia, serif",
+    bookerly:     "'Lora', Georgia, serif",
+    georgia:      "Georgia, serif",
+    literata:     "'Literata', Georgia, serif",
+    opendyslexic: "'OpenDyslexic', Arial, sans-serif",
+    noto:         "'Noto Serif', Georgia, serif"
+  };
+  function applyReadingFont(key) {
+    const family = FONT_MAP[key] || FONT_MAP.cormorant;
+    document.documentElement.style.setProperty('--reading-font', family);
+    const sel = document.getElementById('sel-reading-font');
+    if (sel) sel.value = key;
+    try { localStorage.setItem('bibleFont', key); } catch(e) {}
+  }
+  (function() {
+    try {
+      const saved = localStorage.getItem('bibleFont');
+      if (saved && FONT_MAP[saved]) applyReadingFont(saved);
+    } catch(e) {}
+  })();
 
   // ── Dark mode ──
   function toggleDarkMode() {
