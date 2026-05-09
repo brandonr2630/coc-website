@@ -1162,9 +1162,14 @@
     .notes-entry-quote {
       font-family: var(--reading-font);
       font-size: 0.95rem; font-style: italic; color: var(--charcoal-light);
-      margin-bottom: 8px; padding-left: 10px;
+      margin-bottom: 6px; padding-left: 10px;
       border-left: 2px solid var(--green);
       line-height: 1.5;
+    }
+    .notes-entry-verse-num {
+      font-family: 'Nunito', sans-serif; font-size: 0.62rem; font-weight: 700;
+      color: var(--green); vertical-align: super; margin-right: 4px;
+      font-style: normal;
     }
     .notes-entry-textarea {
       width: 100%; border: 1px solid var(--line); border-radius: 4px;
@@ -4803,15 +4808,31 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     notesSession.entries.forEach((entry, idx) => {
       const el = document.createElement('div');
       el.className = 'notes-entry';
-      el.innerHTML = `
-        <div class="notes-entry-head">
-          <span class="notes-entry-ref">${notesEsc(entry.ref)}</span>
-          <button class="notes-entry-remove" onclick="notesRemoveEntry(${idx})" title="Remove">✕</button>
-        </div>
-        <div class="notes-entry-quote">${notesEsc(entry.text)}</div>
-        <textarea class="notes-entry-textarea" rows="3"
-          placeholder="Your notes…"
-          oninput="notesEntryInput(${idx},this.value)">${notesEsc(entry.notes)}</textarea>`;
+      if (entry.verses) {
+        const refLabel = formatGroupRef(entry.verses);
+        const quotesHtml = entry.verses.map(v =>
+          `<div class="notes-entry-quote"><span class="notes-entry-verse-num">${notesEsc(v.ref.match(/:(\d+)$/)[1])}</span> ${notesEsc(v.text)}</div>`
+        ).join('');
+        el.innerHTML = `
+          <div class="notes-entry-head">
+            <span class="notes-entry-ref">${notesEsc(refLabel)}</span>
+            <button class="notes-entry-remove" onclick="notesRemoveEntry(${idx})" title="Remove">✕</button>
+          </div>
+          ${quotesHtml}
+          <textarea class="notes-entry-textarea" rows="3"
+            placeholder="Your notes…"
+            oninput="notesEntryInput(${idx},this.value)">${notesEsc(entry.notes)}</textarea>`;
+      } else {
+        el.innerHTML = `
+          <div class="notes-entry-head">
+            <span class="notes-entry-ref">${notesEsc(entry.ref)}</span>
+            <button class="notes-entry-remove" onclick="notesRemoveEntry(${idx})" title="Remove">✕</button>
+          </div>
+          <div class="notes-entry-quote">${notesEsc(entry.text)}</div>
+          <textarea class="notes-entry-textarea" rows="3"
+            placeholder="Your notes…"
+            oninput="notesEntryInput(${idx},this.value)">${notesEsc(entry.notes)}</textarea>`;
+      }
       list.appendChild(el);
     });
   }
@@ -4861,8 +4882,34 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     hideVerseCtxMenu();
   }
 
+  function formatGroupRef(verses) {
+    if (verses.length === 1) return verses[0].ref;
+    const nums = verses.map(v => parseInt(v.ref.match(/:(\d+)$/)[1]));
+    const bookCh = verses[0].ref.replace(/:\d+$/, '');
+    const isConsec = nums.every((n, i) => i === 0 || n === nums[i-1] + 1);
+    return isConsec ? `${bookCh}:${nums[0]}–${nums[nums.length-1]}` : `${bookCh}:${nums.join(', ')}`;
+  }
+
   function selectionAddToNotes() {
-    Array.from(selectedVerses).sort((a,b)=>a-b).forEach(v => addVerseToNotes(v));
+    const sorted = Array.from(selectedVerses).sort((a,b) => a-b);
+    if (sorted.length === 1) {
+      addVerseToNotes(sorted[0]);
+    } else {
+      const verses = sorted.map(n => {
+        const el = document.getElementById('v' + n);
+        return { ref: `${currentBook.name} ${currentChapter}:${n}`,
+                 text: stripStrongsNumbers(el?.querySelector('.verse-text')?.textContent?.trim() || '') };
+      });
+      const groupRef = formatGroupRef(verses);
+      const firstRef = verses[0].ref;
+      if (notesSession.entries.some(e =>
+        e.ref === firstRef || (e.verses && e.verses.some(v => v.ref === firstRef))
+      )) { showToast(`${groupRef} already in notes`); openNotesPanel(); return; }
+      notesSession.entries.push({ verses, notes: '' });
+      notesSave();
+      if (document.getElementById('notes-panel').classList.contains('visible')) renderNotesPanel();
+      showToast(`Added ${groupRef}`);
+    }
     clearSelection(); openNotesPanel();
   }
 
@@ -4880,7 +4927,13 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     const trans = TRANSLATIONS[notesSession.translation] || notesSession.translation;
     const lines = [title.toUpperCase(), `${notesSession.date}  ·  ${trans}`, '═'.repeat(50), ''];
     notesSession.entries.forEach(e => {
-      lines.push(`[ ${e.ref} ]`, `"${e.text}"`, '', e.notes || '(no notes)', '', '─'.repeat(40), '');
+      if (e.verses) {
+        lines.push(`[ ${formatGroupRef(e.verses)} ]`);
+        e.verses.forEach(v => lines.push(`  ${v.ref.match(/:(\d+)$/)[1]}  "${v.text}"`));
+      } else {
+        lines.push(`[ ${e.ref} ]`, `"${e.text}"`);
+      }
+      lines.push('', e.notes || '(no notes)', '', '─'.repeat(40), '');
     });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain' }));
@@ -4891,12 +4944,15 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   function notesExportPdf() {
     const title = notesSession.title || 'Sermon Notes';
     const trans = TRANSLATIONS[notesSession.translation] || notesSession.translation;
-    const entriesHtml = notesSession.entries.map(e => `
-      <div class="entry">
-        <div class="ref">${notesEsc(e.ref)}</div>
-        <blockquote>${notesEsc(e.text)}</blockquote>
-        <div class="notes">${e.notes ? notesEsc(e.notes).replace(/\n/g,'<br>') : '<em>No notes</em>'}</div>
-      </div>`).join('');
+    const entriesHtml = notesSession.entries.map(e => {
+      if (e.verses) {
+        const quotesHtml = e.verses.map(v =>
+          `<blockquote><sup>${notesEsc(v.ref.match(/:(\d+)$/)[1])}</sup> ${notesEsc(v.text)}</blockquote>`
+        ).join('');
+        return `<div class="entry"><div class="ref">${notesEsc(formatGroupRef(e.verses))}</div>${quotesHtml}<div class="notes">${e.notes ? notesEsc(e.notes).replace(/\n/g,'<br>') : '<em>No notes</em>'}</div></div>`;
+      }
+      return `<div class="entry"><div class="ref">${notesEsc(e.ref)}</div><blockquote>${notesEsc(e.text)}</blockquote><div class="notes">${e.notes ? notesEsc(e.notes).replace(/\n/g,'<br>') : '<em>No notes</em>'}</div></div>`;
+    }).join('');
     const w = window.open('', '_blank');
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
       <title>${notesEsc(title)}</title>
@@ -4937,11 +4993,19 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
         new Paragraph({ text: '' }),
       ];
       notesSession.entries.forEach(e => {
-        children.push(
-          new Paragraph({ children: [new TextRun({ text: e.ref, bold: true, color: '5f9a2e', size: 26 })] }),
-          new Paragraph({ children: [new TextRun({ text: `"${e.text}"`, italics: true, color: '555555' })], indent: { left: 720 } }),
-          new Paragraph({ text: '' }),
-        );
+        if (e.verses) {
+          children.push(new Paragraph({ children: [new TextRun({ text: formatGroupRef(e.verses), bold: true, color: '5f9a2e', size: 26 })] }));
+          e.verses.forEach(v => children.push(
+            new Paragraph({ children: [new TextRun({ text: `${v.ref.match(/:(\d+)$/)[1]}  "${v.text}"`, italics: true, color: '555555' })], indent: { left: 720 } })
+          ));
+          children.push(new Paragraph({ text: '' }));
+        } else {
+          children.push(
+            new Paragraph({ children: [new TextRun({ text: e.ref, bold: true, color: '5f9a2e', size: 26 })] }),
+            new Paragraph({ children: [new TextRun({ text: `"${e.text}"`, italics: true, color: '555555' })], indent: { left: 720 } }),
+            new Paragraph({ text: '' }),
+          );
+        }
         (e.notes || '(no notes)').split('\n').forEach(line =>
           children.push(new Paragraph({ text: line }))
         );
