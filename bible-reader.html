@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>try{if(localStorage.getItem('bibleTheme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>
   <title>Bible Reader – Todd's Road Church of Christ</title>
   <meta name="description" content="Read the Bible online — multiple translations, Strong's numbers, cross-references, and commentaries. From Todd's Road Church of Christ, Trinidad.">
   <!-- Favicons -->
@@ -37,6 +38,23 @@
       --highlight: rgba(125,194,67,0.18);
       --highlight-border: rgba(125,194,67,0.6);
     }
+
+    /* ── DARK MODE ── */
+    [data-theme="dark"] {
+      --green: #7DC243;
+      --green-dark: #96d455;
+      --charcoal: #e8e4dc;
+      --charcoal-light: #7a7570;
+      --cream: #1a1a17;
+      --white: #252520;
+      --line: #3a3a34;
+      --highlight: rgba(125,194,67,0.13);
+      --highlight-border: rgba(125,194,67,0.45);
+    }
+    [data-theme="dark"] nav { background: rgba(26,26,23,0.94) !important; }
+    [data-theme="dark"] .nav-links { background: rgba(26,26,23,0.98) !important; }
+    [data-theme="dark"] .xref-tooltip { background: #e8e4dc; color: #1a1a17; }
+    [data-theme="dark"] .xref-tooltip::after { border-bottom-color: #e8e4dc; }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; overflow-x: hidden; }
@@ -1908,6 +1926,7 @@
         <button class="tool-btn reading-mode-btn" id="btn-reading-mode" onclick="toggleReadingMode()">⊞ Reading Mode</button>
         <button class="tool-btn" id="btn-pres-mode" onclick="enterPresentationMode()">⛶ Present</button>
         <button class="tool-btn" id="btn-notes" onclick="toggleNotesPanel()">📝 Notes</button>
+        <button class="tool-btn" id="btn-dark" onclick="toggleDarkMode()" title="Toggle dark mode">🌙 Dark</button>
       </div>
     </div>
 
@@ -4937,8 +4956,22 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     return new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
+  // ── Dark mode ──
+  function toggleDarkMode() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    try { localStorage.setItem('bibleTheme', document.documentElement.getAttribute('data-theme')); } catch(e) {}
+    syncDarkBtn();
+  }
+  function syncDarkBtn() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const btn = document.getElementById('btn-dark');
+    if (btn) btn.textContent = isDark ? '☀ Light' : '🌙 Dark';
+  }
+
   // Initialise on load
   notesInit();
+  syncDarkBtn();
   </script>
 
   <script>
