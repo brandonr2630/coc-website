@@ -1220,13 +1220,29 @@
     .notes-intro-area ol { list-style-type: decimal;         padding-left: 1.5em; margin: 1px 0; }
     .notes-intro-area ol ol { list-style-type: lower-alpha;  padding-left: 1.5em; }
     .notes-intro-area ol ol ol { list-style-type: lower-roman; padding-left: 1.5em; }
-    .notes-entry-textarea {
-      width: 100%; border: 1px solid var(--line); border-radius: 4px;
-      padding: 8px 10px; font-family: 'Nunito', sans-serif; font-size: 0.85rem;
-      color: var(--charcoal); background: var(--cream);
-      resize: vertical; outline: none; line-height: 1.5;
+    .notes-entry-toolbar {
+      display: flex; align-items: center; gap: 3px;
+      margin: 6px 0 4px;
     }
-    .notes-entry-textarea:focus { border-color: var(--green); }
+    .notes-entry-area {
+      min-height: 60px; max-height: 180px; overflow-y: auto;
+      padding: 8px 10px;
+      border: 1px solid var(--line); border-radius: 4px;
+      background: var(--cream); color: var(--charcoal);
+      font-family: 'Nunito', sans-serif; font-size: 0.85rem; line-height: 1.65;
+      outline: none;
+    }
+    .notes-entry-area:focus { border-color: var(--green); }
+    .notes-entry-area:empty::before {
+      content: attr(data-placeholder);
+      color: var(--charcoal-light); font-style: italic; pointer-events: none;
+    }
+    .notes-entry-area ul { list-style-type: disc;          padding-left: 1.3em; margin: 1px 0; }
+    .notes-entry-area ul ul { list-style-type: circle;     padding-left: 1.3em; }
+    .notes-entry-area ul ul ul { list-style-type: square;  padding-left: 1.3em; }
+    .notes-entry-area ol { list-style-type: decimal;           padding-left: 1.5em; margin: 1px 0; }
+    .notes-entry-area ol ol { list-style-type: lower-alpha;    padding-left: 1.5em; }
+    .notes-entry-area ol ol ol { list-style-type: lower-roman; padding-left: 1.5em; }
 
     .notes-export-bar {
       flex-shrink: 0; display: flex; align-items: center; gap: 8px;
@@ -3016,11 +3032,24 @@ function clearSelection() {
   updateSelectionBar();
 }
 
+function getVerseText(verseNum) {
+  // DOM-first (reading mode has id="v{n}")
+  const el = document.getElementById('v' + verseNum);
+  if (el) return stripStrongsNumbers(el.querySelector('.verse-text')?.textContent?.trim() || '');
+  // BIBLE_CACHE fallback — works in parallel / interlinear / commentary
+  const bookNum = BOOKS.findIndex(b => b.name === currentBook.name) + 1;
+  const chapterData = BIBLE_CACHE[currentTranslation]?.[bookNum]?.[currentChapter];
+  if (!chapterData) return '';
+  const raw = chapterData[verseNum];
+  if (!raw) return '';
+  const text = (raw && typeof raw === 'object' && raw.t !== undefined) ? raw.t : String(raw);
+  return stripStrongsNumbers(text);
+}
+
 function copySelection() {
   const sorted = Array.from(selectedVerses).sort((a,b) => a-b);
   const lines = sorted.map(n => {
-    const el = document.getElementById('v' + n);
-    const text = el ? el.querySelector('.verse-text').textContent.trim() : '';
+    const text = getVerseText(n);
     return `[${currentBook.name} ${currentChapter}:${n}] ${text}`;
   });
   const copyText = lines.join('\n') + '\n\n— ' + TRANSLATIONS[currentTranslation];
@@ -4828,6 +4857,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   const NOTES_KEY = 'coc_notes_sessions';
   let notesSession  = null;
   let notesSaveTimer = null;
+  let currentFocusedEntryIdx = null;
 
   function notesInit() {
     try {
@@ -4878,6 +4908,14 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     notesSession.entries.forEach((entry, idx) => {
       const el = document.createElement('div');
       el.className = 'notes-entry';
+      const entryToolbar = `
+        <div class="notes-entry-toolbar">
+          <button class="intro-fmt-btn efmt-ul-${idx}" onclick="notesEntryFmt('insertUnorderedList',${idx})" title="Bullet list">● List</button>
+          <button class="intro-fmt-btn efmt-ol-${idx}" onclick="notesEntryFmt('insertOrderedList',${idx})" title="Numbered list">① Num</button>
+          <span class="intro-fmt-sep"></span>
+          <button class="intro-fmt-btn" onclick="notesEntryIndent(1,${idx})" title="Indent">⇥</button>
+          <button class="intro-fmt-btn" onclick="notesEntryIndent(-1,${idx})" title="Outdent">⇤</button>
+        </div>`;
       if (entry.verses) {
         const refLabel = formatGroupRef(entry.verses);
         const quotesHtml = entry.verses.map(v =>
@@ -4888,10 +4926,13 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
             <span class="notes-entry-ref">${notesEsc(refLabel)}</span>
             <button class="notes-entry-remove" onclick="notesRemoveEntry(${idx})" title="Remove">✕</button>
           </div>
-          ${quotesHtml}
-          <textarea class="notes-entry-textarea" rows="3"
-            placeholder="Your notes…"
-            oninput="notesEntryInput(${idx},this.value)">${notesEsc(entry.notes)}</textarea>`;
+          ${quotesHtml}${entryToolbar}
+          <div class="notes-entry-area" id="earea-${idx}" contenteditable="true"
+            data-placeholder="Your notes…"
+            onfocus="currentFocusedEntryIdx=${idx};syncEntryToolbar(${idx})"
+            onkeyup="syncEntryToolbar(${idx})"
+            onmouseup="syncEntryToolbar(${idx})"
+            oninput="notesEntryInput(${idx})"></div>`;
       } else {
         el.innerHTML = `
           <div class="notes-entry-head">
@@ -4899,18 +4940,75 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
             <button class="notes-entry-remove" onclick="notesRemoveEntry(${idx})" title="Remove">✕</button>
           </div>
           <div class="notes-entry-quote">${notesEsc(entry.text)}</div>
-          <textarea class="notes-entry-textarea" rows="3"
-            placeholder="Your notes…"
-            oninput="notesEntryInput(${idx},this.value)">${notesEsc(entry.notes)}</textarea>`;
+          ${entryToolbar}
+          <div class="notes-entry-area" id="earea-${idx}" contenteditable="true"
+            data-placeholder="Your notes…"
+            onfocus="currentFocusedEntryIdx=${idx};syncEntryToolbar(${idx})"
+            onkeyup="syncEntryToolbar(${idx})"
+            onmouseup="syncEntryToolbar(${idx})"
+            oninput="notesEntryInput(${idx})"></div>`;
       }
+      // Set notes HTML after building (avoids escaping issues)
+      el.querySelector('.notes-entry-area').innerHTML = notesToHtml(entry.notes);
       list.appendChild(el);
     });
   }
 
-  function notesEntryInput(idx, val) {
-    notesSession.entries[idx].notes = val;
+  function notesEntryInput(idx) {
+    const area = document.getElementById('earea-' + idx);
+    if (area) notesSession.entries[idx].notes = area.innerHTML;
     clearTimeout(notesSaveTimer);
     notesSaveTimer = setTimeout(notesSave, 600);
+  }
+
+  function notesEntryFmt(cmd, idx) {
+    const area = document.getElementById('earea-' + idx);
+    if (!area) return;
+    area.focus();
+    document.execCommand(cmd);
+    syncEntryToolbar(idx);
+    notesEntryInput(idx);
+  }
+
+  function notesEntryIndent(dir, idx) {
+    const area = document.getElementById('earea-' + idx);
+    if (!area) return;
+    area.focus();
+    document.execCommand(dir > 0 ? 'indent' : 'outdent');
+    syncEntryToolbar(idx);
+    notesEntryInput(idx);
+  }
+
+  function syncEntryToolbar(idx) {
+    const ul = document.querySelector(`.efmt-ul-${idx}`);
+    const ol = document.querySelector(`.efmt-ol-${idx}`);
+    if (ul) ul.classList.toggle('active', document.queryCommandState('insertUnorderedList'));
+    if (ol) ol.classList.toggle('active', document.queryCommandState('insertOrderedList'));
+  }
+
+  function notesToHtml(notes) {
+    if (!notes) return '';
+    if (/<[a-z][\s\S]*>/i.test(notes)) return notes;
+    return notes.split('\n').map(l => notesEsc(l)).join('<br>');
+  }
+
+  function notesEntryToText(notes) {
+    if (!notes) return '';
+    if (!/<[a-z][\s\S]*>/i.test(notes)) return notes;
+    const div = document.createElement('div');
+    div.innerHTML = notes;
+    function walk(node, depth) {
+      let t = '';
+      node.childNodes.forEach(c => {
+        if (c.nodeType === 3) { t += c.textContent; }
+        else if (c.tagName === 'LI') { t += '  '.repeat(depth) + '• ' + walk(c, depth).trim() + '\n'; }
+        else if (c.tagName === 'UL' || c.tagName === 'OL') { t += walk(c, depth + 1); }
+        else if (/^(P|DIV|BR)$/.test(c.tagName)) { t += walk(c, depth) + '\n'; }
+        else { t += walk(c, depth); }
+      });
+      return t;
+    }
+    return walk(div, 0).trim();
   }
 
   function notesRemoveEntry(idx) {
@@ -4934,9 +5032,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   }
 
   function addVerseToNotes(verseNum) {
-    const el = document.getElementById('v' + verseNum);
-    if (!el) return;
-    const text = stripStrongsNumbers(el.querySelector('.verse-text')?.textContent?.trim() || '');
+    const text = getVerseText(verseNum);
     const ref  = `${currentBook.name} ${currentChapter}:${verseNum}`;
     if (notesSession.entries.some(e => e.ref === ref)) {
       showToast(`${ref} already in notes`); openNotesPanel(); return;
@@ -5010,11 +5106,10 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     if (sorted.length === 1) {
       addVerseToNotes(sorted[0]);
     } else {
-      const verses = sorted.map(n => {
-        const el = document.getElementById('v' + n);
-        return { ref: `${currentBook.name} ${currentChapter}:${n}`,
-                 text: stripStrongsNumbers(el?.querySelector('.verse-text')?.textContent?.trim() || '') };
-      });
+      const verses = sorted.map(n => ({
+        ref: `${currentBook.name} ${currentChapter}:${n}`,
+        text: getVerseText(n)
+      }));
       const groupRef = formatGroupRef(verses);
       const firstRef = verses[0].ref;
       if (notesSession.entries.some(e =>
@@ -5050,7 +5145,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       } else {
         lines.push(`[ ${e.ref} ]`, `"${e.text}"`);
       }
-      lines.push('', e.notes || '(no notes)', '', '─'.repeat(40), '');
+      lines.push('', notesEntryToText(e.notes) || '(no notes)', '', '─'.repeat(40), '');
     });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/plain' }));
@@ -5066,9 +5161,9 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
         const quotesHtml = e.verses.map(v =>
           `<blockquote><sup>${notesEsc(v.ref.match(/:(\d+)$/)[1])}</sup> ${notesEsc(v.text)}</blockquote>`
         ).join('');
-        return `<div class="entry"><div class="ref">${notesEsc(formatGroupRef(e.verses))}</div>${quotesHtml}<div class="notes">${e.notes ? notesEsc(e.notes).replace(/\n/g,'<br>') : '<em>No notes</em>'}</div></div>`;
+        return `<div class="entry"><div class="ref">${notesEsc(formatGroupRef(e.verses))}</div>${quotesHtml}<div class="notes">${e.notes || '<em>No notes</em>'}</div></div>`;
       }
-      return `<div class="entry"><div class="ref">${notesEsc(e.ref)}</div><blockquote>${notesEsc(e.text)}</blockquote><div class="notes">${e.notes ? notesEsc(e.notes).replace(/\n/g,'<br>') : '<em>No notes</em>'}</div></div>`;
+      return `<div class="entry"><div class="ref">${notesEsc(e.ref)}</div><blockquote>${notesEsc(e.text)}</blockquote><div class="notes">${e.notes || '<em>No notes</em>'}</div></div>`;
     }).join('');
     const introHtml = notesSession.intro
       ? `<div class="intro">${notesSession.intro}</div>` : '';
@@ -5089,7 +5184,13 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
         .entry{margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid #e0e0e0}
         .ref{font-weight:bold;font-size:15px;color:#5f9a2e;margin-bottom:8px}
         blockquote{margin:0 0 12px;padding:10px 16px;background:#f8f7f2;border-left:3px solid #7DC243;font-style:italic;color:#444}
-        .notes{line-height:1.7;white-space:pre-wrap}
+        .notes{line-height:1.7}
+        .notes ul{list-style-type:disc;padding-left:1.4em;margin:4px 0}
+        .notes ul ul{list-style-type:circle;padding-left:1.4em}
+        .notes ul ul ul{list-style-type:square;padding-left:1.4em}
+        .notes ol{list-style-type:decimal;padding-left:1.6em;margin:4px 0}
+        .notes ol ol{list-style-type:lower-alpha;padding-left:1.6em}
+        .notes ol ol ol{list-style-type:lower-roman;padding-left:1.6em}
         em{color:#aaa}
         @media print{body{margin:20px}}
       </style></head><body>
@@ -5144,7 +5245,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
             new Paragraph({ text: '' }),
           );
         }
-        (e.notes || '(no notes)').split('\n').forEach(line =>
+        (notesEntryToText(e.notes) || '(no notes)').split('\n').forEach(line =>
           children.push(new Paragraph({ text: line }))
         );
         children.push(
