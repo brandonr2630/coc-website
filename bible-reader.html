@@ -4930,6 +4930,10 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
 
+  function todayDate() {
+    return new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
   // Initialise on load
   notesInit();
   </script>
