@@ -1961,6 +1961,7 @@
             <button class="parallel-dropdown-item" onclick="selectTranslation('lsv','Literal Standard Version')">Literal Standard Version</button>
             <button class="parallel-dropdown-item" onclick="selectTranslation('ylt','Young\'s Literal Translation')">Young's Literal Translation</button>
             <button class="parallel-dropdown-item" onclick="selectTranslation('lxxe','English Septuagint (1851)')">English Septuagint (1851)</button>
+            <button class="parallel-dropdown-item" onclick="selectTranslation('darby','Darby Bible (1890)')">Darby Bible (1890)</button>
           </div>
           <div class="parallel-dropdown-group">
             <div class="parallel-dropdown-group-label">Español</div>
@@ -1977,6 +1978,7 @@
         <option value="lsv">Literal Standard Version</option>
         <option value="ylt">Young's Literal Translation</option>
         <option value="lxxe">English Septuagint (1851)</option>
+        <option value="darby">Darby Bible (1890)</option>
         <option value="rvr09">Reina-Valera 1909</option>
       </select>
     </div>
@@ -2013,6 +2015,7 @@
             <button class="parallel-dropdown-item" onclick="openParallelWith('lsv')">Literal Standard Version</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('ylt')">Young's Literal Translation</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('lxxe')">English Septuagint (1851)</button>
+            <button class="parallel-dropdown-item" onclick="openParallelWith('darby')">Darby Bible (1890)</button>
           </div>
           <div class="parallel-dropdown-group">
             <div class="parallel-dropdown-group-label">Español</div>
@@ -2187,6 +2190,7 @@ const TRANSLATIONS = {
   nkjv:  'New King James Version',
   lsv:   'Literal Standard Version',
   lxxe:  'English Septuagint (1851)',
+  darby: 'Darby Bible (1890)',
   kjvs:  "King James Version + Strong's",
   asvs:  "American Standard Version + Strong's"
 };
@@ -2200,6 +2204,7 @@ const TRANSLATION_ABBR = {
   nkjv:  'NKJV',
   lsv:   'LSV',
   lxxe:  'LXXE',
+  darby: 'DARBY',
   kjvs:  'KJV+S',
   asvs:  'ASV+S'
 };
@@ -2252,6 +2257,11 @@ const TRANSLATION_INFO = {
     full: 'Reina-Valera 1909',
     year: 1909,
     body: `The Reina-Valera is the King James Bible of the Spanish-speaking world — not merely in stature but in spiritual lineage. Its origins lie in the courageous work of Casiodoro de Reina, a former Hieronymite monk who, at great personal peril, produced the first complete Spanish Bible in 1569 while living in exile from the Inquisition. Drawing from the Hebrew Masoretic Text, the Textus Receptus, and the labours of earlier Reformation translators, it was a confessional act as much as a scholarly one. Cipriano de Valera revised it in 1602, and the 1909 edition modernised its language while preserving the formal equivalence character and ecclesiastical gravity of the original. For four centuries it has been the Bible in which the Spanish-speaking church has heard the voice of God.`
+  },
+  darby: {
+    full: 'Darby Bible (1890)',
+    year: 1890,
+    body: `John Nelson Darby was among the most formidable biblical scholars of the nineteenth century — a trained lawyer turned theologian who mastered Hebrew, Greek, Latin, French, and German in order to work directly from the source texts without mediation. His translation, revised through multiple editions and finalised in 1890, was produced not for ecclesiastical use but as a precision instrument for serious study: a formal equivalence rendering that attempts to track the grammar and idiom of the underlying texts as closely as the English language will permit. The New Testament in particular is regarded by scholars as one of the most rigorous English renderings of the Greek, preserving distinctions in tense and voice that most translations smooth over for readability. Darby translated from the Hebrew Masoretic Text for the Old Testament and from the critical Greek text for the New, which in places produces significant divergence from the Textus Receptus tradition of the KJV. His translation is the natural companion to detailed word study and to any reader who wants to sit as close as possible to the original text without reading the biblical languages directly.`
   }
 };
 
@@ -2877,7 +2887,7 @@ function stripHtml(html) {
 
 // ── LOCAL translations (served from /bible/<key>.json) ──
 // NKJV is intentionally excluded — it remains API-sourced via bolls.life (copyright)
-const LOCAL_TRANSLATIONS = new Set(['web','kjv','asv','ylt','rvr09','lsv','lxxe','kjvs','asvs']);
+const LOCAL_TRANSLATIONS = new Set(['web','kjv','asv','ylt','rvr09','lsv','lxxe','darby','kjvs','asvs']);
 
 // In-memory cache — each translation JSON is loaded once per session
 const BIBLE_CACHE = {};
