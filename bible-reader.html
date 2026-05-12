@@ -1445,7 +1445,7 @@
     .search-filter-label {
       font-family: 'Nunito', sans-serif; font-size: 0.6rem; font-weight: 700;
       letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--charcoal-light); width: 68px; flex-shrink: 0;
+      color: var(--charcoal-light); white-space: nowrap; flex-shrink: 0;
     }
     .search-filter-clear {
       font-family: 'Nunito', sans-serif; font-size: 0.68rem; font-weight: 700;
@@ -1455,12 +1455,44 @@
     }
     .search-filter-clear:hover { color: var(--green-dark); }
 
+    /* ── SEARCH DRAG HANDLE ── */
+    .search-drag-handle {
+      display: none;
+    }
     @media (max-width: 860px) {
       .search-panel {
         width: 100%; border-right: none; border-top: 2px solid var(--green);
-        top: auto; max-height: 60vh; left: 0; right: 0;
+        top: auto; height: 55vh; left: 0; right: 0;
+        transition: height 0.3s cubic-bezier(0.34,1.56,0.64,1);
       }
-      body.search-open .page-wrap { margin-left: 0; padding-bottom: 62vh; }
+      body.search-open .page-wrap { margin-left: 0; padding-bottom: var(--search-pb, 55vh); }
+      .search-drag-handle {
+        display: flex; justify-content: center; align-items: center;
+        padding: 10px 0 6px; flex-shrink: 0; cursor: ns-resize;
+        touch-action: none; user-select: none;
+      }
+      .search-drag-handle::after {
+        content: ''; display: block;
+        width: 36px; height: 4px; border-radius: 2px;
+        background: var(--line);
+      }
+    }
+    /* ── SEARCH PAGINATION ── */
+    .search-pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px 16px; border-top: 1px solid var(--line); margin-top: 4px;
+    }
+    .search-page-btn {
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      background: var(--green); color: #fff;
+      border: none; border-radius: 3px; padding: 6px 14px; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .search-page-btn:hover { background: var(--green-dark); }
+    .search-page-info {
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 600;
+      color: var(--charcoal-light);
     }
 
     /* Nudge scroll-to-top left when search panel is open */
@@ -3358,6 +3390,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('nav-logo-img').src = LOGO_B64;
   updateBookInfo(currentBook.name);
   updateManuscriptBar(currentTranslation, currentBook.testament);
+  initSearchDrag();
 });
 
 
@@ -4304,6 +4337,16 @@ document.addEventListener('fullscreenchange', () => {
 
 const SEARCH_TRANSLATIONS = Object.keys(TRANSLATIONS).filter(t => t !== 'nkjv');
 
+// ── Search pagination state ───────────────────────────────────────────────────
+const SEARCH_PAGE_SIZE   = 25;
+let searchResultsCache   = [];
+let searchCurrentPage    = 0;
+let searchContextQuery   = '';
+let searchContextPattern = null;
+let searchContextT       = '';
+let searchContextLabel   = '';
+let searchContextStrongs = '';
+
 // ── Search filter data ────────────────────────────────────────────────────────
 const SEARCH_SECTIONS = {
   ot: [
@@ -4419,6 +4462,48 @@ function getSearchScope() {
   return null; // no filter — search all
 }
 
+function initSearchDrag() {
+  const handle = document.getElementById('search-drag-handle');
+  const panel  = document.getElementById('search-panel');
+  if (!handle || !panel) return;
+
+  const SNAP_COMPACT = 180;
+  const snapMid  = () => Math.round(window.innerHeight * 0.55);
+  const snapFull = () => Math.round(window.innerHeight * 0.85);
+
+  let startY = 0, startH = 0, dragging = false;
+
+  handle.addEventListener('pointerdown', e => {
+    if (window.innerWidth > 860) return;
+    dragging = true;
+    startY = e.clientY;
+    startH = panel.getBoundingClientRect().height;
+    panel.style.transition = 'none';
+    handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  handle.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dy   = startY - e.clientY;
+    const newH = Math.max(SNAP_COMPACT, Math.min(snapFull() + 20, startH + dy));
+    panel.style.height = newH + 'px';
+  });
+
+  const snapTo = () => {
+    dragging = false;
+    const cur    = panel.getBoundingClientRect().height;
+    const snaps  = [SNAP_COMPACT, snapMid(), snapFull()];
+    const target = snaps.reduce((a, b) => Math.abs(b - cur) < Math.abs(a - cur) ? b : a);
+    panel.style.transition = 'height 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+    panel.style.height = target + 'px';
+    document.documentElement.style.setProperty('--search-pb', target + 'px');
+  };
+
+  handle.addEventListener('pointerup',     snapTo);
+  handle.addEventListener('pointercancel', snapTo);
+}
+
 function updateStrongsFilter() {
   const row = document.getElementById('filter-strongs-row');
   if (!row) return;
@@ -4433,12 +4518,20 @@ function openSearchPanel() {
   document.body.classList.add('search-open');
   populateFilterSections('');
   updateStrongsFilter();
+  if (window.innerWidth <= 860) {
+    const panel = document.getElementById('search-panel');
+    const mid = Math.round(window.innerHeight * 0.55);
+    panel.style.transition = 'none';
+    panel.style.height = mid + 'px';
+    document.documentElement.style.setProperty('--search-pb', mid + 'px');
+  }
   setTimeout(() => document.getElementById('search-input').focus(), 80);
 }
 
 function closeSearchPanel() {
   document.getElementById('search-panel').classList.remove('visible');
   document.body.classList.remove('search-open');
+  document.documentElement.style.removeProperty('--search-pb');
 }
 
 // Allow Enter key to trigger search — handled inline on the input element
@@ -4574,17 +4667,40 @@ function highlightStrongsInVerse(rawText, strongsNum) {
 }
 
 function renderSearchResults(results, query, pattern, t, translationLabel, strongsNum) {
-  const body = document.getElementById('search-body');
+  searchResultsCache   = results;
+  searchCurrentPage    = 0;
+  searchContextQuery   = query;
+  searchContextPattern = pattern;
+  searchContextT       = t;
+  searchContextLabel   = translationLabel;
+  searchContextStrongs = strongsNum || '';
+  renderSearchPage();
+}
 
-  if (results.length === 0) {
-    body.innerHTML = `<div class="search-no-results">No results found for "<em>${query}</em>" in ${translationLabel}</div>`;
+function renderSearchPage() {
+  const body       = document.getElementById('search-body');
+  const total      = searchResultsCache.length;
+  const query      = searchContextQuery;
+  const pattern    = searchContextPattern;
+  const t          = searchContextT;
+  const label      = searchContextLabel;
+  const strongsNum = searchContextStrongs;
+
+  if (total === 0) {
+    body.innerHTML = `<div class="search-no-results">No results found for "<em>${query}</em>" in ${label}</div>`;
     return;
   }
 
-  const statusLabel = results.length === 1 ? '1 result' : `${results.length} results`;
-  let html = `<div class="search-status">${statusLabel} in ${translationLabel}</div>`;
+  const start  = searchCurrentPage * SEARCH_PAGE_SIZE;
+  const end    = Math.min(start + SEARCH_PAGE_SIZE, total);
+  const page   = searchResultsCache.slice(start, end);
+  const pages  = Math.ceil(total / SEARCH_PAGE_SIZE);
+  const status = total === 1 ? '1 result' : `${start + 1}–${end} of ${total} results`;
 
-  for (const r of results) {
+  let html = `<div class="search-status">${status} in ${label}</div>`;
+
+  if (pattern) pattern.lastIndex = 0;
+  for (const r of page) {
     const ref = `${r.book.name} ${r.chapter}:${r.verse}`;
     const highlighted = strongsNum
       ? highlightStrongsInVerse(r.text, strongsNum)
@@ -4595,7 +4711,29 @@ function renderSearchResults(results, query, pattern, t, translationLabel, stron
     </button>`;
   }
 
+  if (pages > 1) {
+    html += `<div class="search-pagination">`;
+    if (searchCurrentPage > 0) {
+      html += `<button class="search-page-btn" onclick="goSearchPage(${searchCurrentPage - 1})">← Prev</button>`;
+    } else {
+      html += `<span></span>`;
+    }
+    html += `<span class="search-page-info">Page ${searchCurrentPage + 1} / ${pages}</span>`;
+    if (searchCurrentPage < pages - 1) {
+      html += `<button class="search-page-btn" onclick="goSearchPage(${searchCurrentPage + 1})">Next →</button>`;
+    } else {
+      html += `<span></span>`;
+    }
+    html += `</div>`;
+  }
+
   body.innerHTML = html;
+  body.scrollTop = 0;
+}
+
+function goSearchPage(page) {
+  searchCurrentPage = page;
+  renderSearchPage();
 }
 
 function goToSearchResult(bookName, chapter, verse, translation) {
@@ -4806,6 +4944,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 
 <!-- SEARCH PANEL -->
   <div class="search-panel" id="search-panel">
+    <div class="search-drag-handle" id="search-drag-handle"></div>
     <div class="search-panel-head">
       <button class="search-panel-close" onclick="closeSearchPanel()">✕ Close</button>
       <div class="search-panel-title">Search Scripture</div>
