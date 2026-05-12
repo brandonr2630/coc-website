@@ -502,7 +502,8 @@
       border-left: 3px solid var(--green);
       padding-left: 10px;
     }
-    .verse-block.selected {
+    .verse-block.selected,
+    .parallel-verse-block.selected {
       background: rgba(125,194,67,0.22);
       border-left: 3px solid var(--green-dark);
       padding-left: 10px;
@@ -1433,10 +1434,18 @@
       cursor: pointer; transition: border-color 0.2s;
     }
     .search-filter-select:focus { border-color: var(--green); outline: none; }
+    .search-filter-input {
+      flex: 1;
+      font-family: 'Nunito', sans-serif; font-size: 0.75rem; font-weight: 600;
+      color: var(--charcoal); background: var(--white);
+      border: 1.5px solid var(--line); border-radius: 3px;
+      padding: 6px 10px; outline: none; transition: border-color 0.2s;
+    }
+    .search-filter-input:focus { border-color: var(--green); }
     .search-filter-label {
       font-family: 'Nunito', sans-serif; font-size: 0.6rem; font-weight: 700;
       letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--charcoal-light); width: 58px; flex-shrink: 0;
+      color: var(--charcoal-light); width: 68px; flex-shrink: 0;
     }
     .search-filter-clear {
       font-family: 'Nunito', sans-serif; font-size: 0.68rem; font-weight: 700;
@@ -1451,7 +1460,7 @@
         width: 100%; border-right: none; border-top: 2px solid var(--green);
         top: auto; max-height: 60vh; left: 0; right: 0;
       }
-      body.search-open .page-wrap { margin-left: 0; }
+      body.search-open .page-wrap { margin-left: 0; padding-bottom: 62vh; }
     }
 
     /* Nudge scroll-to-top left when search panel is open */
@@ -3000,13 +3009,19 @@ function restorePosition() {
 // ── Verse Selection (Features 7 & 8) ──
 const selectedVerses = new Set(); // stores verse numbers
 
+function getVerseBlock(verseNum) {
+  return document.getElementById('v' + verseNum)
+    || document.querySelector(`.parallel-verse-block[data-verse="${verseNum}"]`);
+}
+
 function toggleVerseSelection(verseNum) {
+  const el = getVerseBlock(verseNum);
   if (selectedVerses.has(verseNum)) {
     selectedVerses.delete(verseNum);
-    document.getElementById('v' + verseNum).classList.remove('selected');
+    if (el) el.classList.remove('selected');
   } else {
     selectedVerses.add(verseNum);
-    document.getElementById('v' + verseNum).classList.add('selected');
+    if (el) el.classList.add('selected');
   }
   updateSelectionBar();
 }
@@ -3025,7 +3040,7 @@ function updateSelectionBar() {
 
 function clearSelection() {
   selectedVerses.forEach(n => {
-    const el = document.getElementById('v' + n);
+    const el = getVerseBlock(n);
     if (el) el.classList.remove('selected');
   });
   selectedVerses.clear();
@@ -3393,6 +3408,7 @@ function selectTranslation(value, label) {
   highlightVerse = null;
   savePosition();
   renderPassage();
+  if (document.getElementById('search-panel').classList.contains('visible')) updateStrongsFilter();
 }
 
 function closeParallelDropdown() {
@@ -3659,6 +3675,7 @@ async function renderCommentaryPassage(area) {
     verses.forEach(v => {
       const block = document.createElement('div');
       block.className = 'parallel-verse-block' + (highlightVerse === v.verse ? ' highlighted' : '');
+      block.dataset.verse = v.verse;
       const num = document.createElement('sup');
       num.className = 'parallel-verse-num';
       num.textContent = v.verse;
@@ -3785,6 +3802,7 @@ async function renderParallelPassage(area) {
       // ── Left column: primary translation — full Strong's + context menu ──
       const blockA = document.createElement('div');
       blockA.className = 'parallel-verse-block' + (highlightVerse === v.verse ? ' highlighted' : '');
+      blockA.dataset.verse = v.verse;
 
       const numA = document.createElement('sup');
       numA.className = 'parallel-verse-num';
@@ -3885,6 +3903,7 @@ async function renderInterlinearPassage(area) {
     verses.forEach(v => {
       const block = document.createElement('div');
       block.className = 'parallel-verse-block' + (highlightVerse === v.verse ? ' highlighted' : '');
+      block.dataset.verse = v.verse;
       const num = document.createElement('sup');
       num.className = 'parallel-verse-num';
       num.textContent = v.verse;
@@ -4377,6 +4396,8 @@ function clearSearchFilters() {
   document.getElementById('filter-testament').value = '';
   document.getElementById('filter-section').value  = '';
   document.getElementById('filter-book').value     = '';
+  const strongsInput = document.getElementById('filter-strongs');
+  if (strongsInput) strongsInput.value = '';
   populateFilterSections('');
 }
 
@@ -4398,11 +4419,20 @@ function getSearchScope() {
   return null; // no filter — search all
 }
 
+function updateStrongsFilter() {
+  const row = document.getElementById('filter-strongs-row');
+  if (!row) return;
+  const show = STRONGS_TRANSLATIONS.has(currentTranslation);
+  row.style.display = show ? 'flex' : 'none';
+  if (!show) document.getElementById('filter-strongs').value = '';
+}
+
 // Initialise filter section dropdown on panel open
 function openSearchPanel() {
   document.getElementById('search-panel').classList.add('visible');
   document.body.classList.add('search-open');
   populateFilterSections('');
+  updateStrongsFilter();
   setTimeout(() => document.getElementById('search-input').focus(), 80);
 }
 
@@ -4419,8 +4449,10 @@ document.addEventListener('keydown', e => {
 }, true);
 
 async function performSearch() {
-  const query = document.getElementById('search-input').value.trim();
-  if (!query) return;
+  const query      = document.getElementById('search-input').value.trim();
+  const strongsRaw = document.getElementById('filter-strongs')?.value.trim() || '';
+  const strongsNum = strongsRaw.replace(/^[HGhg]/, '');
+  if (!query && !strongsNum) return;
 
   const wholeWord = document.getElementById('search-whole-word').checked;
   const body      = document.getElementById('search-body');
@@ -4448,7 +4480,7 @@ async function performSearch() {
           text:    stripHtml(v.text || ''),
         }))
         .filter(v => v.book && (!scope || scope.includes(v.book.name)));
-      renderSearchResults(results, query, pattern, currentTranslation, TRANSLATIONS[currentTranslation]);
+      renderSearchResults(results, query, pattern, currentTranslation, TRANSLATIONS[currentTranslation], '');
     } catch (e) {
       body.innerHTML = `<div class="search-no-results">Search failed: ${e.message}<br>Please check your connection and try again.</div>`;
     }
@@ -4458,11 +4490,19 @@ async function performSearch() {
   const t = currentTranslation;
   const translationLabel = TRANSLATIONS[t];
 
-  body.innerHTML = '<div class="search-loading"><div class="spinner"></div><p>Searching…</p></div>';
+  // Validate Strong's number
+  if (strongsNum && !/^\d+$/.test(strongsNum)) {
+    body.innerHTML = `<div class="search-no-results">Enter a numeric Strong's number (e.g. 3056 or G3056).</div>`;
+    return;
+  }
 
-  // Build regex
+  body.innerHTML = strongsNum
+    ? `<div class="search-loading"><div class="spinner"></div><p>Searching Strong's #${strongsNum}…</p></div>`
+    : '<div class="search-loading"><div class="spinner"></div><p>Searching…</p></div>';
+
+  // Build word-search regex (only needed when not doing a Strong's search)
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = wholeWord ? new RegExp(`\\b${escaped}\\b`, 'gi') : new RegExp(escaped, 'gi');
+  const pattern = query ? (wholeWord ? new RegExp(`\\b${escaped}\\b`, 'gi') : new RegExp(escaped, 'gi')) : null;
 
   // Load translation if not cached
   if (!BIBLE_CACHE[t]) {
@@ -4477,13 +4517,13 @@ async function performSearch() {
     }
   }
 
-  const scope   = getSearchScope();
-  const results = [];
-  const data = BIBLE_CACHE[t];
+  const scope      = getSearchScope();
+  const results    = [];
+  const data       = BIBLE_CACHE[t];
+  const strongsPat = strongsNum ? new RegExp(`[a-zA-Z]${strongsNum}(?!\\d)`) : null;
 
   for (let bi = 0; bi < BOOKS.length; bi++) {
     const book = BOOKS[bi];
-    // Apply scope filter — skip books not in scope
     if (scope && !scope.includes(book.name)) continue;
     const bookNum = bi + 1;
     const bookData = data[bookNum];
@@ -4496,15 +4536,17 @@ async function performSearch() {
       for (const [verseNum, val] of Object.entries(chapterData)) {
         const text = (val && typeof val === 'object' && val.t !== undefined) ? val.t : val;
         if (!text) continue;
-        if (pattern.test(text)) {
-          results.push({ book, chapter: ch, verse: parseInt(verseNum), text });
+        if (strongsPat) {
+          if (strongsPat.test(text)) results.push({ book, chapter: ch, verse: parseInt(verseNum), text });
+        } else {
+          if (pattern.test(text)) results.push({ book, chapter: ch, verse: parseInt(verseNum), text });
+          pattern.lastIndex = 0;
         }
-        pattern.lastIndex = 0;
       }
     }
   }
 
-  renderSearchResults(results, query, pattern, t, translationLabel);
+  renderSearchResults(results, strongsNum ? `Strong's #${strongsNum}` : query, pattern, t, translationLabel, strongsNum);
 }
 
 function stripStrongsNumbers(text) {
@@ -4523,7 +4565,15 @@ function highlightMatch(text, pattern) {
   return text.replace(pattern, match => `<mark>${match}</mark>`);
 }
 
-function renderSearchResults(results, query, pattern, t, translationLabel) {
+function highlightStrongsInVerse(rawText, strongsNum) {
+  const targetPat = new RegExp(`([a-zA-Z][a-zA-Z',;:!?.]*)${strongsNum}(?!\\d)`, 'g');
+  const otherPat  = /([a-zA-Z][a-zA-Z',;:!?."]*)(\d+)/g;
+  let result = rawText.replace(targetPat, '<mark>$1</mark>');
+  result = result.replace(otherPat, '$1');
+  return result.replace(/\s+/g, ' ').trim();
+}
+
+function renderSearchResults(results, query, pattern, t, translationLabel, strongsNum) {
   const body = document.getElementById('search-body');
 
   if (results.length === 0) {
@@ -4536,8 +4586,9 @@ function renderSearchResults(results, query, pattern, t, translationLabel) {
 
   for (const r of results) {
     const ref = `${r.book.name} ${r.chapter}:${r.verse}`;
-    const cleanText = stripStrongsNumbers(r.text);
-    const highlighted = highlightMatch(cleanText, pattern);
+    const highlighted = strongsNum
+      ? highlightStrongsInVerse(r.text, strongsNum)
+      : highlightMatch(stripStrongsNumbers(r.text), pattern);
     html += `<button class="search-result" onclick="goToSearchResult('${r.book.name}',${r.chapter},${r.verse},'${t}')">
       <div class="search-result-ref">${ref}</div>
       <div class="search-result-text">${highlighted}</div>
@@ -4792,6 +4843,10 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
         <select class="search-filter-select" id="filter-book">
           <option value="">All</option>
         </select>
+      </div>
+      <div class="search-filter-row" id="filter-strongs-row" style="display:none">
+        <span class="search-filter-label">Strong's #</span>
+        <input type="text" class="search-filter-input" id="filter-strongs" placeholder="e.g. 3056 or G3056" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') performSearch()" />
       </div>
       <button class="search-filter-clear" onclick="clearSearchFilters()">Clear filters</button>
     </div>
