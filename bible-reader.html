@@ -71,7 +71,7 @@
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 48px;
+      padding: 18px 24px;
       background: rgba(248,247,242,0.92);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
@@ -80,32 +80,28 @@
     .nav-logo img { height: 42px; width: 42px; border-radius: 50%; }
     .nav-name { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--charcoal); letter-spacing: 0.02em; line-height: 1.2; }
     .nav-name span { display: block; font-size: 0.75rem; font-weight: 400; color: var(--charcoal-light); font-family: 'Nunito', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
-    .nav-links { display: flex; gap: 36px; align-items: center; }
+    /* nav-links is always a full-screen overlay — hamburger shows on all screen sizes */
+    .nav-links { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(248,247,242,0.98); backdrop-filter: blur(16px); flex-direction: column; align-items: center; justify-content: center; gap: 32px; padding: 100px 24px 48px; z-index: 99; min-height: 100vh; }
+    .nav-links.open { display: flex; }
+    .nav-links a.nav-link { font-size: 1.1rem; letter-spacing: 0.12em; }
     nav a.nav-link { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--charcoal-light); text-decoration: none; transition: color 0.2s; }
     nav a.nav-link:hover, nav a.nav-link.active { color: var(--green); }
-    .btn-primary { background: var(--green); color: #fff; padding: 14px 36px; border-radius: 3px; font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; transition: background 0.25s; }
+    .btn-primary { background: var(--green); color: #fff; padding: 14px 40px; border-radius: 3px; font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; transition: background 0.25s; }
     .btn-primary:hover { background: var(--green-dark); }
 
     /* ── HAMBURGER ── */
-    .hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; z-index: 200; }
+    .hamburger { display: flex; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; z-index: 200; }
     .hamburger span { display: block; width: 24px; height: 2px; background: var(--charcoal); border-radius: 2px; transition: all 0.3s ease; }
     .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .hamburger.open span:nth-child(2) { opacity: 0; }
     .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    @media (max-width: 768px) {
-      nav { padding: 16px 20px; }
-      .nav-links { display: none; position: fixed; top: 0; left: 0; right: 0; background: rgba(248,247,242,0.98); backdrop-filter: blur(16px); flex-direction: column; align-items: center; justify-content: center; gap: 32px; padding: 100px 24px 48px; z-index: 99; min-height: 100vh; }
-      .nav-links.open { display: flex; }
-      .nav-links a.nav-link { font-size: 1.1rem; letter-spacing: 0.12em; }
-      .btn-primary { padding: 14px 40px !important; font-size: 0.85rem !important; }
-      .hamburger { display: flex; }
-    }
+    @media (max-width: 768px) { nav { padding: 16px 20px; } }
 
     /* ── PAGE WRAP ── */
     .page-wrap {
       max-width: 860px;
       margin: 0 auto;
-      padding: 96px 20px 60px;
+      padding: 96px 20px 100px;
     }
 
     /* ── HOLY BIBLE HEADER ── */
@@ -138,8 +134,7 @@
     /* ── TESTAMENT TOGGLES ── */
     /* ── SHARED CONTROLS WRAPPER ── */
     .controls-wrap {
-      max-width: 540px;
-      margin: 0 auto;
+      display: none; /* controls moved to .reader-pill */
     }
 
     /* ── ROW 1: OT | NT | Translation ── */
@@ -524,10 +519,10 @@
     .verse-num:hover { background: var(--green); color: #fff; }
     .verse-text {
       font-family: var(--reading-font);
-      font-size: 1.1rem;
+      font-size: 1.22rem;
       font-weight: 400;
       color: var(--charcoal);
-      line-height: 1.5;
+      line-height: 1.85;
     }
 
     /* ── LOADING / ERROR ── */
@@ -597,7 +592,7 @@
     /* ── SELECTION ACTION BAR ── */
     .selection-bar {
       display: none;
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
       background: var(--charcoal); color: var(--cream);
       border-radius: 4px; padding: 10px 16px;
       align-items: center; gap: 14px;
@@ -636,6 +631,114 @@
       border: none; border-radius: 3px; padding: 8px 16px; cursor: pointer;
     }
     body.reading-mode .reading-mode-exit { display: block; }
+    body.reading-mode .reader-pill { display: none; }
+
+    /* ── READER PILL (floating bottom bar) ── */
+    .reader-pill {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 400;
+      display: flex; align-items: center;
+      background: rgba(248,247,242,0.95);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--line);
+      border-radius: 50px;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.11), 0 1px 4px rgba(0,0,0,0.06);
+      padding: 5px 10px;
+      max-width: calc(860px - 40px);
+      width: calc(100vw - 32px);
+    }
+    [data-theme="dark"] .reader-pill { background: rgba(26,26,23,0.95); }
+
+    .pill-divider { width: 1px; height: 22px; background: var(--line); margin: 0 3px; flex-shrink: 0; }
+
+    .pill-btn {
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.06em; background: none; border: none; border-radius: 30px;
+      padding: 6px 9px; cursor: pointer; color: var(--charcoal-light);
+      transition: all 0.18s; white-space: nowrap; line-height: 1; flex-shrink: 0;
+    }
+    .pill-btn:hover { background: rgba(125,194,67,0.12); color: var(--green-dark); }
+    .pill-btn.active { background: var(--charcoal); color: var(--cream); }
+
+    .pill-testament { font-size: 0.68rem; letter-spacing: 0.1em; padding: 6px 8px; }
+
+    /* Pill selects */
+    .pill-select-wrap { position: relative; display: flex; align-items: center; flex-shrink: 1; min-width: 0; }
+    .pill-select-wrap::after { content: '▾'; position: absolute; right: 2px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; color: var(--charcoal-light); pointer-events: none; }
+    .pill-select {
+      appearance: none; -webkit-appearance: none;
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      color: var(--charcoal); background: transparent; border: none;
+      padding: 6px 16px 6px 6px; cursor: pointer; min-width: 0; max-width: 100%;
+    }
+    [data-theme="dark"] .pill-select { color: var(--charcoal); }
+    .pill-select:focus { outline: none; }
+    .pill-select-book { width: 114px; }
+    .pill-select-sm { width: 52px; }
+
+    /* Pill dropdowns (open upward) */
+    .pill-dropdown {
+      display: none; position: absolute; bottom: calc(100% + 14px); left: 50%;
+      transform: translateX(-50%);
+      background: var(--white); border: 1.5px solid var(--line);
+      border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+      z-index: 600; min-width: 200px;
+    }
+    .pill-dropdown.open { display: block; }
+
+    /* Study rows inside study dropdown */
+    .pill-study-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--line); position: relative; }
+    .pill-study-row:last-child { border-bottom: none; }
+    .pill-study-main {
+      flex: 1; text-align: left; font-family: 'Nunito', sans-serif;
+      font-size: 0.8rem; font-weight: 600; color: var(--charcoal);
+      background: none; border: none; padding: 11px 14px; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .pill-study-main:hover { background: var(--highlight); }
+    .pill-study-main.active { color: var(--green-dark); font-weight: 700; }
+    .pill-study-arrow {
+      flex-shrink: 0; background: none; border: none; border-left: 1px solid var(--line);
+      padding: 11px 10px; cursor: pointer; color: var(--charcoal-light);
+      font-size: 0.7rem; transition: background 0.12s;
+    }
+    .pill-study-arrow:hover { background: var(--highlight); }
+    /* Sub-dropdowns inside study panel open to the right */
+    #study-dropdown-menu .parallel-dropdown-menu { top: 0; bottom: auto; left: calc(100% + 4px); right: auto; transform: none; }
+
+    /* Settings dropdown sections */
+    .pill-settings-section { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+    .pill-settings-section:last-child { border-bottom: none; }
+    .pill-settings-label {
+      font-family: 'Nunito', sans-serif; font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--charcoal-light);
+      display: block; margin-bottom: 7px;
+    }
+    .pill-settings-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .pill-settings-item {
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      background: var(--white); border: 1.5px solid var(--line); border-radius: 4px;
+      padding: 5px 10px; cursor: pointer; color: var(--charcoal-light);
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .pill-settings-item:hover { border-color: var(--green); color: var(--green-dark); }
+    .pill-settings-item.active { background: var(--charcoal); color: var(--cream); border-color: var(--charcoal); }
+    .pill-font-select {
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      background: var(--white); border: 1.5px solid var(--line); border-radius: 4px;
+      color: var(--charcoal-light); padding: 5px 8px; cursor: pointer; appearance: auto;
+      transition: border-color 0.15s;
+    }
+    .pill-font-select:hover { border-color: var(--green); }
+
+    /* Mobile pill */
+    @media (max-width: 540px) {
+      .reader-pill { padding: 4px 8px; }
+      .pill-verse-wrap { display: none; }
+      .pill-select-book { width: 88px; }
+      .pill-btn { padding: 6px 7px; font-size: 0.66rem; }
+      .pill-study-text { display: none; }
+    }
 
 
     /* ── VERSE CONTEXT MENU ── */
@@ -1920,91 +2023,74 @@
 <!-- MOBILE DROPDOWN BACKDROP -->
 <div class="dropdown-backdrop" id="dropdown-backdrop"></div>
 
-<!-- FLOATING PASSAGE PILLS -->
-<div class="floating-passage" id="floating-passage">
-  <span class="floating-passage-ref">Genesis 1</span>
-  <span class="floating-passage-abbr">WEB</span>
-</div>
-<div class="floating-passage-2" id="floating-passage-2">
-  <span class="floating-passage-ref">Genesis 1</span>
-  <span class="floating-passage-abbr">KJV</span>
-</div>
-<div class="floating-passage-3" id="floating-passage-3">
-  <span class="floating-passage-ref">Genesis 1</span>
-  <span class="floating-passage-abbr">MHC</span>
-</div>
+<!-- READER PILL (floating bottom bar) -->
+<div class="reader-pill" id="reader-pill">
 
-<div class="page-wrap">
-  <div class="bible-header">
-    <h1>Holy Bible</h1>
+  <!-- OT / NT -->
+  <button class="pill-btn pill-testament active" id="btn-ot" onclick="setTestament('ot')">OT</button>
+  <button class="pill-btn pill-testament" id="btn-nt" onclick="setTestament('nt')">NT</button>
+
+  <div class="pill-divider"></div>
+
+  <!-- Book / Chapter / Verse -->
+  <div class="pill-select-wrap">
+    <select class="pill-select pill-select-book" id="sel-book" onchange="onBookChange()"></select>
+  </div>
+  <div class="pill-select-wrap">
+    <select class="pill-select pill-select-sm" id="sel-chapter" onchange="onChapterChange()"></select>
+  </div>
+  <div class="pill-select-wrap pill-verse-wrap">
+    <select class="pill-select pill-select-sm" id="sel-verse" onchange="onVerseChange()"></select>
   </div>
 
-  <!-- CONTROLS WRAPPER -->
-  <div class="controls-wrap">
+  <div class="pill-divider"></div>
 
-    <!-- ROW 1: OT | NT | Translation -->
-    <div class="testament-row">
-      <button class="testament-btn active" id="btn-ot" onclick="setTestament('ot')">Old Testament</button>
-      <button class="testament-btn" id="btn-nt" onclick="setTestament('nt')">New Testament</button>
-      <div class="translation-select-wrap" id="translation-btn-wrap" style="position:relative; flex: 2 1 160px;">
-        <button class="translation-select-btn" id="btn-translation-label" onclick="toggleTranslationDropdown(event)">
-          <span id="btn-translation-text">New King James Version</span>
-          <span class="translation-dropdown-arrow">▾</span>
-        </button>
-        <div class="parallel-dropdown-menu" id="translation-dropdown-menu">
-          <div class="parallel-dropdown-group">
-            <div class="parallel-dropdown-group-label">English</div>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('nkjv','New King James Version')">New King James Version</button>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('kjvs','King James Version + Strong\'s')">King James Version + Strong's</button>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('asvs','American Standard + Strong\'s')">American Standard + Strong's</button>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('web','World English Bible')">World English Bible</button>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('lsv','Literal Standard Version')">Literal Standard Version</button>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('ylt','Young\'s Literal Translation')">Young's Literal Translation</button>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('lxxe','English Septuagint (1851)')">English Septuagint (1851)</button>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('darby','Darby Bible (1890)')">Darby Bible (1890)</button>
-          </div>
-          <div class="parallel-dropdown-group">
-            <div class="parallel-dropdown-group-label">Español</div>
-            <button class="parallel-dropdown-item" onclick="selectTranslation('rvr09','Reina-Valera 1909')">Reina-Valera 1909</button>
-          </div>
-        </div>
+  <!-- Translation -->
+  <div style="position:relative; flex-shrink:0;" id="translation-btn-wrap">
+    <button class="pill-btn" id="btn-translation-label" onclick="toggleTranslationDropdown(event)">
+      <span id="btn-translation-text">NKJV</span><span style="font-size:0.58rem; margin-left:3px; opacity:0.55;">▾</span>
+    </button>
+    <div class="pill-dropdown" id="translation-dropdown-menu">
+      <div class="parallel-dropdown-group">
+        <div class="parallel-dropdown-group-label">English</div>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('nkjv','New King James Version')">New King James Version</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('kjvs','King James Version + Strong\'s')">King James Version + Strong's</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('asvs','American Standard + Strong\'s')">American Standard + Strong's</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('web','World English Bible')">World English Bible</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('lsv','Literal Standard Version')">Literal Standard Version</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('ylt','Young\'s Literal Translation')">Young's Literal Translation</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('lxxe','English Septuagint (1851)')">English Septuagint (1851)</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('darby','Darby Bible (1890)')">Darby Bible (1890)</button>
       </div>
-      <!-- Hidden select kept for JS compatibility -->
-      <select id="sel-translation" style="display:none;">
-        <option value="nkjv" selected>New King James Version</option>
-        <option value="kjvs">King James Version + Strong's</option>
-        <option value="asvs">American Standard + Strong's</option>
-        <option value="web">World English Bible</option>
-        <option value="lsv">Literal Standard Version</option>
-        <option value="ylt">Young's Literal Translation</option>
-        <option value="lxxe">English Septuagint (1851)</option>
-        <option value="darby">Darby Bible (1890)</option>
-        <option value="rvr09">Reina-Valera 1909</option>
-      </select>
+      <div class="parallel-dropdown-group">
+        <div class="parallel-dropdown-group-label">Español</div>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('rvr09','Reina-Valera 1909')">Reina-Valera 1909</button>
+      </div>
     </div>
+    <select id="sel-translation" style="display:none;">
+      <option value="nkjv" selected>New King James Version</option>
+      <option value="kjvs">King James Version + Strong's</option>
+      <option value="asvs">American Standard + Strong's</option>
+      <option value="web">World English Bible</option>
+      <option value="lsv">Literal Standard Version</option>
+      <option value="ylt">Young's Literal Translation</option>
+      <option value="lxxe">English Septuagint (1851)</option>
+      <option value="darby">Darby Bible (1890)</option>
+      <option value="rvr09">Reina-Valera 1909</option>
+    </select>
+  </div>
 
-    <!-- ROW 2: Book | Chapter | Verse | Search -->
-    <div class="nav-dropdowns">
-      <div class="dropdown-wrap">
-        <select class="nav-select" id="sel-book" onchange="onBookChange()"></select>
-      </div>
-      <div class="dropdown-wrap">
-        <select class="nav-select" id="sel-chapter" onchange="onChapterChange()"></select>
-      </div>
-      <div class="dropdown-wrap">
-        <select class="nav-select" id="sel-verse" onchange="onVerseChange()"></select>
-      </div>
-      <button class="nav-search-btn" id="btn-search" onclick="openSearchPanel()" title="Search">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
-      </button>
-    </div>
+  <div class="pill-divider"></div>
 
-    <!-- ROW 3: Parallel | Interlinear | Commentary | [Dictionary] -->
-    <div class="reader-toolbar" id="reader-toolbar-study">
-      <!-- Parallel split button -->
-      <div class="split-btn-wrap" id="parallel-btn-wrap">
-        <button class="tool-btn" id="btn-parallel" onclick="closeParallelDropdown(); toggleParallelMode()">⇔ Parallel</button>
-        <button class="split-dropdown-trigger" id="btn-parallel-dropdown" onclick="toggleParallelDropdown(event)" title="Choose translation">▾</button>
+  <!-- Study -->
+  <div style="position:relative; flex-shrink:0;" id="study-pill-wrap">
+    <button class="pill-btn" id="btn-study-pill" onclick="togglePillDropdown(event,'study-dropdown-menu')">
+      <span class="pill-study-text">Study</span><span style="font-size:0.58rem; margin-left:3px; opacity:0.55;">▾</span>
+    </button>
+    <div class="pill-dropdown" id="study-dropdown-menu" onclick="event.stopPropagation()">
+      <div class="pill-study-row">
+        <button class="pill-study-main" id="btn-parallel" onclick="closeParallelDropdown(); toggleParallelMode()">⇔ Parallel</button>
+        <button class="pill-study-arrow" id="btn-parallel-dropdown" onclick="toggleParallelDropdown(event)" title="Choose translation">▾</button>
         <div class="parallel-dropdown-menu" id="parallel-dropdown-menu">
           <div class="parallel-dropdown-group">
             <div class="parallel-dropdown-group-label">English</div>
@@ -2023,50 +2109,84 @@
           </div>
         </div>
       </div>
-      <!-- Interlinear button -->
-      <button class="tool-btn" id="btn-interlinear" onclick="toggleInterlinearMode()">⇕ Interlinear</button>
-      <!-- Commentary split button -->
-      <div class="split-btn-wrap" id="commentary-btn-wrap">
-        <button class="tool-btn" id="btn-commentary" onclick="closeCommentaryDropdown(); toggleCommentaryMode()">☰ Commentary</button>
-        <button class="split-dropdown-trigger" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary">▾</button>
+      <div class="pill-study-row">
+        <button class="pill-study-main" id="btn-interlinear" onclick="toggleInterlinearMode()">⇕ Interlinear</button>
+      </div>
+      <div class="pill-study-row">
+        <button class="pill-study-main" id="btn-commentary" onclick="closeCommentaryDropdown(); toggleCommentaryMode()">☰ Commentary</button>
+        <button class="pill-study-arrow" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary">▾</button>
         <div class="parallel-dropdown-menu" id="commentary-dropdown-menu">
           <div class="parallel-dropdown-group">
             <button class="parallel-dropdown-item" onclick="openCommentaryWith('matthew-henry')">Matthew Henry (1706)</button>
             <button class="parallel-dropdown-item" onclick="openCommentaryWith('adam-clarke')">Adam Clarke (1810)</button>
-            <button class="parallel-dropdown-item" onclick="openCommentaryWith('jamieson-fausset-brown')">Jamieson, Fausset & Brown (1871)</button>
+            <button class="parallel-dropdown-item" onclick="openCommentaryWith('jamieson-fausset-brown')">Jamieson, Fausset &amp; Brown (1871)</button>
             <button class="parallel-dropdown-item" onclick="openCommentaryWith('john-gill')">John Gill (1746)</button>
-            <button class="parallel-dropdown-item" onclick="openCommentaryWith('keil-delitzsch')">Keil & Delitzsch — OT only (1861)</button>
+            <button class="parallel-dropdown-item" onclick="openCommentaryWith('keil-delitzsch')">Keil &amp; Delitzsch — OT only (1861)</button>
             <button class="parallel-dropdown-item" onclick="openCommentaryWith('tyndale')">Tyndale Open Study Notes</button>
           </div>
         </div>
       </div>
-      <!-- Notes button — same tier as study tools -->
-      <button class="tool-btn" id="btn-notes" onclick="toggleNotesPanel()">📝 Notes</button>
-    </div>
-
-    <!-- ROW 4: Text Size | Font | Reading Mode | Presentation Mode | Dark -->
-    <div class="reader-toolbar" id="reader-toolbar">
-      <div class="toolbar-left">
-        <span class="toolbar-label">Text Size</span>
-        <button class="tool-btn" id="btn-font-down" onclick="adjustFont(-1)">A−</button>
-        <button class="tool-btn" id="btn-font-up" onclick="adjustFont(1)">A+</button>
-        <span class="toolbar-label" style="margin-left:8px;">Font</span>
-        <select class="font-select" id="sel-reading-font" onchange="applyReadingFont(this.value)" title="Reading font">
-          <option value="cormorant">Cormorant</option>
-          <option value="bookerly">Lora</option>
-          <option value="georgia">Georgia</option>
-          <option value="literata">Literata</option>
-          <option value="opendyslexic">OpenDyslexic</option>
-          <option value="noto">Noto Serif</option>
-        </select>
-      </div>
-      <div class="toolbar-right">
-        <button class="tool-btn reading-mode-btn" id="btn-reading-mode" onclick="toggleReadingMode()">⊞ Reading Mode</button>
-        <button class="tool-btn" id="btn-pres-mode" onclick="enterPresentationMode()">⛶ Present</button>
-        <button class="tool-btn" id="btn-dark" onclick="toggleDarkMode()" title="Toggle dark mode">🌙 Dark</button>
+      <div class="pill-study-row">
+        <button class="pill-study-main" id="btn-notes" onclick="toggleNotesPanel()">📝 Notes</button>
       </div>
     </div>
+  </div>
 
+  <!-- Settings -->
+  <div style="position:relative; flex-shrink:0;" id="settings-pill-wrap">
+    <button class="pill-btn" id="btn-settings-pill" onclick="togglePillDropdown(event,'settings-dropdown-menu')" title="Settings">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <div class="pill-dropdown" id="settings-dropdown-menu" onclick="event.stopPropagation()">
+      <div class="pill-settings-section">
+        <span class="pill-settings-label">Text Size</span>
+        <div class="pill-settings-row">
+          <button class="pill-settings-item" id="btn-font-down" onclick="adjustFont(-1)">A−</button>
+          <button class="pill-settings-item" id="btn-font-up" onclick="adjustFont(1)">A+</button>
+        </div>
+      </div>
+      <div class="pill-settings-section">
+        <span class="pill-settings-label">Font</span>
+        <div class="pill-settings-row">
+          <select class="pill-font-select" id="sel-reading-font" onchange="applyReadingFont(this.value)">
+            <option value="cormorant">Cormorant</option>
+            <option value="bookerly">Lora</option>
+            <option value="georgia">Georgia</option>
+            <option value="literata">Literata</option>
+            <option value="opendyslexic">OpenDyslexic</option>
+            <option value="noto">Noto Serif</option>
+          </select>
+        </div>
+      </div>
+      <div class="pill-settings-section">
+        <div class="pill-settings-row">
+          <button class="pill-settings-item reading-mode-btn" id="btn-reading-mode" onclick="toggleReadingMode()">⊞ Reading</button>
+          <button class="pill-settings-item" id="btn-pres-mode" onclick="enterPresentationMode()">⛶ Present</button>
+          <button class="pill-settings-item" id="btn-dark" onclick="toggleDarkMode()">🌙 Dark</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FLOATING PASSAGE PILLS -->
+<div class="floating-passage" id="floating-passage">
+  <span class="floating-passage-ref">Genesis 1</span>
+  <span class="floating-passage-abbr">WEB</span>
+</div>
+<div class="floating-passage-2" id="floating-passage-2">
+  <span class="floating-passage-ref">Genesis 1</span>
+  <span class="floating-passage-abbr">KJV</span>
+</div>
+<div class="floating-passage-3" id="floating-passage-3">
+  <span class="floating-passage-ref">Genesis 1</span>
+  <span class="floating-passage-abbr">MHC</span>
+</div>
+
+<div class="page-wrap">
+  <div class="bible-header">
+    <h1>Holy Bible</h1>
   </div>
 
   <!-- READING MODE EXIT -->
@@ -3438,7 +3558,7 @@ function selectTranslation(value, label) {
   const sel = document.getElementById('sel-translation');
   if (sel) sel.value = value;
   const btn = document.getElementById('btn-translation-text');
-  if (btn) btn.textContent = label;
+  if (btn) btn.textContent = TRANSLATION_ABBR[value] || value.toUpperCase();
   // Mark selected item
   document.querySelectorAll('#translation-dropdown-menu .parallel-dropdown-item').forEach(el => {
     el.classList.toggle('selected', el.getAttribute('onclick').includes(`'${value}'`));
@@ -3471,8 +3591,21 @@ function toggleParallelDropdown(e) {
   setDropdownBackdrop(!isOpen);
 }
 
+function togglePillDropdown(e, menuId) {
+  e.stopPropagation();
+  const menu = document.getElementById(menuId);
+  if (!menu) return;
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'));
+  closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown();
+  if (!isOpen) menu.classList.add('open');
+}
+
 // Close dropdowns when clicking outside or tapping backdrop
-document.addEventListener('click', () => { closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown(); });
+document.addEventListener('click', () => {
+  closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown();
+  document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'));
+});
 document.getElementById && document.addEventListener('DOMContentLoaded', () => {
   const bd = document.getElementById('dropdown-backdrop');
   if (bd) bd.addEventListener('click', () => { closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown(); });
