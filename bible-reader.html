@@ -643,7 +643,7 @@
       border: 1.5px solid rgba(125,194,67,0.32);
       border-radius: 50px;
       box-shadow: 0 4px 28px rgba(0,0,0,0.13), 0 1px 6px rgba(0,0,0,0.07);
-      padding: 5px 10px;
+      padding: 8px 14px;
       max-width: calc(860px - 40px);
       width: calc(100vw - 32px);
     }
@@ -652,15 +652,15 @@
     .pill-divider { width: 1px; height: 22px; background: var(--line); margin: 0 3px; flex-shrink: 0; }
 
     .pill-btn {
-      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
       letter-spacing: 0.06em; background: none; border: none; border-radius: 30px;
-      padding: 6px 9px; cursor: pointer; color: var(--charcoal-light);
+      padding: 8px 11px; cursor: pointer; color: var(--charcoal-light);
       transition: all 0.18s; white-space: nowrap; line-height: 1; flex-shrink: 0;
     }
     .pill-btn:hover { background: rgba(125,194,67,0.12); color: var(--green-dark); }
     .pill-btn.active { background: var(--charcoal); color: var(--cream); }
 
-    .pill-testament { font-size: 0.68rem; letter-spacing: 0.1em; padding: 6px 8px; }
+    .pill-testament { font-size: 0.76rem; letter-spacing: 0.1em; padding: 8px 10px; }
 
     /* Pill selects */
     .pill-location { flex: 1; display: flex; align-items: center; min-width: 0; }
@@ -670,12 +670,15 @@
     .pill-select-wrap::after { content: '▾'; position: absolute; right: 2px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; color: var(--charcoal-light); pointer-events: none; }
     .pill-select {
       appearance: none; -webkit-appearance: none;
-      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
       color: var(--charcoal); background: transparent; border: none;
       padding: 6px 16px 6px 6px; cursor: pointer; width: 100%; min-width: 0;
     }
     [data-theme="dark"] .pill-select { color: var(--charcoal); }
     .pill-select:focus { outline: none; }
+
+    .pill-nav { display: flex; align-items: center; flex: 1; min-width: 0; }
+    .pill-tools { display: flex; align-items: center; flex-shrink: 0; }
 
 
     /* Pill dropdowns (open upward) */
@@ -707,7 +710,7 @@
     }
     .pill-study-arrow:hover { background: var(--highlight); }
     /* Sub-dropdowns inside study panel open to the right */
-    #study-dropdown-menu .parallel-dropdown-menu { top: 0; bottom: auto; left: calc(100% + 4px); right: auto; transform: none; }
+    #study-dropdown-menu .parallel-dropdown-menu { bottom: 0; top: auto; left: calc(100% + 4px); right: auto; transform: none; }
 
     /* Settings dropdown sections */
     .pill-settings-section { padding: 10px 14px; border-bottom: 1px solid var(--line); }
@@ -736,9 +739,11 @@
 
     /* Mobile pill */
     @media (max-width: 540px) {
-      .reader-pill { padding: 4px 8px; }
-      .pill-verse-wrap { display: none; }
-      .pill-btn { padding: 6px 7px; font-size: 0.66rem; }
+      .reader-pill { flex-direction: column; border-radius: 16px; padding: 6px 10px; align-items: stretch; gap: 2px; }
+      .pill-nav { flex: 0 0 auto; }
+      .pill-tools { justify-content: flex-end; }
+      .pill-divider-desktop { display: none; }
+      .pill-verse-wrap { display: flex; }
       .pill-study-text { display: none; }
     }
 
@@ -2028,6 +2033,7 @@
 <!-- READER PILL (floating bottom bar) -->
 <div class="reader-pill" id="reader-pill">
 
+<div class="pill-nav">
   <!-- OT / NT -->
   <button class="pill-btn pill-testament active" id="btn-ot" onclick="setTestament('ot')">OT</button>
   <button class="pill-btn pill-testament" id="btn-nt" onclick="setTestament('nt')">NT</button>
@@ -2046,8 +2052,10 @@
       <select class="pill-select" id="sel-verse" onchange="onVerseChange()"></select>
     </div>
   </div>
+</div><!-- /.pill-nav -->
 
-  <div class="pill-divider"></div>
+<div class="pill-tools">
+  <div class="pill-divider pill-divider-desktop"></div>
 
   <!-- Translation -->
   <div style="position:relative; flex-shrink:0;" id="translation-btn-wrap">
@@ -2171,6 +2179,7 @@
       </div>
     </div>
   </div>
+</div><!-- /.pill-tools -->
 
 </div>
 
@@ -3110,7 +3119,7 @@ function updateTranslationInfo(t) {
   if (abbrEl) abbrEl.textContent = TRANSLATION_ABBR[t] || t.toUpperCase();
   // Keep custom dropdown button label in sync
   const btnText = document.getElementById('btn-translation-text');
-  if (btnText) btnText.textContent = TRANSLATIONS[t];
+  if (btnText) btnText.textContent = TRANSLATION_ABBR[t] || t.toUpperCase();
   // Mark selected item in custom dropdown
   document.querySelectorAll('#translation-dropdown-menu .parallel-dropdown-item').forEach(el => {
     el.classList.toggle('selected', el.getAttribute('onclick')?.includes(`'${t}'`));
@@ -4933,7 +4942,7 @@ document.getElementById('sel-translation').value = currentTranslation;
 updateTranslationInfo(currentTranslation);
 // Sync custom dropdown button label and selected item
 const _transBtn = document.getElementById('btn-translation-text');
-if (_transBtn) _transBtn.textContent = TRANSLATIONS[currentTranslation] || currentTranslation;
+if (_transBtn) _transBtn.textContent = TRANSLATION_ABBR[currentTranslation] || currentTranslation.toUpperCase();
 document.querySelectorAll('#translation-dropdown-menu .parallel-dropdown-item').forEach(el => {
   el.classList.toggle('selected', el.getAttribute('onclick').includes(`'${currentTranslation}'`));
 });
