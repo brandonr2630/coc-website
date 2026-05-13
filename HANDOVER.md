@@ -1,5 +1,5 @@
 # COC Website — Handover File
-*Last updated 2026-05-13*
+*Last updated 2026-05-13 (session 2)*
 
 ---
 
@@ -18,7 +18,7 @@ Two deployable files: `index.html` (landing page) and `bible-reader.html` (full 
 
 - Vanilla HTML / CSS / JS — no build system, no framework, no npm
 - Supabase: not yet used on this site (ERP only)
-- Service worker (`service-worker.js`) — PWA offline support, currently `coc-bible-v11`
+- Service worker (`service-worker.js`) — PWA offline support, currently `coc-bible-v12`
 - Translation JSON files served from repo root (fetched client-side on first use, then cached)
 
 ---
@@ -63,7 +63,7 @@ The page has three zones:
 The pill holds all navigation and study controls in one bar:
 
 ```
-[ OT | NT ]  [ Book ▾ | Ch ▾ | V ▾ ]  [ NKJV ▾ ]  [ Study ▾ ]  [ ⚙ ]
+[ OT | NT ]  [ Book ▾ | Ch ▾ | V ▾ ]  [ NKJV ▾ ]  [ 🔍 ]  [ Study ▾ ]  [ ⚙ ]
 ```
 
 On mobile (≤540px) the pill wraps to **two rows**:
@@ -97,15 +97,42 @@ The pill is hidden in Reading Mode and Presentation Mode.
 - `--search-pb` CSS variable on `:root` drives `page-wrap` padding-bottom dynamically
 
 ### Service worker
-Cache version is `coc-bible-v11`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get a stale cached file.
+Cache version is `coc-bible-v12`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get a stale cached file.
 
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v11';`
+Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v12';`
 
 ### Notes / Sermon Notes feature
 - Data model: `coc_notes_sessions` in localStorage
 - Right-click any verse → "Add to Notes"; or use selection bar → Notes button
 - Export: TXT, DOCX (docx.js lazy-loaded from CDN), PDF (window.print)
 - Rich-text toolbar on note cards: bullet list / numbered list / indent
+
+---
+
+## Session Work — 2026-05-13 (session 2)
+
+### Commits
+| Hash | Summary |
+|------|---------|
+| `6d5b96f` | fix(bible-reader): mobile translations, pill styling, UI polish |
+| `7f551b6` | fix(bible-reader): restore missing search button to reader pill |
+
+### Details
+
+**Mobile translations not launching (6d5b96f)**
+Root cause: `.dropdown-backdrop` had `z-index: 599` but `.reader-pill` is `z-index: 400`. Both are in the root stacking context, so the backdrop sat *above* the pill and intercepted every tap on translation dropdown items — firing the close handler before the selection could land. NKJV was unaffected because it uses the bolls.life API (no dropdown tap needed to trigger). Fix: lowered backdrop `z-index` from `599` to `390` (below the pill at `400`). The `.parallel-dropdown-menu` sheets (Parallel, Commentary) use `position: fixed` at `z-index: 600` so they remain above the backdrop unaffected.
+
+**Selection bar redesigned to match reader pill (6d5b96f)**
+`.selection-bar` (the bar that appears when verses are selected) was a dark charcoal rectangle. Redesigned to match `.reader-pill`: white background, green border, `border-radius: 50px`, same box-shadow, pill-style action buttons with hover states. Added `.sel-divider` lines separating the verse count from Copy/Cross-refs/Notes and from Clear. Dark mode handled via `[data-theme="dark"] .selection-bar`. Mobile `bottom` raised to `112px` to clear the taller 2-row pill.
+
+**Book select narrowed; translation button enlarged (6d5b96f)**
+Book select `flex` reduced from `2.5` to `1.8` — was wider than needed for even the longest book names. Translation button `#btn-translation-label` given explicit `padding: 8px 15px; font-size: 0.86rem` for easier tapping on desktop.
+
+**Panel close buttons (6d5b96f)**
+All four panels (xref, search, notes, Strong's) changed from `✕ Close` to `✕` only.
+
+**Search button restored (7f551b6)**
+The search icon (🔍 SVG) was dropped from the UI during the pill refactor in session 1 when the top nav was simplified to logo+hamburger only. The `.nav-search-btn` CSS class still existed in the file but had no matching HTML element. Fixed by adding a dedicated search icon button into `.pill-tools` between the Translation button and the Study dropdown. The `.nav-search-btn` CSS class is now dead code (can be removed later).
 
 ---
 
