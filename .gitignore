@@ -1,0 +1,15 @@
+# Local version history — snapshots, not deployed
+ARCHIVES/
+
+# Data pipeline scripts and source files
+# (processed copies live at repo root and are deployed)
+SCRIPTS/
+BIBLE TRANSLATIONS/
+COMMENTARIES/
+DICTIONARY/
+LIBRARY/
+BRAND/
+
+# Tooling
+skills-lock.json
+test-notes-live.mjs
