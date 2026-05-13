@@ -589,29 +589,36 @@
     }
     .font-select:hover, .font-select:focus { border-color: var(--green); color: var(--charcoal); outline: none; }
 
-    /* ── SELECTION ACTION BAR ── */
+    /* ── SELECTION ACTION BAR — styled to match .reader-pill ── */
     .selection-bar {
       display: none;
       position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-      background: var(--charcoal); color: var(--cream);
-      border-radius: 4px; padding: 10px 16px;
-      align-items: center; gap: 14px;
-      font-family: 'Nunito', sans-serif; font-size: 0.75rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      background: #ffffff;
+      border: 1.5px solid rgba(125,194,67,0.32);
+      border-radius: 50px; padding: 8px 14px;
+      align-items: center; gap: 6px;
+      font-family: 'Nunito', sans-serif; font-size: 0.82rem;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.13), 0 1px 6px rgba(0,0,0,0.07);
       z-index: 500; white-space: nowrap;
     }
     .selection-bar.visible { display: flex; }
-    .selection-bar .sel-label { font-weight: 600; letter-spacing: 0.05em; color: rgba(255,255,255,0.7); }
-    .sel-btn {
-      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      border: none; border-radius: 3px; padding: 5px 12px; cursor: pointer;
-      transition: background 0.15s;
+    [data-theme="dark"] .selection-bar { background: #2a2a25; border-color: rgba(125,194,67,0.25); }
+    .selection-bar .sel-label {
+      font-weight: 700; letter-spacing: 0.06em; font-size: 0.78rem;
+      color: var(--charcoal-light); padding: 0 4px;
     }
-    .sel-btn-copy { background: var(--green); color: #fff; }
-    .sel-btn-copy:hover { background: var(--green-dark); }
-    .sel-btn-clear { background: rgba(255,255,255,0.12); color: var(--cream); }
-    .sel-btn-clear:hover { background: rgba(255,255,255,0.22); }
+    .sel-divider { width: 1px; height: 20px; background: var(--line); margin: 0 2px; flex-shrink: 0; }
+    .sel-btn {
+      font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
+      letter-spacing: 0.06em; background: none;
+      border: none; border-radius: 30px; padding: 6px 11px; cursor: pointer;
+      color: var(--charcoal-light); transition: all 0.18s; white-space: nowrap;
+    }
+    .sel-btn:hover { background: rgba(125,194,67,0.12); color: var(--green-dark); }
+    .sel-btn-copy { color: var(--green-dark); }
+    .sel-btn-copy:hover { background: rgba(125,194,67,0.18); }
+    .sel-btn-clear { color: var(--charcoal-light); }
+    @media (max-width: 540px) { .selection-bar { bottom: 112px; } }
 
     /* ── READING MODE ── */
     body.reading-mode .controls-wrap { display: none; }
@@ -665,7 +672,8 @@
     /* Pill selects */
     .pill-location { flex: 1; display: flex; align-items: center; min-width: 0; }
     .pill-location .pill-select-wrap { flex: 1 1 0; min-width: 0; }
-    .pill-location .pill-select-wrap:first-child { flex: 2.5 1 0; }
+    .pill-location .pill-select-wrap:first-child { flex: 1.8 1 0; }
+    #btn-translation-label { padding: 8px 15px; font-size: 0.86rem; }
     .pill-select-wrap { position: relative; display: flex; align-items: center; flex-shrink: 1; min-width: 0; }
     .pill-select-wrap::after { content: '▾'; position: absolute; right: 2px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; color: var(--charcoal-light); pointer-events: none; }
     .pill-select {
@@ -1956,12 +1964,14 @@
         padding: 13px 20px;
         font-size: 0.85rem;
       }
-      /* Backdrop behind the sheet */
+      /* Backdrop behind the sheet — must be below the pill (z-index:400) so it
+         doesn't intercept taps on the translation dropdown which lives inside
+         the pill's stacking context */
       .dropdown-backdrop {
         display: none;
         position: fixed; inset: 0;
         background: rgba(0,0,0,0.4);
-        z-index: 599;
+        z-index: 390;
       }
       .dropdown-backdrop.visible { display: block; }
     }
@@ -5050,9 +5060,11 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 </script>
 <div class="selection-bar" id="selection-bar">
   <span class="sel-label" id="sel-label">0 verses selected</span>
+  <div class="sel-divider"></div>
   <button class="sel-btn sel-btn-copy" id="sel-btn-copy" onclick="copySelection()">Copy</button>
   <button class="sel-btn" id="sel-btn-xref" onclick="selectionXref()">Cross-refs</button>
   <button class="sel-btn" onclick="selectionAddToNotes()">Notes</button>
+  <div class="sel-divider"></div>
   <button class="sel-btn sel-btn-clear" onclick="clearSelection()">Clear</button>
 </div>
 
@@ -5103,7 +5115,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 <!-- CROSS-REFERENCE PANEL -->
 <div class="xref-panel" id="xref-panel">
   <div class="xref-panel-head">
-    <button class="xref-panel-close" onclick="closeXrefPanel()">✕ Close</button>
+    <button class="xref-panel-close" onclick="closeXrefPanel()">✕</button>
     <div class="xref-panel-ref-row">
       <div class="xref-panel-ref" id="xref-panel-ref">Cross-references</div>
       <button class="xref-info-btn" id="xref-info-btn" onclick="toggleXrefInfo()" aria-label="About relevance scores">i
@@ -5127,7 +5139,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   <div class="search-panel" id="search-panel">
     <div class="search-drag-handle" id="search-drag-handle"></div>
     <div class="search-panel-head">
-      <button class="search-panel-close" onclick="closeSearchPanel()">✕ Close</button>
+      <button class="search-panel-close" onclick="closeSearchPanel()">✕</button>
       <div class="search-panel-title">Search Scripture</div>
     </div>
     <div class="search-panel-controls">
@@ -5180,7 +5192,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   <div class="notes-panel" id="notes-panel">
     <div class="notes-panel-head">
       <div class="notes-panel-toprow">
-        <button class="notes-panel-close" onclick="closeNotesPanel()">✕ Close</button>
+        <button class="notes-panel-close" onclick="closeNotesPanel()">✕</button>
         <button class="notes-new-session-btn" onclick="startNewNotesSession()">+ New Session</button>
       </div>
       <div class="notes-session-info">
@@ -5219,7 +5231,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 
   <div class="strongs-panel" id="strongs-panel">
     <div class="strongs-panel-head">
-      <button class="strongs-panel-close" id="strongs-close" onclick="closeStrongsPanel()">✕ Close</button>
+      <button class="strongs-panel-close" id="strongs-close" onclick="closeStrongsPanel()">✕</button>
       <div class="strongs-tabs" id="strongs-tabs-row"></div>
     </div>
     <div class="strongs-panel-body" id="strongs-body"></div>
