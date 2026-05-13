@@ -638,16 +638,16 @@
       position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
       z-index: 400;
       display: flex; align-items: center;
-      background: rgba(248,247,242,0.95);
+      background: #ffffff;
       backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--line);
+      border: 1.5px solid rgba(125,194,67,0.32);
       border-radius: 50px;
-      box-shadow: 0 4px 28px rgba(0,0,0,0.11), 0 1px 4px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 28px rgba(0,0,0,0.13), 0 1px 6px rgba(0,0,0,0.07);
       padding: 5px 10px;
       max-width: calc(860px - 40px);
       width: calc(100vw - 32px);
     }
-    [data-theme="dark"] .reader-pill { background: rgba(26,26,23,0.95); }
+    [data-theme="dark"] .reader-pill { background: #2a2a25; border-color: rgba(125,194,67,0.25); }
 
     .pill-divider { width: 1px; height: 22px; background: var(--line); margin: 0 3px; flex-shrink: 0; }
 
@@ -663,18 +663,20 @@
     .pill-testament { font-size: 0.68rem; letter-spacing: 0.1em; padding: 6px 8px; }
 
     /* Pill selects */
+    .pill-location { flex: 1; display: flex; align-items: center; min-width: 0; }
+    .pill-location .pill-select-wrap { flex: 1 1 0; min-width: 0; }
+    .pill-location .pill-select-wrap:first-child { flex: 2.5 1 0; }
     .pill-select-wrap { position: relative; display: flex; align-items: center; flex-shrink: 1; min-width: 0; }
     .pill-select-wrap::after { content: '▾'; position: absolute; right: 2px; top: 50%; transform: translateY(-50%); font-size: 0.62rem; color: var(--charcoal-light); pointer-events: none; }
     .pill-select {
       appearance: none; -webkit-appearance: none;
       font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
       color: var(--charcoal); background: transparent; border: none;
-      padding: 6px 16px 6px 6px; cursor: pointer; min-width: 0; max-width: 100%;
+      padding: 6px 16px 6px 6px; cursor: pointer; width: 100%; min-width: 0;
     }
     [data-theme="dark"] .pill-select { color: var(--charcoal); }
     .pill-select:focus { outline: none; }
-    .pill-select-book { width: 114px; }
-    .pill-select-sm { width: 52px; }
+
 
     /* Pill dropdowns (open upward) */
     .pill-dropdown {
@@ -682,8 +684,9 @@
       transform: translateX(-50%);
       background: var(--white); border: 1.5px solid var(--line);
       border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.14);
-      z-index: 600; min-width: 200px;
+      z-index: 600; min-width: 200px; max-width: min(280px, calc(100vw - 20px));
     }
+    #study-dropdown-menu, #settings-dropdown-menu { left: auto; right: 0; transform: none; }
     .pill-dropdown.open { display: block; }
 
     /* Study rows inside study dropdown */
@@ -735,7 +738,6 @@
     @media (max-width: 540px) {
       .reader-pill { padding: 4px 8px; }
       .pill-verse-wrap { display: none; }
-      .pill-select-book { width: 88px; }
       .pill-btn { padding: 6px 7px; font-size: 0.66rem; }
       .pill-study-text { display: none; }
     }
@@ -2033,14 +2035,16 @@
   <div class="pill-divider"></div>
 
   <!-- Book / Chapter / Verse -->
-  <div class="pill-select-wrap">
-    <select class="pill-select pill-select-book" id="sel-book" onchange="onBookChange()"></select>
-  </div>
-  <div class="pill-select-wrap">
-    <select class="pill-select pill-select-sm" id="sel-chapter" onchange="onChapterChange()"></select>
-  </div>
-  <div class="pill-select-wrap pill-verse-wrap">
-    <select class="pill-select pill-select-sm" id="sel-verse" onchange="onVerseChange()"></select>
+  <div class="pill-location">
+    <div class="pill-select-wrap">
+      <select class="pill-select" id="sel-book" onchange="onBookChange()"></select>
+    </div>
+    <div class="pill-select-wrap">
+      <select class="pill-select" id="sel-chapter" onchange="onChapterChange()"></select>
+    </div>
+    <div class="pill-select-wrap pill-verse-wrap">
+      <select class="pill-select" id="sel-verse" onchange="onVerseChange()"></select>
+    </div>
   </div>
 
   <div class="pill-divider"></div>
@@ -2315,6 +2319,23 @@ const TRANSLATIONS = {
   asvs:  "American Standard Version + Strong's"
 };
 
+const BOOK_ABBR = {
+  Genesis:'Gen', Exodus:'Exo', Leviticus:'Lev', Numbers:'Num', Deuteronomy:'Deut',
+  Joshua:'Josh', Judges:'Judg', Ruth:'Ruth', '1 Samuel':'1Sam', '2 Samuel':'2Sam',
+  '1 Kings':'1Kgs', '2 Kings':'2Kgs', '1 Chronicles':'1Chr', '2 Chronicles':'2Chr',
+  Ezra:'Ezra', Nehemiah:'Neh', Esther:'Est', Job:'Job', Psalms:'Ps', Proverbs:'Prov',
+  Ecclesiastes:'Eccl', 'Song of Solomon':'SoS', Isaiah:'Isa', Jeremiah:'Jer',
+  Lamentations:'Lam', Ezekiel:'Ezek', Daniel:'Dan', Hosea:'Hos', Joel:'Joel',
+  Amos:'Amos', Obadiah:'Obad', Jonah:'Jon', Micah:'Mic', Nahum:'Nah', Habakkuk:'Hab',
+  Zephaniah:'Zeph', Haggai:'Hag', Zechariah:'Zech', Malachi:'Mal',
+  Matthew:'Matt', Mark:'Mark', Luke:'Luke', John:'John', Acts:'Acts',
+  Romans:'Rom', '1 Corinthians':'1Cor', '2 Corinthians':'2Cor', Galatians:'Gal',
+  Ephesians:'Eph', Philippians:'Phil', Colossians:'Col',
+  '1 Thessalonians':'1Thes', '2 Thessalonians':'2Thes', '1 Timothy':'1Tim',
+  '2 Timothy':'2Tim', Titus:'Titus', Philemon:'Phlm', Hebrews:'Heb', James:'Jas',
+  '1 Peter':'1Pet', '2 Peter':'2Pet', '1 John':'1Jn', '2 John':'2Jn',
+  '3 John':'3Jn', Jude:'Jude', Revelation:'Rev'
+};
 const TRANSLATION_ABBR = {
   web:   'WEB',
   kjv:   'KJV',
@@ -3289,10 +3310,11 @@ function setTestament(t) {
 function populateBookSelect() {
   const sel = document.getElementById('sel-book');
   sel.innerHTML = '';
+  const useMobileAbbr = window.innerWidth <= 540;
   BOOKS.filter(b => b.testament === currentTestament).forEach(book => {
     const opt = document.createElement('option');
     opt.value = book.name;
-    opt.textContent = book.name;
+    opt.textContent = useMobileAbbr ? (BOOK_ABBR[book.name] || book.name) : book.name;
     if (book.name === currentBook.name) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -3304,7 +3326,7 @@ function populateChapterSelect() {
   for (let i = 1; i <= currentBook.chapters; i++) {
     const opt = document.createElement('option');
     opt.value = i;
-    opt.textContent = 'Chapter ' + i;
+    opt.textContent = 'Ch ' + i;
     if (i === currentChapter) opt.selected = true;
     sel.appendChild(opt);
   }
@@ -3315,14 +3337,14 @@ function populateVerseSelect(count) {
   sel.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = 'Verse…';
+  placeholder.textContent = 'V…';
   placeholder.disabled = true;
   placeholder.selected = !highlightVerse;
   sel.appendChild(placeholder);
   for (let i = 1; i <= count; i++) {
     const opt = document.createElement('option');
     opt.value = i;
-    opt.textContent = 'Verse ' + i;
+    opt.textContent = 'V ' + i;
     if (i === highlightVerse) opt.selected = true;
     sel.appendChild(opt);
   }
@@ -4991,6 +5013,13 @@ window.addEventListener('scroll', updateFloatingBar, { passive: true });
   };
 })();
 
+
+// Re-populate book select with abbreviations on resize
+let _bookResizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_bookResizeTimer);
+  _bookResizeTimer = setTimeout(populateBookSelect, 150);
+});
 // ── Hamburger ──
 const hamburger = document.getElementById('hamburger');
 const navLinks = document.querySelector('.nav-links');
