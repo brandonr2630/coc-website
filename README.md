@@ -19,9 +19,20 @@ Church website and Bible study app for the Church of Christ at Todd's Road, Trin
 
 ## Deploy
 
-No automated workflow yet. Push to `master` does not auto-deploy — use cPanel Git Version Control or upload manually.
+Every push to `master` auto-deploys via GitHub Actions → cPanel Fileman API (GreenGeeks).
+
+- **Incremental push:** only files changed in the push are uploaded
+- **Full redeploy:** trigger manually via Actions → Deploy to cPanel → Run workflow
 
 **Before pushing any change to `bible-reader.html`:** bump the service worker cache version in `service-worker.js` line 7 (`coc-bible-vN` → `coc-bible-v(N+1)`).
+
+### Required GitHub Secrets
+
+| Secret | Value |
+|--------|-------|
+| `CPANEL_API_TOKEN` | cPanel API token |
+| `CPANEL_HOST` | `https://chi203.greengeeks.net:2083` |
+| `CPANEL_USER` | `terranre` |
 
 ## Repository
 
