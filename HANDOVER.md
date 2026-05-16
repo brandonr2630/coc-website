@@ -1,5 +1,5 @@
 # COC Website — Handover File
-*Last updated 2026-05-13 (session 2)*
+*Last updated 2026-05-16 (session 4)*
 
 ---
 
@@ -10,7 +10,7 @@ Two deployable files: `index.html` (landing page) and `bible-reader.html` (full 
 
 **Live URL:** toddsroadcoctt (GreenGeeks cPanel)
 **GitHub repo:** `brandonr2630/coc-website`
-**Deploy:** every push to `master` auto-deploys via GitHub Actions → cPanel Git Version Control API.
+**Deploy:** every push to `master` (via PR) auto-deploys via GitHub Actions → cPanel Fileman API.
 
 ---
 
@@ -106,6 +106,37 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v12';`
 - Right-click any verse → "Add to Notes"; or use selection bar → Notes button
 - Export: TXT, DOCX (docx.js lazy-loaded from CDN), PDF (window.print)
 - Rich-text toolbar on note cards: bullet list / numbered list / indent
+
+---
+
+## Session Work — 2026-05-16 (session 4)
+
+### GitHub Infrastructure
+
+Switched to the centralised reusable deploy workflow.
+
+| Change | Commit |
+|--------|--------|
+| Reusable deploy workflow — 130-line script → 14-line call to `brandonr2630/projects` | `7fec0d2` |
+| Auto-merge enabled on repo | — |
+| GitHub Projects board linked | [projects/1](https://github.com/users/brandonr2630/projects/1) |
+
+---
+
+## Session Work — 2026-05-16 (session 3)
+
+### Infrastructure Overhaul
+
+| Change | Commit |
+|--------|--------|
+| Deploy workflow: hybrid binary/text upload, directory creation, `workflow_dispatch` | `acb2af4` |
+| Removed dead `.cpanel.yml` | `952ea8e` |
+| `HOST` and `CPANEL_USER` moved to GitHub Secrets | `a47061d` |
+| README corrected (deploy section, live URL) | `b20b783` |
+| Branch protection ruleset on `master` — requires PR | — |
+| Folder renamed `COC Website/` → `coc-website/` | — |
+
+**Required GitHub Secrets:** `CPANEL_API_TOKEN`, `CPANEL_HOST` (`https://chi203.greengeeks.net:2083`), `CPANEL_USER` (`terranre`)
 
 ---
 
@@ -239,7 +270,7 @@ From `seven1m/open-bibles` — all public domain, converter at `SCRIPTS/zefania-
 ## File Locations
 
 ```
-COC Website/
+coc-website/
 ├── index.html                  Landing page
 ├── bible-reader.html           Bible study app (main file, ~5000 lines)
 ├── service-worker.js           PWA cache — bump version on every html change (now v11)
@@ -270,8 +301,9 @@ Before pushing any change to `bible-reader.html`:
 1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)`
 2. `git add bible-reader.html service-worker.js [any new .json files]`
 3. `git commit -m "fix/feat(bible-reader): ..."`
-4. `git push origin master`
-5. `gh run watch <run-id>` — confirm green
+4. `git push origin <branch>` then open a PR — branch protection requires PRs on `master`
+5. Merge PR → deploy triggers automatically
+6. `gh run watch <run-id>` — confirm green
 6. Hard-refresh on device to force SW update
 
 ---
