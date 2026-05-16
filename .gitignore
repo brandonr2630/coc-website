@@ -10,6 +10,20 @@ DICTIONARY/
 LIBRARY/
 BRAND/
 
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Claude Code
+.claude/
+
 # Tooling
 skills-lock.json
 test-notes-live.mjs
