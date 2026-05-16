@@ -15,7 +15,7 @@ Church website and Bible study app for the Church of Christ at Todd's Road, Trin
 | `kjv.json`, `asv.json`, … | Translation JSONs fetched client-side |
 | `adam-clarke.json`, `matthew-henry.json`, `jamieson-fausset-brown.json` | Commentary data |
 | `eastons.json`, `smiths.json` | Bible dictionary data |
-| `HANDOVER.md` | Full technical handover — architecture, session history, pending work |
+| `handoff.md` | Full technical handover — architecture, session history, pending work |
 
 ## Deploy
 
