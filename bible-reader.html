@@ -1314,10 +1314,15 @@
     .intro-fmt-sep {
       width: 1px; height: 16px; background: var(--line); margin: 0 3px; flex-shrink: 0;
     }
-    .intro-fmt-hint {
-      font-family: 'Nunito', sans-serif; font-size: 0.62rem; color: var(--charcoal-light);
-      letter-spacing: 0.04em; margin-left: 4px; white-space: nowrap;
+    .intro-fmt-select {
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem;
+      border: 1.5px solid var(--line); border-radius: 3px;
+      background: var(--white); color: var(--charcoal);
+      padding: 3px 8px; cursor: pointer; line-height: 1.4;
+      transition: border-color 0.15s, background 0.15s;
     }
+    .intro-fmt-select:hover { border-color: var(--green); background: var(--cream); }
+    .intro-fmt-select:focus { outline: none; border-color: var(--green); background: var(--cream); }
     .notes-intro-area {
       min-height: 68px; max-height: 220px; overflow-y: auto;
       padding: 8px 10px; margin-bottom: 10px;
@@ -5567,13 +5572,33 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     <!-- INTRO EDITOR — always visible, persistent (not re-rendered) -->
     <div class="notes-intro-wrap" id="notes-intro-wrap">
       <div class="notes-intro-toolbar">
-        <button class="intro-fmt-btn" id="ifmt-ul" onclick="notesIntroFmt('insertUnorderedList','ifmt-ul')" title="Bullet list  •  ◦  ▪">● List</button>
-        <button class="intro-fmt-btn" id="ifmt-ol" onclick="notesIntroFmt('insertOrderedList','ifmt-ol')" title="Numbered list  1.  a.  i.">① Numbered</button>
+        <button class="intro-fmt-btn" id="ifmt-b" onclick="notesIntroFmt('bold','ifmt-b')" title="Bold">B</button>
+        <button class="intro-fmt-btn" id="ifmt-i" onclick="notesIntroFmt('italic','ifmt-i')" title="Italic">I</button>
+        <button class="intro-fmt-btn" id="ifmt-u" onclick="notesIntroFmt('underline','ifmt-u')" title="Underline">U</button>
         <div class="intro-fmt-sep"></div>
-        <button class="intro-fmt-btn" onclick="notesIntroIndent(1)"  title="Increase tier">⇥</button>
-        <button class="intro-fmt-btn" onclick="notesIntroIndent(-1)" title="Decrease tier">⇤</button>
+        <select class="intro-fmt-select" id="ifmt-font" onchange="notesIntroFmtFont(this.value)" title="Font family">
+          <option value="">Default</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Arial">Arial</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Comic Sans MS">Comic Sans MS</option>
+        </select>
+        <select class="intro-fmt-select" id="ifmt-size" onchange="notesIntroFmtSize(this.value)" title="Font size">
+          <option value="">Size</option>
+          <option value="1">Small</option>
+          <option value="3">Normal</option>
+          <option value="5">Large</option>
+          <option value="6">Larger</option>
+          <option value="7">Largest</option>
+        </select>
         <div class="intro-fmt-sep"></div>
-        <span class="intro-fmt-hint">• ◦ ▪ &nbsp;·&nbsp; 1. a. i.</span>
+        <button class="intro-fmt-btn" id="ifmt-ul" onclick="notesIntroFmt('insertUnorderedList','ifmt-ul')" title="Bullet list">≡</button>
+        <button class="intro-fmt-btn" id="ifmt-ol" onclick="notesIntroFmt('insertOrderedList','ifmt-ol')" title="Numbered list">1.</button>
+        <div class="intro-fmt-sep"></div>
+        <button class="intro-fmt-btn" onclick="notesIntroIndent(1)"  title="Indent">→</button>
+        <button class="intro-fmt-btn" onclick="notesIntroIndent(-1)" title="Outdent">←</button>
       </div>
       <div class="notes-intro-area" id="notes-intro-area" contenteditable="true"
            data-placeholder="Introduction, context, or general notes…"
@@ -6028,6 +6053,20 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     area.focus();
     document.execCommand(dir > 0 ? 'indent' : 'outdent');
     syncIntroToolbar();
+    notesIntroInput();
+  }
+
+  function notesIntroFmtFont(fontName) {
+    const area = document.getElementById('notes-intro-area');
+    area.focus();
+    if (fontName) document.execCommand('fontName', false, fontName);
+    notesIntroInput();
+  }
+
+  function notesIntroFmtSize(size) {
+    const area = document.getElementById('notes-intro-area');
+    area.focus();
+    if (size) document.execCommand('fontSize', false, size);
     notesIntroInput();
   }
 
