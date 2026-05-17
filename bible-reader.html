@@ -1201,6 +1201,28 @@
 
 
     /* ── NOTES PANEL ── */
+    .notes-panel-resize-handle {
+      position: fixed;
+      right: 380px;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: transparent;
+      cursor: col-resize;
+      z-index: 601;
+      display: none;
+      transition: background 0.2s;
+      user-select: none;
+    }
+
+    .notes-panel-resize-handle:hover {
+      background: var(--green);
+    }
+
+    body.notes-open .notes-panel-resize-handle {
+      display: block;
+    }
+
     .notes-panel {
       display: none;
       position: fixed; top: 0; right: 0; bottom: 0; z-index: 600;
@@ -5553,6 +5575,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       <!-- Sessions rendered here -->
     </div>
   </div>
+  <div class="notes-panel-resize-handle" id="notes-resize-handle" title="Drag to resize"></div>
   <div class="notes-panel" id="notes-panel">
     <div class="notes-panel-head">
       <div class="notes-panel-toprow">
@@ -5668,6 +5691,68 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     document.getElementById('btn-notes').classList.add('active');
     notesFilterEntries('');
     renderNotesPanel();
+    initNotesResize();
+  }
+
+  // Notes panel resize
+  let notesResizing = false;
+  const NOTES_WIDTH_KEY = 'coc_notes_panel_width';
+  const MIN_NOTES_WIDTH = 250;
+  const MAX_NOTES_WIDTH = 800;
+
+  function initNotesResize() {
+    const handle = document.getElementById('notes-resize-handle');
+    if (!handle) return;
+
+    // Load saved width
+    const savedWidth = localStorage.getItem(NOTES_WIDTH_KEY);
+    if (savedWidth) {
+      setNotesPanelWidth(parseInt(savedWidth));
+    }
+
+    handle.addEventListener('mousedown', startNotesResize);
+  }
+
+  function startNotesResize(e) {
+    e.preventDefault();
+    notesResizing = true;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    document.addEventListener('mousemove', doNotesResize);
+    document.addEventListener('mouseup', stopNotesResize);
+  }
+
+  function doNotesResize(e) {
+    if (!notesResizing) return;
+
+    const panel = document.getElementById('notes-panel');
+    const newWidth = window.innerWidth - e.clientX;
+
+    if (newWidth >= MIN_NOTES_WIDTH && newWidth <= MAX_NOTES_WIDTH) {
+      setNotesPanelWidth(newWidth);
+    }
+  }
+
+  function setNotesPanelWidth(width) {
+    const panel = document.getElementById('notes-panel');
+    const handle = document.getElementById('notes-resize-handle');
+    const pageWrap = document.querySelector('.page-wrap');
+
+    panel.style.width = width + 'px';
+    handle.style.right = width + 'px';
+    if (pageWrap) pageWrap.style.marginRight = width + 'px';
+
+    localStorage.setItem(NOTES_WIDTH_KEY, width);
+  }
+
+  function stopNotesResize() {
+    notesResizing = false;
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+
+    document.removeEventListener('mousemove', doNotesResize);
+    document.removeEventListener('mouseup', stopNotesResize);
   }
 
   function closeNotesPanel() {
