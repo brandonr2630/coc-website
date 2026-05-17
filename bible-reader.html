@@ -1394,6 +1394,266 @@
     }
     .notes-toast.show { opacity: 1; }
 
+    /* Search box in notes panel */
+    .notes-search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--white);
+    }
+
+    #notes-search-input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-family: 'Nunito', sans-serif;
+      outline: none;
+      color: var(--charcoal);
+    }
+
+    #notes-search-input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(125, 194, 67, 0.15);
+    }
+
+    #notes-search-input::placeholder {
+      color: var(--charcoal-light);
+    }
+
+    .notes-search-clear {
+      cursor: pointer;
+      color: var(--charcoal-light);
+      font-size: 0.9rem;
+      padding: 2px 6px;
+      border-radius: 2px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .notes-search-clear:hover {
+      color: var(--charcoal);
+      background: var(--highlight);
+    }
+
+    .notes-search-status {
+      font-size: 0.65rem;
+      color: var(--charcoal-light);
+      white-space: nowrap;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    .notes-search-highlight {
+      background: rgba(125, 194, 67, 0.4);
+      padding: 1px 2px;
+      border-radius: 1px;
+    }
+
+    [data-theme="dark"] .notes-search-highlight {
+      background: rgba(125, 194, 67, 0.3);
+    }
+
+    [data-theme="dark"] #notes-search-input {
+      background: var(--charcoal);
+      color: var(--cream);
+      border-color: var(--charcoal-light);
+    }
+
+    [data-theme="dark"] #notes-search-input:focus {
+      border-color: var(--green);
+    }
+
+    [data-theme="dark"] .notes-search-box {
+      background: var(--charcoal);
+      border-bottom-color: var(--charcoal-light);
+    }
+
+    /* Session sidebar */
+    .notes-sidebar-toggle {
+      position: absolute;
+      top: 18px;
+      right: 392px;
+      width: 36px;
+      height: 36px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 99;
+      padding: 0;
+    }
+
+    .notes-sidebar-toggle:hover {
+      background: var(--highlight);
+      border-color: var(--green);
+    }
+
+    .notes-sidebar-toggle.active {
+      background: var(--cream);
+      border-color: var(--green);
+    }
+
+    .notes-sessions-sidebar {
+      position: fixed;
+      top: 0;
+      right: 380px;
+      width: 320px;
+      height: 100vh;
+      background: var(--white);
+      border-left: 2px solid var(--green);
+      display: none;
+      flex-direction: column;
+      z-index: 98;
+      overflow: hidden;
+      animation: slideInRight 0.3s ease;
+    }
+
+    .notes-sessions-sidebar.visible {
+      display: flex;
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    .notes-sidebar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--cream);
+    }
+
+    .notes-sidebar-head h3 {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--charcoal);
+    }
+
+    .notes-sidebar-close {
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--charcoal-light);
+      padding: 0;
+    }
+
+    .notes-sidebar-close:hover {
+      color: var(--charcoal);
+    }
+
+    .notes-sidebar-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .notes-sidebar-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .notes-sidebar-item:hover {
+      background: rgba(125, 194, 67, 0.1);
+      border-color: var(--green);
+    }
+
+    .notes-sidebar-item.active {
+      background: var(--highlight);
+      border-color: var(--green);
+      font-weight: 600;
+    }
+
+    .notes-sidebar-item-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--charcoal);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .notes-sidebar-item-meta {
+      font-size: 0.65rem;
+      color: var(--charcoal-light);
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .notes-sidebar-item-meta span {
+      background: var(--white);
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    [data-theme="dark"] .notes-sessions-sidebar {
+      background: var(--charcoal);
+      border-left-color: var(--green);
+    }
+
+    [data-theme="dark"] .notes-sidebar-head {
+      background: var(--charcoal-light);
+      border-bottom-color: var(--charcoal-light);
+    }
+
+    [data-theme="dark"] .notes-sidebar-head h3 {
+      color: var(--cream);
+    }
+
+    [data-theme="dark"] .notes-sidebar-item {
+      background: var(--charcoal-light);
+      border-color: var(--charcoal-light);
+      color: var(--cream);
+    }
+
+    [data-theme="dark"] .notes-sidebar-item-title {
+      color: var(--cream);
+    }
+
+    [data-theme="dark"] .notes-sidebar-item-meta span {
+      background: var(--charcoal);
+    }
+
+    @media (max-width: 860px) {
+      .notes-sidebar-toggle {
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .notes-sessions-sidebar {
+        right: 0;
+        width: 100%;
+        border-left: none;
+        border-top: 2px solid var(--green);
+      }
+
+      body.notes-sidebar-open {
+        overflow: hidden;
+      }
+    }
+
     @media (max-width: 860px) {
       .notes-panel { width: 100%; border-left: none; border-top: 2px solid var(--green);
                      top: auto; max-height: 60vh; }
@@ -3082,27 +3342,70 @@ async function fetchLocalChapter(book, chapter, translation) {
     .sort((a, b) => a.verse - b.verse);
 }
 
+// ── Rate limiting queue for bolls.life API ──
+let bollsRequestQueue = [];
+let bollsInFlight = 0;
+const MAX_BOLLS_INFLIGHT = 1; // Only 1 request at a time to avoid rate limiting
+async function processBollsQueue() {
+  if (bollsInFlight >= MAX_BOLLS_INFLIGHT || bollsRequestQueue.length === 0) return;
+  bollsInFlight++;
+  const { fn, resolve, reject } = bollsRequestQueue.shift();
+  try {
+    const result = await fn();
+    resolve(result);
+  } catch (e) {
+    reject(e);
+  } finally {
+    bollsInFlight--;
+    processBollsQueue();
+  }
+}
+function queueBollsRequest(fn) {
+  return new Promise((resolve, reject) => {
+    bollsRequestQueue.push({ fn, resolve, reject });
+    processBollsQueue();
+  });
+}
+
 // ── NKJV — bolls.life API (copyright — cannot self-host) ──
 async function fetchBollsChapter(book, chapter, translation) {
   const bookNum = getBollsBookNum(book);
   const code = BOLLS_CODE[translation] || translation.toUpperCase();
   const url = `https://bolls.life/get-chapter/${code}/${bookNum}/${chapter}/`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('bolls API error');
-  const data = await res.json();
-  if (!Array.isArray(data) || !data.length) throw new Error('no verses');
-  const verses = data.map(v => ({
-    verse: v.verse,
-    text: stripHtml(v.text).trim(),
-    rawHtml: v.text
-  }));
-  // Write into BIBLE_CACHE so cross-reference lookups can find verse text
-  if (!BIBLE_CACHE[translation]) BIBLE_CACHE[translation] = {};
-  if (!BIBLE_CACHE[translation][bookNum]) BIBLE_CACHE[translation][bookNum] = {};
-  const chCache = {};
-  verses.forEach(v => { chCache[v.verse] = v.text; });
-  BIBLE_CACHE[translation][bookNum][chapter] = chCache;
-  return verses;
+
+  return queueBollsRequest(async () => {
+    let retries = 3;
+    while (retries > 0) {
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (!Array.isArray(data) || !data.length) throw new Error('no verses');
+        const verses = data.map(v => ({
+          verse: v.verse,
+          text: stripHtml(v.text).trim(),
+          rawHtml: v.text
+        }));
+        // Write into BIBLE_CACHE so cross-reference lookups can find verse text
+        if (!BIBLE_CACHE[translation]) BIBLE_CACHE[translation] = {};
+        if (!BIBLE_CACHE[translation][bookNum]) BIBLE_CACHE[translation][bookNum] = {};
+        const chCache = {};
+        verses.forEach(v => { chCache[v.verse] = v.text; });
+        BIBLE_CACHE[translation][bookNum][chapter] = chCache;
+        return verses;
+      } else if (res.status === 429) {
+        // Rate limited — wait and retry
+        retries--;
+        if (retries > 0) {
+          const waitMs = Math.pow(2, 3 - retries) * 1000; // 1s, 2s, 4s
+          await new Promise(r => setTimeout(r, waitMs));
+        } else {
+          throw new Error('bolls.life API rate limited — please try again in a moment');
+        }
+      } else {
+        throw new Error(`bolls API error: ${res.status}`);
+      }
+    }
+  });
 }
 
 async function fetchChapter(book, chapter, translation) {
@@ -4749,13 +5052,32 @@ async function performSearch() {
     const code     = BOLLS_CODE[currentTranslation] || currentTranslation.toUpperCase();
     const url      = `https://bolls.life/v2/find/${code}?search=${encodeURIComponent(query)}&match_case=false&match_whole=${wholeWord}`;
     try {
-      const res  = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      // Queue the search request to avoid rate limiting
+      const data = await queueBollsRequest(async () => {
+        let retries = 3;
+        while (retries > 0) {
+          const res = await fetch(url);
+          if (res.ok) {
+            return await res.json();
+          } else if (res.status === 429) {
+            retries--;
+            if (retries > 0) {
+              const waitMs = Math.pow(2, 3 - retries) * 1000;
+              await new Promise(r => setTimeout(r, waitMs));
+            } else {
+              throw new Error('bolls.life API rate limited — please try again in a moment');
+            }
+          } else {
+            throw new Error(`HTTP ${res.status}`);
+          }
+        }
+      });
+      console.log('bolls.life search response:', data);
       // bolls.life returns { total, verses: [{book, chapter, verse, text}] }
       // book is a 1-based integer matching our BOOKS array order
       const scope     = getSearchScope();
       const rawVerses = data.verses || (Array.isArray(data) ? data : []);
+      console.log('Parsed verses:', rawVerses.length);
       const results   = rawVerses
         .map(v => ({
           book:    BOOKS[parseInt(v.book) - 1] || { name: `Book ${v.book}` },
@@ -4764,8 +5086,10 @@ async function performSearch() {
           text:    stripHtml(v.text || ''),
         }))
         .filter(v => v.book && (!scope || scope.includes(v.book.name)));
+      console.log('Final results:', results.length);
       renderSearchResults(results, query, pattern, currentTranslation, TRANSLATIONS[currentTranslation], '');
     } catch (e) {
+      console.error('Search error:', e);
       body.innerHTML = `<div class="search-no-results">Search failed: ${e.message}<br>Please check your connection and try again.</div>`;
     }
     return;
@@ -5196,6 +5520,16 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 
   <!-- STRONG'S PANEL -->
   <!-- NOTES PANEL -->
+  <button class="notes-sidebar-toggle" id="notes-sidebar-toggle" onclick="toggleNotesSidebar()" title="Show all sessions">📋</button>
+  <div class="notes-sessions-sidebar" id="notes-sessions-sidebar">
+    <div class="notes-sidebar-head">
+      <h3>Sessions</h3>
+      <button class="notes-sidebar-close" onclick="closeNotesSidebar()">✕</button>
+    </div>
+    <div class="notes-sidebar-list" id="notes-sidebar-list">
+      <!-- Sessions rendered here -->
+    </div>
+  </div>
   <div class="notes-panel" id="notes-panel">
     <div class="notes-panel-head">
       <div class="notes-panel-toprow">
@@ -5205,6 +5539,14 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       <div class="notes-session-info">
         <input class="notes-title-input" id="notes-title" type="text" placeholder="Session title…" oninput="notesUpdateTitle(this.value)">
         <span class="notes-date" id="notes-date"></span>
+      </div>
+      <div class="notes-search-box" id="notes-search-box">
+        <input type="text"
+               id="notes-search-input"
+               placeholder="Search verse or notes…"
+               oninput="notesFilterEntries(this.value)">
+        <span class="notes-search-clear" onclick="notesFilterEntries('')">✕</span>
+        <span class="notes-search-status" id="notes-search-status"></span>
       </div>
     </div>
     <!-- INTRO EDITOR — always visible, persistent (not re-rendered) -->
@@ -5252,6 +5594,9 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   let notesSession  = null;
   let notesSaveTimer = null;
   let currentFocusedEntryIdx = null;
+  let notesSearchQuery = '';
+  let notesSearchFilteredIndices = [];
+  let notesSidebarVisible = false;
 
   function notesInit() {
     try {
@@ -5277,6 +5622,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     document.getElementById('notes-panel').classList.add('visible');
     document.body.classList.add('notes-open');
     document.getElementById('btn-notes').classList.add('active');
+    notesFilterEntries('');
     renderNotesPanel();
   }
 
@@ -5284,6 +5630,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     document.getElementById('notes-panel').classList.remove('visible');
     document.body.classList.remove('notes-open');
     document.getElementById('btn-notes').classList.remove('active');
+    closeNotesSidebar();
   }
 
   function renderNotesPanel() {
@@ -5298,8 +5645,19 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       list.innerHTML = '<div class="notes-empty">Select verse numbers then tap <strong>Notes</strong> to add them here.</div>';
       return;
     }
+
+    // Use filtered indices if search is active, else all indices
+    const indicesToRender = notesSearchQuery ? notesSearchFilteredIndices :
+                            notesSession.entries.map((_, i) => i);
+
+    if (!indicesToRender.length && notesSession.entries.length > 0) {
+      list.innerHTML = `<div class="notes-empty">No matches for "${notesEsc(notesSearchQuery)}"</div>`;
+      return;
+    }
+
     list.innerHTML = '';
-    notesSession.entries.forEach((entry, idx) => {
+    indicesToRender.forEach(idx => {
+      const entry = notesSession.entries[idx];
       const el = document.createElement('div');
       el.className = 'notes-entry';
       const entryToolbar = `
@@ -5344,6 +5702,17 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       }
       // Set notes HTML after building (avoids escaping issues)
       el.querySelector('.notes-entry-area').innerHTML = notesToHtml(entry.notes);
+
+      // Highlight search matches if search is active
+      if (notesSearchQuery) {
+        const notesArea = el.querySelector('.notes-entry-area');
+        if (notesArea) {
+          const html = notesArea.innerHTML;
+          const highlightedHtml = highlightSearchMatches(html, notesSearchQuery);
+          notesArea.innerHTML = highlightedHtml;
+        }
+      }
+
       list.appendChild(el);
     });
   }
@@ -5408,6 +5777,155 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   function notesRemoveEntry(idx) {
     notesSession.entries.splice(idx, 1);
     notesSave(); renderNotesPanel();
+  }
+
+  function notesFilterEntries(query) {
+    notesSearchQuery = query.toLowerCase().trim();
+
+    // Recalculate filtered indices
+    notesSearchFilteredIndices = [];
+    if (!notesSearchQuery) {
+      // No filter — show all entries
+      notesSearchFilteredIndices = notesSession.entries.map((_, i) => i);
+    } else {
+      notesSession.entries.forEach((entry, idx) => {
+        const refMatch = (entry.ref || '').toLowerCase().includes(notesSearchQuery);
+        const textMatch = (entry.text || '').toLowerCase().includes(notesSearchQuery);
+        const notesMatch = (entry.notes || '').toLowerCase().includes(notesSearchQuery);
+        const versesMatch = entry.verses && entry.verses.some(v =>
+          v.ref.toLowerCase().includes(notesSearchQuery) ||
+          v.text.toLowerCase().includes(notesSearchQuery)
+        );
+
+        if (refMatch || textMatch || notesMatch || versesMatch) {
+          notesSearchFilteredIndices.push(idx);
+        }
+      });
+    }
+
+    // Update status
+    const status = document.getElementById('notes-search-status');
+    if (notesSearchQuery) {
+      status.textContent = `${notesSearchFilteredIndices.length} of ${notesSession.entries.length}`;
+    } else {
+      status.textContent = '';
+      document.getElementById('notes-search-input').value = '';
+    }
+
+    // Re-render filtered entries
+    renderNotesPanel();
+  }
+
+  function highlightSearchMatches(html, query) {
+    if (!query) return html;
+
+    // Create a temporary div to safely parse HTML
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    // Walk text nodes and highlight matches
+    function walk(node) {
+      if (node.nodeType === 3) { // Text node
+        const text = node.textContent;
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        if (regex.test(text)) {
+          const span = document.createElement('span');
+          span.innerHTML = text.replace(regex, '<span class="notes-search-highlight">$1</span>');
+          node.parentNode.replaceChild(span, node);
+        }
+      } else if (node.nodeType === 1) { // Element node
+        Array.from(node.childNodes).forEach(walk);
+      }
+    }
+
+    walk(temp);
+    return temp.innerHTML;
+  }
+
+  function toggleNotesSidebar() {
+    if (notesSidebarVisible) closeNotesSidebar();
+    else openNotesSidebar();
+  }
+
+  function openNotesSidebar() {
+    document.getElementById('notes-sessions-sidebar').classList.add('visible');
+    document.body.classList.add('notes-sidebar-open');
+    document.getElementById('notes-sidebar-toggle').classList.add('active');
+    notesSidebarVisible = true;
+    renderNotesSidebar();
+  }
+
+  function closeNotesSidebar() {
+    document.getElementById('notes-sessions-sidebar').classList.remove('visible');
+    document.body.classList.remove('notes-sidebar-open');
+    document.getElementById('notes-sidebar-toggle').classList.remove('active');
+    notesSidebarVisible = false;
+  }
+
+  function renderNotesSidebar() {
+    const list = document.getElementById('notes-sidebar-list');
+    const allSessions = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+
+    if (!allSessions.length) {
+      list.innerHTML = '<div class="notes-empty">No sessions yet</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+
+    allSessions.forEach(session => {
+      const isActive = session.id === notesSession.id;
+      const item = document.createElement('div');
+      item.className = `notes-sidebar-item ${isActive ? 'active' : ''}`;
+      item.onclick = () => loadNotesSession(session.id);
+
+      // Calculate metadata
+      const verseCount = session.entries.length;
+      const uniqueBooks = new Set(
+        session.entries.flatMap(e => {
+          if (e.verses) return e.verses.map(v => v.ref.split(' ')[0]);
+          return [e.ref.split(' ')[0]];
+        })
+      );
+      const bookCount = uniqueBooks.size;
+      const dateStr = session.date.split(' ')[0]; // Just date, no time
+
+      const title = session.title || '(Untitled)';
+
+      item.innerHTML = `
+        <div class="notes-sidebar-item-title">${notesEsc(title)}</div>
+        <div class="notes-sidebar-item-meta">
+          <span>${verseCount} verse${verseCount !== 1 ? 's' : ''}</span>
+          <span>${bookCount} book${bookCount !== 1 ? 's' : ''}</span>
+          <span>${dateStr}</span>
+        </div>
+      `;
+
+      list.appendChild(item);
+    });
+  }
+
+  function loadNotesSession(sessionId) {
+    const allSessions = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+    const found = allSessions.find(s => s.id === sessionId);
+
+    if (found) {
+      notesSession = found;
+      notesSession.closed = false;
+      notesSave();
+
+      // Reset search when loading new session
+      notesFilterEntries('');
+
+      // Update UI
+      renderNotesPanel();
+      renderNotesSidebar();
+
+      // Close sidebar on mobile
+      if (window.innerWidth <= 860) closeNotesSidebar();
+
+      showToast(`Loaded: ${notesSession.title || '(Untitled)'}`);
+    }
   }
 
   function notesUpdateTitle(val) {
@@ -5521,7 +6039,10 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     if (!confirm('Start a new session? Your current notes are saved and can still be exported.')) return;
     notesSession.closed = true; notesSave();
     notesSession = notesNewObj(); notesSave();
+    notesFilterEntries('');
     renderNotesPanel();
+    if (notesSidebarVisible) renderNotesSidebar();
+    showToast('New session started');
   }
 
   // ── NOTES EXPORT ─────────────────────────────────────────────────────────
