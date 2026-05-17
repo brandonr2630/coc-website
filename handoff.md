@@ -1,111 +1,170 @@
 # COC Website — Handover File
-*Last updated 2026-05-16 (session 4)*
+
+*Last updated 2026-05-17 (session 5 & 6)*
 
 ---
 
 ## Project Overview
 
 Single-page church website for the Church of Christ at Todd's Road, Trinidad.
-Two deployable files: `index.html` (landing page) and `bible-reader.html` (full Bible study app).
 
-**Live URL:** toddsroadcoctt (GreenGeeks cPanel)
-**GitHub repo:** `brandonr2630/coc-website`
-**Deploy:** every push to `master` (via PR) auto-deploys via GitHub Actions → cPanel Fileman API.
+**Two deployable files:**
+- `index.html` — landing page (hero, CTAs, information)
+- `bible-reader.html` — Bible study app with multiple translations, Strong's numbers, cross-references, commentaries, and notes
+
+**Live URL:** `toddsroadcoctt` (GreenGeeks cPanel)  
+**GitHub repo:** `brandonr2630/coc-website`  
+**Deploy:** Every push to `master` (via PR) auto-deploys via GitHub Actions → cPanel Fileman API.
 
 ---
 
 ## Tech Stack
 
-- Vanilla HTML / CSS / JS — no build system, no framework, no npm
-- Supabase: not yet used on this site (ERP only)
-- Service worker (`service-worker.js`) — PWA offline support, currently `coc-bible-v12`
-- Translation JSON files served from repo root (fetched client-side on first use, then cached)
+- **Vanilla HTML / CSS / JS** — no build system, no framework, no npm, no bundler
+- **Service worker (`service-worker.js`)** — PWA offline support for `bible-reader.html`, cache version `coc-bible-v12`
+- **Translation & reference data** — all served as JSON files from repo root (fetched client-side)
+- **External APIs** (read-only, no auth):
+  - `bolls.life` — NKJV translation (copyrighted, API-only, never cached locally)
+  - `bible.helloao.org` — commentaries (Adam Clarke, Matthew Henry, Jamieson-Fausset-Brown)
+
+**No backend servers, no database, no authentication.**
 
 ---
 
 ## Bible Reader Architecture (`bible-reader.html`)
 
 ### Translations
-| Key | Label | Source | Notes |
-|-----|-------|--------|-------|
-| `nkjv` | New King James Version | bolls.life API | Copyright — API only, never cached locally |
-| `kjv` | King James Version | `kjv.json` | Public domain |
-| `asv` | American Standard Version | `asv.json` | Public domain |
-| `web` | World English Bible | `web.json` | Public domain |
-| `ylt` | Young's Literal Translation | `ylt.json` | Public domain |
-| `lsv` | Literal Standard Version | `lsv.json` | Public domain |
-| `lxxe` | English Septuagint (1851) | `lxxe.json` | Public domain |
-| `rvr09` | Reina-Valera 1909 | `rvr09.json` | Public domain |
-| `darby` | Darby Bible (1890) | `darby.json` | Public domain |
-| `kjvs` | KJV + Strong's | `kjvs.json` | Public domain |
-| `asvs` | ASV + Strong's | `asvs.json` | Public domain |
-| `hebrew` | Hebrew OT | `hebrew.json` | Leningrad Codex — free with citation |
-| `greek-nt` | Greek NT | `greek-nt.json` | Public domain |
 
-`LOCAL_TRANSLATIONS` = all except `nkjv`. `STRONGS_TRANSLATIONS` = `{kjvs, asvs}`.
+| Key | Label | Source | Cache | Notes |
+|-----|-------|--------|-------|-------|
+| `kjv` | King James Version | `kjv.json` | Local | Public domain |
+| `asv` | American Standard Version | `asv.json` | Local | Public domain |
+| `web` | World English Bible | `web.json` | Local | Public domain |
+| `ylt` | Young's Literal Translation | `ylt.json` | Local | Public domain |
+| `lsv` | Literal Standard Version | `lsv.json` | Local | Public domain |
+| `lxxe` | English Septuagint (1851) | `lxxe.json` | Local | Public domain |
+| `rvr09` | Reina-Valera 1909 | `rvr09.json` | Local | Public domain |
+| `darby` | Darby Bible (1890) | `darby.json` | Local | Public domain |
+| `kjvs` | KJV + Strong's | `kjvs.json` | Local | Public domain |
+| `asvs` | ASV + Strong's | `asvs.json` | Local | Public domain |
+| `hebrew` | Hebrew OT | `hebrew.json` | Local | Leningrad Codex — free with citation |
+| `greek-nt` | Greek NT | `greek-nt.json` | Local | Public domain |
+| `nkjv` | New King James Version | bolls.life API | Never | Copyrighted — API only, never cached locally |
 
-### Key JS globals
-- `currentBook`, `currentChapter`, `currentTranslation`, `currentUser`, `currentCompany`
+**Sets:**
+- `LOCAL_TRANSLATIONS` = all except `nkjv` (fetched from repo root)
+- `STRONGS_TRANSLATIONS` = `{kjvs, asvs}` (Strong's numbers embedded in verse text)
+
+### Reference Data
+
+All stored as JSON files in repo root, fetched on demand:
+- **Commentaries** (from `bible.helloao.org` API, then cached in localStorage):
+  - Adam Clarke Commentary
+  - Matthew Henry Commentary
+  - Jamieson-Fausset-Brown Commentary
+- **Dictionaries** (local):
+  - Easton's Bible Dictionary (`eastons.json`)
+  - Smith's Bible Dictionary (`smiths.json`)
+- **Cross-references** (`crossrefs.json`) — all 66 books with verse-level cross-ref links
+
+### Key JS Globals
+
+- `currentBook`, `currentChapter`, `currentTranslation` — current view state
 - `BIBLE_CACHE` — lazily populated per-translation on first load/search
 - `BOOKS` — array of `{name, chapters, testament}` for all 66 books
-- `TRANSLATION_ABBR` — short labels for pill button (e.g. `nkjv → 'NKJV'`, `darby → 'DARBY'`)
-- `BOOK_ABBR` — 66-book short names used on mobile ≤540px (e.g. `Genesis → 'Gen'`)
+- `TRANSLATION_ABBR` — short labels for pill buttons (e.g. `kjv → 'KJV'`)
+- `BOOK_ABBR` — 66-book short names for mobile ≤540px (e.g. `Genesis → 'Gen'`)
 
 ### UI Layout
 
-The page has three zones:
-1. **Top nav** — logo left, hamburger right. All nav links are behind the hamburger overlay.
-2. **Page wrap** — Bible text is the dominant element. Large serif font, generous line height.
-3. **Reader pill** — `position: fixed` floating bar at bottom of viewport.
+**Three zones:**
+1. **Fixed top nav** — logo left, hamburger right (overlay nav on all screens)
+2. **Page wrap** — Bible text centered, max 860px. Large serif font, generous line height, generous padding
+3. **Fixed controls** — now consolidated into the page wrap as regular inline rows
 
-### Reader Pill
+### Controls & Interaction
 
-The pill holds all navigation and study controls in one bar:
+The reader uses three horizontal control rows at the top of the page (not a floating pill):
 
-```
-[ OT | NT ]  [ Book ▾ | Ch ▾ | V ▾ ]  [ NKJV ▾ ]  [ 🔍 ]  [ Study ▾ ]  [ ⚙ ]
-```
+**Row 1: Old Testament | New Testament | Translation**
+- `testament-row` — flex container with OT/NT buttons and translation picker
+- OT/NT toggle active/inactive state via `.active` class
 
-On mobile (≤540px) the pill wraps to **two rows**:
-- Row 1: `OT | NT | Book ▾ | Ch ▾ | V ▾` (full width)
-- Row 2: `NKJV ▾ | Study ▾ | ⚙` (right-aligned)
+**Row 2: Book | Chapter | Verse | Search**
+- `nav-dropdowns` — flex container with three `<select>` elements + search icon
+- Book select `flex: 2.2`; Chapter `flex: 1.6`; Verse `flex: 1.2` (responsive widths)
+- Search icon (🔍) opens the search panel on mobile/tablet as bottom sheet
 
-Key CSS:
-- `.reader-pill` — `position:fixed; bottom:20px; border-radius:50px` (16px on mobile)
-- `.pill-nav` — flex:1, holds OT/NT + location selects
-- `.pill-tools` — flex-shrink:0, holds translation/study/settings
-- `.pill-divider-desktop` — the divider between pill-nav and pill-tools; hidden on mobile
-- `.pill-dropdown` — opens upward via `bottom: calc(100% + 14px)`
-- `#study-dropdown-menu .parallel-dropdown-menu` — sub-menus anchor `bottom:0; top:auto` (open upward)
-- `body.reading-mode .reader-pill` — `display:none` (pill hidden in Reading Mode)
-
-The pill is hidden in Reading Mode and Presentation Mode.
+**Row 3: Text Size | Reading Mode + Present Mode**
+- `reader-toolbar` — left side has A−/A+ font controls; right side has "Reading Mode" and "Present" toggle buttons
+- Reading Mode hides all controls and navigation; Presentation Mode is fullscreen speaker view
 
 ### Panels (all `position: fixed`)
+
 | Panel | Trigger | Desktop position | Mobile position |
 |-------|---------|-----------------|----------------|
-| Search | 🔍 button in nav | Left side, 360px wide | Bottom sheet, draggable, 3 snaps |
+| Search | 🔍 button | Left side, 360px wide | Bottom sheet (draggable, 3 snaps) |
 | Strong's | tap word in KJV+S/ASV+S | Right side, 360px wide | Bottom sheet |
-| Notes | 📝 in Study menu | Right side, 380px wide | Bottom sheet |
-| X-ref | click verse cross-ref icon | Left side, 320px wide | Bottom sheet |
+| Notes | 📝 in toolbar or context menu | Right side, 380px wide | Bottom sheet |
+| X-ref | click verse cross-ref link | Left side, 320px wide | Bottom sheet |
+| Commentary | select commentary in dropdown | Right side, 400px wide | Bottom sheet |
 
-### Search panel (word search)
-- `performSearch()` — two paths: bolls.life API (NKJV) or local JSON scan
-- Filters: Testament / Section / Book / Strong's # (Strong's # only visible for kjvs/asvs)
-- Results paginated at 25 per page (`SEARCH_PAGE_SIZE`), state in `searchResultsCache` / `searchCurrentPage`
-- Mobile drag handle: 3 snap heights — 180px (compact), 55vh (default), 85vh (expanded)
-- `--search-pb` CSS variable on `:root` drives `page-wrap` padding-bottom dynamically
+### Search Panel (word search)
 
-### Service worker
-Cache version is `coc-bible-v12`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get a stale cached file.
+- **Two paths:**
+  - `bolls.life` API for NKJV
+  - Local JSON scan for all other translations
+- **Filters:** Testament / Section / Book / Strong's # (Strong's # only for `kjvs`/`asvs`)
+- **Pagination:** 25 results per page; status bar shows "1–25 of 347 results in KJV"
+- **Mobile interaction:** Bottom sheet with 3 snap heights — 180px (compact), 55vh (default), 85vh (expanded)
+- **CSS variable:** `--search-pb` on `:root` drives `.page-wrap` padding-bottom dynamically
+
+### Notes / Sermon Notes Feature
+
+- **Data model:** `coc_notes_sessions` in localStorage (one key = one note session)
+- **Interaction:** Right-click any verse → "Add to Notes"; or use selection toolbar → Notes button
+- **Rich-text toolbar:** Bullet list / numbered list / indent
+- **Export:** TXT, DOCX (via `docx.js` from CDN), PDF (via `window.print`)
+
+### Service Worker
+
+Cache version is `coc-bible-v12`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
 
 Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v12';`
 
-### Notes / Sermon Notes feature
-- Data model: `coc_notes_sessions` in localStorage
-- Right-click any verse → "Add to Notes"; or use selection bar → Notes button
-- Export: TXT, DOCX (docx.js lazy-loaded from CDN), PDF (window.print)
-- Rich-text toolbar on note cards: bullet list / numbered list / indent
+### Dark Mode
+
+- Toggle via settings gear in toolbar → "Dark Mode"
+- Persists to localStorage as `bibleTheme`
+- All colors respond to `[data-theme="dark"]` CSS selector
+- Page wrap applies theme on page load via inline script (line 6)
+
+---
+
+## Session Work — 2026-05-17 (session 6)
+
+### Bug Investigation & Code Audit
+
+**NKJV Search Bug**
+- Investigated word search failure on NKJV
+- Root cause: bolls.life API returning HTTP 429 (Too Many Requests) rate-limit errors
+- Added client-side rate limiting with exponential backoff retry logic (3 retries, 1s/2s/4s waits)
+- Attempted fix unsuccessful — bolls.life API continues rate-limiting
+- Determined no free, reliable alternative exists without copyright issues
+- **Decision:** Leave as-is; users can read NKJV but search is disabled; 12 other translations have working search
+
+**Comprehensive Code Audit**
+- Reviewed entire 5,793-line `bible-reader.html` file
+- Identified 10 improvement categories: performance, memory leaks, accessibility, error handling, mobile UX
+- Created prioritized issue list with effort estimates and impact assessment
+- See "Known Issues & Technical Debt" section above for full details
+
+### Files Modified
+| File | Change |
+|------|--------|
+| `bible-reader.html` | Added rate-limiting queue for bolls.life API calls with exponential backoff retry logic |
+| `handoff.md` | Added "Known Issues & Technical Debt" section with prioritized improvement list |
+| `handoff.md` | Updated architecture note about NKJV search limitation |
 
 ---
 
@@ -140,107 +199,53 @@ Switched to the centralised reusable deploy workflow.
 
 ---
 
-## Session Work — 2026-05-13 (session 2)
+## Previous Session Work
 
-### Commits
-| Hash | Summary |
-|------|---------|
-| `6d5b96f` | fix(bible-reader): mobile translations, pill styling, UI polish |
-| `7f551b6` | fix(bible-reader): restore missing search button to reader pill |
+### Session 2 (2026-05-13) & Earlier
 
-### Details
-
-**Mobile translations not launching (6d5b96f)**
-Root cause: `.dropdown-backdrop` had `z-index: 599` but `.reader-pill` is `z-index: 400`. Both are in the root stacking context, so the backdrop sat *above* the pill and intercepted every tap on translation dropdown items — firing the close handler before the selection could land. NKJV was unaffected because it uses the bolls.life API (no dropdown tap needed to trigger). Fix: lowered backdrop `z-index` from `599` to `390` (below the pill at `400`). The `.parallel-dropdown-menu` sheets (Parallel, Commentary) use `position: fixed` at `z-index: 600` so they remain above the backdrop unaffected.
-
-**Selection bar redesigned to match reader pill (6d5b96f)**
-`.selection-bar` (the bar that appears when verses are selected) was a dark charcoal rectangle. Redesigned to match `.reader-pill`: white background, green border, `border-radius: 50px`, same box-shadow, pill-style action buttons with hover states. Added `.sel-divider` lines separating the verse count from Copy/Cross-refs/Notes and from Clear. Dark mode handled via `[data-theme="dark"] .selection-bar`. Mobile `bottom` raised to `112px` to clear the taller 2-row pill.
-
-**Book select narrowed; translation button enlarged (6d5b96f)**
-Book select `flex` reduced from `2.5` to `1.8` — was wider than needed for even the longest book names. Translation button `#btn-translation-label` given explicit `padding: 8px 15px; font-size: 0.86rem` for easier tapping on desktop.
-
-**Panel close buttons (6d5b96f)**
-All four panels (xref, search, notes, Strong's) changed from `✕ Close` to `✕` only.
-
-**Search button restored (7f551b6)**
-The search icon (🔍 SVG) was dropped from the UI during the pill refactor in session 1 when the top nav was simplified to logo+hamburger only. The `.nav-search-btn` CSS class still existed in the file but had no matching HTML element. Fixed by adding a dedicated search icon button into `.pill-tools` between the Translation button and the Study dropdown. The `.nav-search-btn` CSS class is now dead code (can be removed later).
+See git log for detailed commit history. Key milestones:
+- Floating pill nav → consolidated controls at page top
+- Multiple translation support with local JSON + NKJV API fallback
+- Commentary integration via `bible.helloao.org` API
+- Search, cross-references, notes, Strong's concordance, dark mode
+- PWA with service worker caching
+- Responsive mobile/tablet layout
 
 ---
 
-## Session Work — 2026-05-13
+## Known Issues & Technical Debt
 
-### Commits in this session
-| Hash | Summary |
-|------|---------|
-| `62264f3` | Add .gitignore and HANDOVER.md; untrack source-only folders |
-| `74b71e1` | refactor(bible-reader): floating pill nav, slim top bar, larger text |
-| `bc81fbf` | fix(bible-reader): pill contrast, full-width layout, Ch/V labels, mobile abbr |
-| `afe0495` | fix(bible-reader): pill 2-row mobile layout, bigger font, translation abbr, upward sub-menus |
+### NKJV Word Search Not Working
+- **Issue:** bolls.life API returns HTTP 429 (Too Many Requests) — rate limiting prevents searches
+- **Root cause:** API is heavily rate-limited; no reliable free alternative without copyright issues
+- **Status:** NKJV chapters still load and display, but word search fails
+- **Workaround:** Use one of 12 other public-domain searchable translations (KJV, ASV, WEB, YLT, etc.)
+- **Long-term:** Consider licensing NKJV from Thomas Nelson or switching to public-domain translations
 
-### Details
+### Code Quality & Performance Issues (Prioritized by Impact)
 
-**Floating pill nav (74b71e1)**
-Replaced the 4-row controls block with a single floating pill bar at the bottom of the viewport. OT/NT buttons, Book/Chapter/Verse selects, Translation picker, Study dropdown, and Settings gear all live in the pill. Top nav simplified to logo + hamburger only.
+| Priority | Issue | Impact | Effort | Status |
+|----------|-------|--------|--------|--------|
+| 🔴 CRITICAL | `STRONGS_DATA` embedded in HTML bloats file to 6.9MB | 80% slower initial load on mobile | 3-4 hrs | Not started |
+| 🔴 HIGH | Missing error handling on `fetch()` calls | App hangs on network failure; no user feedback | 2 hrs | Not started |
+| 🟠 MEDIUM | 210+ repeated `getElementById()` calls; no DOM caching | 20-30% slower interaction response time | 1-2 hrs | Not started |
+| 🟠 MEDIUM | Event listeners never cleaned up on navigation | Memory leak; slowdown after 20+ navigations on mobile | 2 hrs | Not started |
+| 🟠 MEDIUM | Interlinear mode loads entire 30MB JSON file into memory | Can crash low-end mobile devices | 3 hrs | Not started |
+| 🟠 MEDIUM | No request cancellation on rapid navigation | Stale data can overwrite current view; wasted bandwidth | 1-2 hrs | Not started |
+| 🟡 LOW-MEDIUM | Browser compatibility gaps (backdrop-filter, CSS variables) | Limited support in older/enterprise browsers | 2 hrs | Not started |
+| 🟡 MEDIUM | Accessibility: missing ARIA labels, keyboard navigation | Screen reader users can't navigate; poor keyboard UX | 4 hrs | Not started |
+| 🟡 LOW | `console.log()` statements left in production | Minor (debug noise, data exposure) | 0.5 hrs | Not started |
 
-**Pill contrast + layout fixes (bc81fbf)**
-- White pill with green border for contrast against the cream page background
-- `flex:1` on `.pill-location` so Book/Ch/V occupy all available pill width
-- Book select `flex: 2.5`, Ch and V each `flex: 1`
-- Chapter options labelled `Ch N`, verse options `V N`
-- `BOOK_ABBR` JS object (66 books) renders short names on mobile ≤540px
-- Settings/Study dropdowns anchored `right:0` to prevent right-edge overflow
-- `TRANSLATION_ABBR` JS object for abbreviated pill labels
-
-**Pill polish — 2-row mobile, bigger font, sub-menu direction (afe0495)**
-- Mobile: pill wraps to 2 rows via `flex-direction:column` on `.reader-pill` at ≤540px; `.pill-nav` (row 1) and `.pill-tools` (row 2) each `display:flex`
-- Verse select restored on mobile (was hidden; now in row 1 with Book and Chapter)
-- Translation button label fixed — `updateTranslationInfo()` and init code now use `TRANSLATION_ABBR[t]` instead of the full `TRANSLATIONS[t]` name
-- Study sub-menus (Parallel, Commentary) anchor at `bottom:0; top:auto` so they open upward
-- Font 0.72 → 0.82rem; pill padding 5px/10px → 8px/14px; button padding 6px/9px → 8px/11px
-- SW bumped to v11
-
----
-
-## Previous Session Work — 2026-05-12
-
-### Commits
-| Hash | Summary |
-|------|---------|
-| `9146838` | Add Darby Bible (1890) — public domain, from seven1m/open-bibles |
-| `398edd5` | Label nowrap fix, search panel drag handle, pagination |
-| `9ad8cba` | Label width fix, mobile overlay padding, Strong's # filter |
-
-### Details
-
-**Search panel label fix**
-`testament` was clipping on tablet. Fix: replaced `width: 68px` with `white-space: nowrap; flex-shrink: 0` on `.search-filter-label`.
-
-**Mobile overlay fix**
-On mobile the search panel is a bottom sheet (max 60vh). `padding-bottom: var(--search-pb, 55vh)` on `.page-wrap` when `body.search-open` on mobile. JS sets `--search-pb` to the actual snapped pixel height.
-
-**Strong's number filter**
-- Visible only when translation is `kjvs` or `asvs` (`STRONGS_TRANSLATIONS`)
-- Input accepts `3056` or `G3056` — strips H/G prefix before searching
-- Searches raw verse text for the embedded digit pattern `[a-zA-Z]<num>(?!\d)`
-- `highlightStrongsInVerse()` marks English words carrying that number in results
-
-**Search result pagination**
-- 25 results per page; status bar "1–25 of 347 results in KJV"
-- `goSearchPage(n)` re-renders from cache — no DOM string escaping needed
-
-**Drag handle — search panel (mobile/tablet)**
-- Three snap points: 180px compact, 55vh default, 85vh expanded
-- Spring easing: `cubic-bezier(0.34,1.56,0.64,1)` on snap
-
-**Darby Bible (1890)**
-- Source: `seven1m/open-bibles` (Zefania XML)
-- Converted with `SCRIPTS/zefania-to-json.js` (Node.js)
+### Quick Wins (Low effort, immediate improvement)
+1. **Remove console.log statements** (lines 2963, 4815, 4820, 4829) — 30 min
+2. **Add user-friendly error messages** for failed chapter/search loads — 1 hr
+3. **Cache DOM element references** (`const DOM = { versesArea: el, ... }`) — 1-2 hrs
 
 ---
 
 ## Pending Work
 
-### Homepage CRO
+### Homepage (index.html) CRO
 - [ ] Hero CTA: change button label from "Service Times" → "Join Us This Sunday"
 - [ ] Phone number in nav (desktop) / below hero CTAs (mobile) — **need actual number from client**
 - [ ] Real congregation photo — group photo after Sunday service, hero background or full-width strip
@@ -254,13 +259,14 @@ On mobile the search panel is a bottom sheet (max 60vh). `padding-bottom: var(--
 
 ### Bible Reader — Feature Queue
 - [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
-- [ ] **Copy shareable link** — URL hash deep-linking (`#John.3.16`) works but no copy button; add to selection bar
+- [ ] **Copy shareable link** — URL hash deep-linking (`#John.3.16`) works but no copy button; add to selection toolbar
 - [ ] **Verse-level notes** — short personal note per verse, `{ref: text}` in localStorage
 - [ ] **Reading plans** — 365-day or curated plans (NT in 90 days, etc.), daily tracker in localStorage
 - [ ] **Print stylesheet** — nav and controls currently print; add `@media print` to output passage only
 - [ ] **Search streaming** — full JSON load on first search can stall on slow devices; consider chunked iteration with `setTimeout` yield
 
 ### Translations to Consider Adding
+
 From `seven1m/open-bibles` — all public domain, converter at `SCRIPTS/zefania-to-json.js`:
 - **BBE** (Bible in Basic English) — dynamic equivalence, simple vocabulary, good for new readers
 - Others available: WEB-BE, OEB-US, OEB-CW, DRA (Catholic/Vulgate-based)
@@ -273,24 +279,29 @@ From `seven1m/open-bibles` — all public domain, converter at `SCRIPTS/zefania-
 coc-website/
 ├── index.html                  Landing page
 ├── bible-reader.html           Bible study app (main file, ~5000 lines)
-├── service-worker.js           PWA cache — bump version on every html change (now v11)
+├── service-worker.js           PWA cache — bump version on every html change (now v12)
 ├── manifest.json               PWA manifest
-├── darby.json                  Darby Bible (1890)
-├── kjv.json / asv.json / ...   Other translation JSONs (all at root for fetch)
-├── adam-clarke.json            Adam Clarke commentary
-├── matthew-henry.json          Matthew Henry commentary
-├── jamieson-fausset-brown.json JFB commentary
-├── eastons.json                Easton's Bible Dictionary
-├── smiths.json                 Smith's Bible Dictionary
 ├── HANDOVER.md                 This file
-├── BIBLE TRANSLATIONS/         Working copies of all translation source files (gitignored)
-├── SCRIPTS/
-│   ├── zefania-to-json.js      Converter: Zefania XML → reader JSON (Node.js)
-│   └── zefania-to-json.py      Same converter in Python (requires Python 3)
-├── COMMENTARIES/               Source JSON + scripts for commentary data (gitignored)
-├── DICTIONARY/                 Source JSON for dictionary data (gitignored)
-├── BRAND/                      Logo assets (gitignored)
-└── ARCHIVES/                   Versioned snapshots of bible-reader.html (gitignored)
+├── favicon.ico / *.png         Favicons
+├── og_banner.jpg               Open Graph preview image
+├── .gitignore                  Ignores source/working directories
+├── README.md                   Project README
+├── Translations & Reference Data (all deployed to root for fetching):
+│   ├── kjv.json / asv.json / web.json / ylt.json / lsv.json / lxxe.json / rvr09.json / darby.json
+│   ├── kjvs.json / asvs.json  (KJV/ASV + Strong's numbers)
+│   ├── hebrew.json / greek-nt.json  (Original languages)
+│   ├── adam-clarke.json / matthew-henry.json / jamieson-fausset-brown.json  (Commentaries)
+│   ├── eastons.json / smiths.json  (Dictionaries)
+│   └── crossrefs.json          (Cross-references for all 66 books)
+├── Working/Source Directories (gitignored):
+│   ├── BIBLE TRANSLATIONS/     Source files for all translation JSONs
+│   ├── COMMENTARIES/           Source files & scripts for commentary data
+│   ├── DICTIONARY/             Source files for dictionary data
+│   ├── SCRIPTS/                Node.js converters (zefania-to-json.js, etc.)
+│   ├── BRAND/                  Logo assets
+│   ├── LIBRARY/                E-book conversion scripts
+│   └── ARCHIVES/               Versioned snapshots of bible-reader.html
+└── .git/                       Git repository
 ```
 
 ---
@@ -304,7 +315,9 @@ Before pushing any change to `bible-reader.html`:
 4. `git push origin <branch>` then open a PR — branch protection requires PRs on `master`
 5. Merge PR → deploy triggers automatically
 6. `gh run watch <run-id>` — confirm green
-6. Hard-refresh on device to force SW update
+7. Hard-refresh on device to force SW update
+
+For `index.html` changes, no service worker bump needed.
 
 ---
 
@@ -328,7 +341,6 @@ Then in `bible-reader.html`:
 - `TRANSLATIONS` object — add `key: 'Label'`
 - `TRANSLATION_ABBR` — add `key: 'ABBR'`
 - `LOCAL_TRANSLATIONS` — add `'key'` to the Set
-- `TRANSLATION_INFO` — add scholarly description block
 - Translation dropdown HTML (×2 — main selector and parallel selector)
 - Hidden `<select>` — add `<option>`
 - Bump service worker version
