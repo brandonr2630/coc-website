@@ -1503,6 +1503,103 @@
       border-bottom-color: var(--charcoal-light);
     }
 
+    /* Global formatting toolbar */
+    .notes-fmt-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      background: var(--white);
+      flex-wrap: wrap;
+    }
+
+    .notes-fmt-btn {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      background: var(--white);
+      color: var(--charcoal-light);
+      padding: 2px 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .notes-fmt-btn:hover {
+      border-color: var(--green);
+      color: var(--green-dark);
+    }
+
+    .notes-fmt-btn.active {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    .notes-fmt-sep {
+      width: 1px;
+      height: 14px;
+      background: var(--line);
+      margin: 0 2px;
+      flex-shrink: 0;
+    }
+
+    .notes-fmt-select {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.65rem;
+      border: 1px solid var(--line);
+      border-radius: 2px;
+      background: var(--white);
+      color: var(--charcoal);
+      padding: 2px 4px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      max-width: 90px;
+    }
+
+    .notes-fmt-select:hover {
+      border-color: var(--green);
+      background: var(--cream);
+    }
+
+    .notes-fmt-select:focus {
+      outline: none;
+      border-color: var(--green);
+      background: var(--cream);
+    }
+
+    [data-theme="dark"] .notes-fmt-toolbar {
+      background: var(--charcoal);
+      border-bottom-color: var(--charcoal-light);
+    }
+
+    [data-theme="dark"] .notes-fmt-btn {
+      background: var(--charcoal-light);
+      border-color: var(--charcoal);
+      color: var(--tan);
+    }
+
+    [data-theme="dark"] .notes-fmt-btn:hover {
+      border-color: var(--green);
+      color: var(--green-light);
+    }
+
+    [data-theme="dark"] .notes-fmt-select {
+      background: var(--charcoal-light);
+      border-color: var(--charcoal);
+      color: var(--tan);
+    }
+
+    [data-theme="dark"] .notes-fmt-select:hover,
+    [data-theme="dark"] .notes-fmt-select:focus {
+      background: var(--charcoal);
+      border-color: var(--green);
+    }
+
     /* Session sidebar */
     .notes-sidebar-toggle {
       width: auto;
@@ -5595,15 +5692,13 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
         <span class="notes-search-clear" onclick="notesFilterEntries('')">✕</span>
         <span class="notes-search-status" id="notes-search-status"></span>
       </div>
-    </div>
-    <!-- INTRO EDITOR — always visible, persistent (not re-rendered) -->
-    <div class="notes-intro-wrap" id="notes-intro-wrap">
-      <div class="notes-intro-toolbar">
-        <button class="intro-fmt-btn" id="ifmt-b" onclick="notesIntroFmt('bold','ifmt-b')" title="Bold">B</button>
-        <button class="intro-fmt-btn" id="ifmt-i" onclick="notesIntroFmt('italic','ifmt-i')" title="Italic">I</button>
-        <button class="intro-fmt-btn" id="ifmt-u" onclick="notesIntroFmt('underline','ifmt-u')" title="Underline">U</button>
-        <div class="intro-fmt-sep"></div>
-        <select class="intro-fmt-select" id="ifmt-font" onchange="notesIntroFmtFont(this.value)" title="Font family">
+      <!-- GLOBAL FORMATTING TOOLBAR -->
+      <div class="notes-fmt-toolbar" id="notes-fmt-toolbar">
+        <button class="notes-fmt-btn" id="nfmt-b" onclick="notesGlobalFmt('bold')" title="Bold">B</button>
+        <button class="notes-fmt-btn" id="nfmt-i" onclick="notesGlobalFmt('italic')" title="Italic">I</button>
+        <button class="notes-fmt-btn" id="nfmt-u" onclick="notesGlobalFmt('underline')" title="Underline">U</button>
+        <div class="notes-fmt-sep"></div>
+        <select class="notes-fmt-select" id="nfmt-font" onchange="notesGlobalFmtFont(this.value)" title="Font family">
           <option value="">Default</option>
           <option value="Georgia">Georgia</option>
           <option value="Times New Roman">Times New Roman</option>
@@ -5612,7 +5707,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
           <option value="Courier New">Courier New</option>
           <option value="Comic Sans MS">Comic Sans MS</option>
         </select>
-        <select class="intro-fmt-select" id="ifmt-size" onchange="notesIntroFmtSize(this.value)" title="Font size">
+        <select class="notes-fmt-select" id="nfmt-size" onchange="notesGlobalFmtSize(this.value)" title="Font size">
           <option value="">Size</option>
           <option value="1">Small</option>
           <option value="3">Normal</option>
@@ -5620,18 +5715,20 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
           <option value="6">Larger</option>
           <option value="7">Largest</option>
         </select>
-        <div class="intro-fmt-sep"></div>
-        <button class="intro-fmt-btn" id="ifmt-ul" onclick="notesIntroFmt('insertUnorderedList','ifmt-ul')" title="Bullet list">≡</button>
-        <button class="intro-fmt-btn" id="ifmt-ol" onclick="notesIntroFmt('insertOrderedList','ifmt-ol')" title="Numbered list">1.</button>
-        <div class="intro-fmt-sep"></div>
-        <button class="intro-fmt-btn" onclick="notesIntroIndent(1)"  title="Indent">→</button>
-        <button class="intro-fmt-btn" onclick="notesIntroIndent(-1)" title="Outdent">←</button>
+        <div class="notes-fmt-sep"></div>
+        <button class="notes-fmt-btn" id="nfmt-ul" onclick="notesGlobalFmt('insertUnorderedList')" title="Bullet list">≡</button>
+        <button class="notes-fmt-btn" id="nfmt-ol" onclick="notesGlobalFmt('insertOrderedList')" title="Numbered list">1.</button>
+        <div class="notes-fmt-sep"></div>
+        <button class="notes-fmt-btn" onclick="notesGlobalIndent(1)" title="Indent">→</button>
+        <button class="notes-fmt-btn" onclick="notesGlobalIndent(-1)" title="Outdent">←</button>
       </div>
+    </div>
+    <!-- INTRO EDITOR — always visible, persistent (not re-rendered) -->
+    <div class="notes-intro-wrap" id="notes-intro-wrap">
       <div class="notes-intro-area" id="notes-intro-area" contenteditable="true"
            data-placeholder="Introduction, context, or general notes…"
-           oninput="notesIntroInput()"
-           onkeyup="syncIntroToolbar()"
-           onmouseup="syncIntroToolbar()"></div>
+           onfocus="notesActiveFocusedElement=this"
+           oninput="notesIntroInput()"></div>
     </div>
     <div class="notes-list" id="notes-list"></div>
     <div class="notes-export-bar">
@@ -5664,6 +5761,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   let notesSearchQuery = '';
   let notesSearchFilteredIndices = [];
   let notesSidebarVisible = false;
+  let notesActiveFocusedElement = null; // Global formatting: track active contenteditable
 
   function notesInit() {
     try {
@@ -5762,6 +5860,63 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     closeNotesSidebar();
   }
 
+  // ── GLOBAL FORMATTING (applies to currently focused element) ─────────────────
+  function notesGlobalFmt(cmd) {
+    if (!notesActiveFocusedElement) return;
+    notesActiveFocusedElement.focus();
+    document.execCommand(cmd);
+    notesActiveElementSyncToolbar();
+    if (notesActiveFocusedElement.id === 'notes-intro-area') notesIntroInput();
+    else if (notesActiveFocusedElement.id.startsWith('earea-')) {
+      const idx = parseInt(notesActiveFocusedElement.id.match(/\d+/)[0]);
+      notesEntryInput(idx);
+    }
+  }
+
+  function notesGlobalFmtFont(fontName) {
+    if (!notesActiveFocusedElement || !fontName) return;
+    notesActiveFocusedElement.focus();
+    document.execCommand('fontName', false, fontName);
+    if (notesActiveFocusedElement.id === 'notes-intro-area') notesIntroInput();
+    else if (notesActiveFocusedElement.id.startsWith('earea-')) {
+      const idx = parseInt(notesActiveFocusedElement.id.match(/\d+/)[0]);
+      notesEntryInput(idx);
+    }
+    document.getElementById('nfmt-font').value = ''; // Reset dropdown
+  }
+
+  function notesGlobalFmtSize(size) {
+    if (!notesActiveFocusedElement || !size) return;
+    notesActiveFocusedElement.focus();
+    document.execCommand('fontSize', false, size);
+    if (notesActiveFocusedElement.id === 'notes-intro-area') notesIntroInput();
+    else if (notesActiveFocusedElement.id.startsWith('earea-')) {
+      const idx = parseInt(notesActiveFocusedElement.id.match(/\d+/)[0]);
+      notesEntryInput(idx);
+    }
+    document.getElementById('nfmt-size').value = ''; // Reset dropdown
+  }
+
+  function notesGlobalIndent(dir) {
+    if (!notesActiveFocusedElement) return;
+    notesActiveFocusedElement.focus();
+    document.execCommand(dir > 0 ? 'indent' : 'outdent');
+    notesActiveElementSyncToolbar();
+    if (notesActiveFocusedElement.id === 'notes-intro-area') notesIntroInput();
+    else if (notesActiveFocusedElement.id.startsWith('earea-')) {
+      const idx = parseInt(notesActiveFocusedElement.id.match(/\d+/)[0]);
+      notesEntryInput(idx);
+    }
+  }
+
+  function notesActiveElementSyncToolbar() {
+    if (!notesActiveFocusedElement) return;
+    const ulBtn = document.getElementById('nfmt-ul');
+    const olBtn = document.getElementById('nfmt-ol');
+    if (ulBtn) ulBtn.classList.toggle('active', document.queryCommandState('insertUnorderedList'));
+    if (olBtn) olBtn.classList.toggle('active', document.queryCommandState('insertOrderedList'));
+  }
+
   function renderNotesPanel() {
     document.getElementById('notes-title').value = notesSession.title;
     document.getElementById('notes-date').textContent = notesSession.date;
@@ -5789,14 +5944,6 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       const entry = notesSession.entries[idx];
       const el = document.createElement('div');
       el.className = 'notes-entry';
-      const entryToolbar = `
-        <div class="notes-entry-toolbar">
-          <button class="intro-fmt-btn efmt-ul-${idx}" onclick="notesEntryFmt('insertUnorderedList',${idx})" title="Bullet list">● List</button>
-          <button class="intro-fmt-btn efmt-ol-${idx}" onclick="notesEntryFmt('insertOrderedList',${idx})" title="Numbered list">① Num</button>
-          <span class="intro-fmt-sep"></span>
-          <button class="intro-fmt-btn" onclick="notesEntryIndent(1,${idx})" title="Indent">⇥</button>
-          <button class="intro-fmt-btn" onclick="notesEntryIndent(-1,${idx})" title="Outdent">⇤</button>
-        </div>`;
       if (entry.verses) {
         const refLabel = formatGroupRef(entry.verses);
         const quotesHtml = entry.verses.map(v =>
@@ -5807,12 +5954,10 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
             <span class="notes-entry-ref">${notesEsc(refLabel)}</span>
             <button class="notes-entry-remove" onclick="notesRemoveEntry(${idx})" title="Remove">✕</button>
           </div>
-          ${quotesHtml}${entryToolbar}
+          ${quotesHtml}
           <div class="notes-entry-area" id="earea-${idx}" contenteditable="true"
             data-placeholder="Your notes…"
-            onfocus="currentFocusedEntryIdx=${idx};syncEntryToolbar(${idx})"
-            onkeyup="syncEntryToolbar(${idx})"
-            onmouseup="syncEntryToolbar(${idx})"
+            onfocus="notesActiveFocusedElement=this"
             oninput="notesEntryInput(${idx})"></div>`;
       } else {
         el.innerHTML = `
@@ -5821,12 +5966,9 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
             <button class="notes-entry-remove" onclick="notesRemoveEntry(${idx})" title="Remove">✕</button>
           </div>
           <div class="notes-entry-quote">${notesEsc(entry.text)}</div>
-          ${entryToolbar}
           <div class="notes-entry-area" id="earea-${idx}" contenteditable="true"
             data-placeholder="Your notes…"
-            onfocus="currentFocusedEntryIdx=${idx};syncEntryToolbar(${idx})"
-            onkeyup="syncEntryToolbar(${idx})"
-            onmouseup="syncEntryToolbar(${idx})"
+            onfocus="notesActiveFocusedElement=this"
             oninput="notesEntryInput(${idx})"></div>`;
       }
       // Set notes HTML after building (avoids escaping issues)
@@ -5851,31 +5993,6 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     if (area) notesSession.entries[idx].notes = area.innerHTML;
     clearTimeout(notesSaveTimer);
     notesSaveTimer = setTimeout(notesSave, 600);
-  }
-
-  function notesEntryFmt(cmd, idx) {
-    const area = document.getElementById('earea-' + idx);
-    if (!area) return;
-    area.focus();
-    document.execCommand(cmd);
-    syncEntryToolbar(idx);
-    notesEntryInput(idx);
-  }
-
-  function notesEntryIndent(dir, idx) {
-    const area = document.getElementById('earea-' + idx);
-    if (!area) return;
-    area.focus();
-    document.execCommand(dir > 0 ? 'indent' : 'outdent');
-    syncEntryToolbar(idx);
-    notesEntryInput(idx);
-  }
-
-  function syncEntryToolbar(idx) {
-    const ul = document.querySelector(`.efmt-ul-${idx}`);
-    const ol = document.querySelector(`.efmt-ol-${idx}`);
-    if (ul) ul.classList.toggle('active', document.queryCommandState('insertUnorderedList'));
-    if (ol) ol.classList.toggle('active', document.queryCommandState('insertOrderedList'));
   }
 
   function notesToHtml(notes) {
@@ -6129,40 +6246,6 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     notesSaveTimer = setTimeout(notesSave, 600);
   }
 
-  function notesIntroFmt(cmd, btnId) {
-    const area = document.getElementById('notes-intro-area');
-    area.focus();
-    document.execCommand(cmd);
-    syncIntroToolbar();
-    notesIntroInput();
-  }
-
-  function notesIntroIndent(dir) {
-    const area = document.getElementById('notes-intro-area');
-    area.focus();
-    document.execCommand(dir > 0 ? 'indent' : 'outdent');
-    syncIntroToolbar();
-    notesIntroInput();
-  }
-
-  function notesIntroFmtFont(fontName) {
-    const area = document.getElementById('notes-intro-area');
-    area.focus();
-    if (fontName) document.execCommand('fontName', false, fontName);
-    notesIntroInput();
-  }
-
-  function notesIntroFmtSize(size) {
-    const area = document.getElementById('notes-intro-area');
-    area.focus();
-    if (size) document.execCommand('fontSize', false, size);
-    notesIntroInput();
-  }
-
-  function syncIntroToolbar() {
-    document.getElementById('ifmt-ul').classList.toggle('active', document.queryCommandState('insertUnorderedList'));
-    document.getElementById('ifmt-ol').classList.toggle('active', document.queryCommandState('insertOrderedList'));
-  }
 
   function introToText() {
     const div = document.createElement('div');
