@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-17 (session 5 & 6)*
+*Last updated 2026-05-17 (session 7)*
 
 ---
 
@@ -141,6 +141,46 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v12';`
 
 ---
 
+## Session Work — 2026-05-17 (session 7)
+
+### Global Formatting Toolbar Implementation
+
+**Feature 1a + 1b completion:**
+Completed consolidation of notes formatting controls into a single global toolbar at the top of the notes panel.
+
+**Changes Made:**
+- **Removed per-entry formatting toolbars** — Each entry no longer has its own formatting controls
+- **Implemented global focus tracking** — New `notesActiveFocusedElement` variable tracks which contenteditable area is active (intro or entry)
+- **Created 4 global formatting functions:**
+  - `notesGlobalFmt(cmd)` — applies bold, italic, underline, insertUnorderedList, insertOrderedList
+  - `notesGlobalFmtFont(fontName)` — applies font family to active element
+  - `notesGlobalFmtSize(size)` — applies font size to active element  
+  - `notesGlobalIndent(dir)` — applies indent (+1) or outdent (-1) to active element
+  - `notesActiveElementSyncToolbar()` — syncs list button active states
+- **Updated event handlers** — Both intro and entry contenteditable areas track focus via `onfocus="notesActiveFocusedElement=this"`
+- **Added complete CSS styling** — Toolbar with light/dark mode support, hover states, active states (green for list buttons when in list mode)
+- **Removed obsolete functions** — Deleted `notesEntryFmt()`, `notesEntryIndent()`, `syncEntryToolbar()`, old intro-level formatting functions
+
+**UI/UX Improvements:**
+- Single point of control for all formatting — no confusion about which toolbar to use
+- Cleaner entry layout without per-entry toolbars
+- Consistent button styling and behavior across all editors
+- List buttons (≡ and 1.) highlight green when formatting is active in current selection
+- Font and size dropdowns reset after selection (no lingering state)
+
+**Files Modified:**
+| File | Changes |
+|------|---------|
+| `bible-reader.html` | 177 insertions, 94 deletions — global toolbar, functions, CSS, entry rendering |
+
+**Deployment:**
+- Commit: `87057ac` — "feat(notes): consolidate formatting toolbar to global, single-point control"
+- PR #15 created and merged to `master`
+- GitHub Actions deployment completed successfully (12s)
+- Live at `toddsroadcoctt` ✅
+
+---
+
 ## Session Work — 2026-05-17 (session 6)
 
 ### Bug Investigation & Code Audit
@@ -240,6 +280,22 @@ See git log for detailed commit history. Key milestones:
 1. **Remove console.log statements** (lines 2963, 4815, 4820, 4829) — 30 min
 2. **Add user-friendly error messages** for failed chapter/search loads — 1 hr
 3. **Cache DOM element references** (`const DOM = { versesArea: el, ... }`) — 1-2 hrs
+
+---
+
+## Completed Notes Features (Phase 1)
+
+✅ **1a: In-Session Search** — Real-time filtering of notes within current session with text highlighting  
+✅ **1b: Session Sidebar** — Browse, load, and delete all saved note sessions with metadata (verse count, book count, date)  
+✅ **1c: Global Formatting Toolbar** — Single consolidated toolbar at top of notes panel; applies to focused element  
+
+All notes session management and formatting features now complete. Users can:
+- Create and manage multiple note sessions
+- Search within a session and quickly find verses/notes
+- Switch between sessions via sidebar
+- Format text (B/I/U, font family, font size, lists, indent) from a single global toolbar
+- Resize notes panel width via drag handle
+- Export notes as TXT, DOCX, or PDF
 
 ---
 
