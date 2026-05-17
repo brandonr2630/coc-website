@@ -1474,19 +1474,15 @@
 
     /* Session sidebar */
     .notes-sidebar-toggle {
-      position: absolute;
-      top: 18px;
-      right: 392px;
-      width: 36px;
-      height: 36px;
+      width: auto;
+      padding: 6px 12px;
       background: var(--white);
       border: 1px solid var(--line);
       border-radius: 3px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       cursor: pointer;
       transition: all 0.2s;
-      z-index: 99;
-      padding: 0;
+      margin: 0 8px;
     }
 
     .notes-sidebar-toggle:hover {
@@ -1495,7 +1491,7 @@
     }
 
     .notes-sidebar-toggle.active {
-      background: var(--cream);
+      background: var(--highlight);
       border-color: var(--green);
     }
 
@@ -1636,12 +1632,6 @@
     }
 
     @media (max-width: 860px) {
-      .notes-sidebar-toggle {
-        right: auto;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-
       .notes-sessions-sidebar {
         right: 0;
         width: 100%;
@@ -5520,7 +5510,6 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 
   <!-- STRONG'S PANEL -->
   <!-- NOTES PANEL -->
-  <button class="notes-sidebar-toggle" id="notes-sidebar-toggle" onclick="toggleNotesSidebar()" title="Show all sessions">📋</button>
   <div class="notes-sessions-sidebar" id="notes-sessions-sidebar">
     <div class="notes-sidebar-head">
       <h3>Sessions</h3>
@@ -5534,6 +5523,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     <div class="notes-panel-head">
       <div class="notes-panel-toprow">
         <button class="notes-panel-close" onclick="closeNotesPanel()">✕</button>
+        <button class="notes-sidebar-toggle" id="notes-sidebar-toggle" onclick="toggleNotesSidebar()" title="Show all sessions">📋</button>
         <button class="notes-new-session-btn" onclick="startNewNotesSession()">+ New Session</button>
       </div>
       <div class="notes-session-info">
