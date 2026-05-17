@@ -1603,6 +1603,31 @@
       border-radius: 2px;
     }
 
+    .notes-sidebar-delete-btn {
+      background: none;
+      border: none;
+      color: var(--charcoal-light);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0 4px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .notes-sidebar-delete-btn:hover {
+      color: #d32f2f;
+      background: rgba(211, 47, 47, 0.1);
+      border-radius: 2px;
+    }
+
+    [data-theme="dark"] .notes-sidebar-delete-btn {
+      color: var(--charcoal-light);
+    }
+
+    [data-theme="dark"] .notes-sidebar-delete-btn:hover {
+      color: #ff6b6b;
+    }
+
     [data-theme="dark"] .notes-sessions-sidebar {
       background: var(--charcoal);
       border-left-color: var(--green);
@@ -5883,11 +5908,16 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       const title = session.title || '(Untitled)';
 
       item.innerHTML = `
-        <div class="notes-sidebar-item-title">${notesEsc(title)}</div>
-        <div class="notes-sidebar-item-meta">
-          <span>${verseCount} verse${verseCount !== 1 ? 's' : ''}</span>
-          <span>${bookCount} book${bookCount !== 1 ? 's' : ''}</span>
-          <span>${dateStr}</span>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="flex: 1;">
+            <div class="notes-sidebar-item-title">${notesEsc(title)}</div>
+            <div class="notes-sidebar-item-meta">
+              <span>${verseCount} verse${verseCount !== 1 ? 's' : ''}</span>
+              <span>${bookCount} book${bookCount !== 1 ? 's' : ''}</span>
+              <span>${dateStr}</span>
+            </div>
+          </div>
+          <button class="notes-sidebar-delete-btn" onclick="deleteNotesSession('${session.id}'); event.stopPropagation();" title="Delete session">✕</button>
         </div>
       `;
 
@@ -5915,6 +5945,34 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       if (window.innerWidth <= 860) closeNotesSidebar();
 
       showToast(`Loaded: ${notesSession.title || '(Untitled)'}`);
+    }
+  }
+
+  function deleteNotesSession(sessionId) {
+    if (!confirm('Delete this session? This cannot be undone.')) return;
+
+    const allSessions = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+    const index = allSessions.findIndex(s => s.id === sessionId);
+
+    if (index >= 0) {
+      const deletedTitle = allSessions[index].title || '(Untitled)';
+      allSessions.splice(index, 1);
+      localStorage.setItem(NOTES_KEY, JSON.stringify(allSessions));
+
+      // If deleted session was active, load another one
+      if (notesSession.id === sessionId) {
+        if (allSessions.length > 0) {
+          notesSession = allSessions[0];
+        } else {
+          notesSession = notesNewObj();
+          allSessions.unshift(notesSession);
+          localStorage.setItem(NOTES_KEY, JSON.stringify(allSessions));
+        }
+        renderNotesPanel();
+      }
+
+      renderNotesSidebar();
+      showToast(`Deleted: ${deletedTitle}`);
     }
   }
 
