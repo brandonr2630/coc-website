@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-24 (session 11)*
+*Last updated 2026-05-24 (session 12)*
 
 ---
 
@@ -128,9 +128,9 @@ The reader uses three horizontal control rows at the top of the page (not a floa
 
 ### Service Worker
 
-Cache version is `coc-bible-v14`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
+Cache version is `coc-bible-v15`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
 
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v14';`
+Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v15';`
 
 ### Dark Mode
 
@@ -138,6 +138,46 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v14';`
 - Persists to localStorage as `bibleTheme`
 - All colors respond to `[data-theme="dark"]` CSS selector
 - Page wrap applies theme on page load via inline script (line 6)
+
+---
+
+## Session Work — 2026-05-24 (session 12)
+
+### Nav Pill Redesign — Grid-Only Navigation & Compact Layout
+
+**PR #24** — `feat/pill-nav-redesign` → merged to `master` → deployed (coc-bible-v15)
+**PR #25** — `chore/sw-bump-v15` → merged to `master` → deployed (service worker bump)
+
+**Navigation overhaul:**
+
+| Change | Detail |
+|--------|--------|
+| Chapter & verse dropdowns removed | Grid picker is now the sole nav mechanism for chapter and verse |
+| Book dropdown always triggers grid | `onmousedown` saves and blanks the value so re-selecting the same book fires `onchange` and opens the chapter grid; `onblur` restores if dismissed without picking |
+| Same-book re-selection | When already on John 3 and user opens Book → picks John again, chapter grid opens with current chapter highlighted |
+| Bottom nav stripped | Arrow buttons removed from `#bottom-nav`; now a centred strip showing translation full name + ⓘ info button only |
+| Chevrons merged into pill | `«` `‹` `›` `»` moved into `.pill-nav` flanking the book select, reusing the `-bot` IDs so all JS sync logic (`syncHistoryBtns`, prev/next disable) works unchanged |
+
+**SVG chevrons:**
+
+All four chevrons in both the pill and the top nav are now matched SVGs — same arm geometry (`polyline points="14 3 9 12 14 21"` / mirrored), `stroke-width="2.5"`, `width="16" height="16"`. Replaced Nunito Unicode glyphs which had inconsistent stroke weight. `nav-arrow-btn` and `nav-hist-btn` updated to `display:flex` for proper centering.
+
+**Pill polish:**
+
+| Item | Detail |
+|------|--------|
+| Filter icons | `▾` replaced with 3-line SVG filter icon on Translation, Study, Parallel sub-arrow, Commentary sub-arrow (menus open upward) |
+| Book select caret | CSS `::after` `▾` removed — native select has no indicator |
+| Compact pill | `.pill-nav` changed to `flex:none`; pill drops fixed `width`; shrinks to content, stays centred via `translateX(-50%)` |
+| Book select width | `.pill-location` and `.pill-select` set to `flex:none` / `width:auto` — sizes to longest option ("2 Thessalonians") |
+| Study/Settings divider | `pill-divider` added between Study and Settings buttons |
+| Scroll-to-top on mobile | Added `@media (max-width:540px) { bottom:140px }` to clear the two-row pill layout |
+
+**Files modified:**
+| File | Changes |
+|------|---------|
+| `bible-reader.html` | 57 insertions, 54 deletions |
+| `service-worker.js` | Cache version bump only (v14 → v15) |
 
 ---
 
