@@ -679,10 +679,10 @@
     .pill-select {
       appearance: none; -webkit-appearance: none;
       font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 700;
-      color: var(--charcoal); background: transparent; border: none;
+      color: var(--charcoal); background: #ffffff; border: none;
       padding: 6px 16px 6px 6px; cursor: pointer; width: 100%; min-width: 0;
     }
-    [data-theme="dark"] .pill-select { color: var(--charcoal); }
+    [data-theme="dark"] .pill-select { color: var(--charcoal); background: #2a2a25; }
     .pill-select:focus { outline: none; }
 
     .pill-nav { display: flex; align-items: center; flex: 1; min-width: 0; }
@@ -717,8 +717,8 @@
       font-size: 0.7rem; transition: background 0.12s;
     }
     .pill-study-arrow:hover { background: var(--highlight); }
-    /* Sub-dropdowns inside study panel open to the right */
-    #study-dropdown-menu .parallel-dropdown-menu { bottom: 0; top: auto; left: calc(100% + 4px); right: auto; transform: none; }
+    /* Sub-dropdowns inside study panel open to the left */
+    #study-dropdown-menu .parallel-dropdown-menu { bottom: 0; top: auto; right: calc(100% + 4px); left: auto; transform: none; }
 
     /* Settings dropdown sections */
     .pill-settings-section { padding: 10px 14px; border-bottom: 1px solid var(--line); }
@@ -755,6 +755,53 @@
       .pill-study-text { display: none; }
     }
 
+
+    /* ── GRID CHAPTER / VERSE PICKER ── */
+    .grid-modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.42); z-index: 800;
+    }
+    .grid-modal-backdrop.open { display: block; }
+    .grid-modal {
+      display: none; position: fixed; z-index: 810;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: var(--white); border-radius: 14px;
+      box-shadow: 0 16px 56px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.10);
+      min-width: 260px; max-width: min(460px, calc(100vw - 32px));
+      max-height: min(520px, 78vh);
+      flex-direction: column; overflow: hidden;
+    }
+    .grid-modal.open { display: flex; }
+    [data-theme="dark"] .grid-modal { background: #252520; }
+    .grid-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px 12px; border-bottom: 1px solid var(--line); flex-shrink: 0;
+    }
+    .grid-modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem; font-weight: 600; color: var(--charcoal); letter-spacing: 0.04em;
+    }
+    .grid-modal-close {
+      background: none; border: none; cursor: pointer; font-size: 1rem;
+      color: var(--charcoal-light); padding: 4px 8px; border-radius: 4px;
+      transition: color 0.15s; line-height: 1;
+    }
+    .grid-modal-close:hover { color: var(--charcoal); }
+    .grid-modal-body {
+      overflow-y: auto; padding: 12px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px;
+    }
+    .grid-btn {
+      font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 700;
+      background: var(--white); border: 1.5px solid var(--line); border-radius: 6px;
+      padding: 11px 4px; cursor: pointer; text-align: center; color: var(--charcoal-light);
+      transition: all 0.14s; line-height: 1;
+    }
+    .grid-btn:hover { border-color: var(--green); color: var(--green-dark); background: rgba(125,194,67,0.06); }
+    .grid-btn.current { background: var(--charcoal); color: var(--cream); border-color: var(--charcoal); }
+    [data-theme="dark"] .grid-btn { background: #2a2a25; border-color: #3a3a34; color: #a0a090; }
+    [data-theme="dark"] .grid-btn:hover { border-color: var(--green); color: var(--green); background: rgba(125,194,67,0.08); }
+    [data-theme="dark"] .grid-btn.current { background: var(--charcoal); color: var(--cream); }
 
     /* ── VERSE CONTEXT MENU ── */
     .verse-ctx-menu {
@@ -1195,47 +1242,42 @@
     @media (max-width: 860px) {
       body.strongs-open .scroll-top-btn { right: 32px; }
     }
+    @media (max-width: 900px) {
+      .scroll-top-btn { bottom: 80px; right: 20px; }
+    }
     @media (max-width: 480px) {
-      .scroll-top-btn { bottom: 80px; right: 20px; width: 44px; height: 44px; }
+      .scroll-top-btn { width: 44px; height: 44px; }
     }
 
 
-    /* ── NOTES PANEL ── */
-    .notes-panel-resize-handle {
-      position: fixed;
-      right: 380px;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      background: transparent;
-      cursor: col-resize;
-      z-index: 601;
-      display: none;
-      transition: background 0.2s;
-      user-select: none;
-    }
-
-    .notes-panel-resize-handle:hover {
-      background: var(--green);
-    }
-
-    body.notes-open .notes-panel-resize-handle {
-      display: block;
-    }
+    /* ── NOTES PANEL (full-page) ── */
+    .notes-panel-resize-handle { display: none !important; }
 
     .notes-panel {
       display: none;
-      position: fixed; top: 0; right: 0; bottom: 0; z-index: 600;
-      width: 380px;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 600;
+      width: 100%;
       background: var(--white);
-      border-left: 2px solid var(--green);
-      box-shadow: -4px 0 24px rgba(0,0,0,0.10);
+      border-top: 3px solid var(--green);
       font-family: 'Nunito', sans-serif;
       flex-direction: column;
       overflow: hidden;
     }
     .notes-panel.visible { display: flex; }
-    body.notes-open .page-wrap { margin-right: 380px; }
+    body.notes-open .page-wrap { margin-right: 0; }
+
+    /* Constrain notes content for readability on large screens */
+    .notes-panel-head,
+    .notes-intro-wrap,
+    .notes-list,
+    .notes-export-bar {
+      max-width: 860px;
+      width: 100%;
+      align-self: center;
+      box-sizing: border-box;
+    }
+    .notes-panel-head { max-width: 100%; border-bottom: 1px solid var(--line); }
+    .notes-panel-head > * { max-width: 860px; margin-left: auto; margin-right: auto; }
 
     .notes-panel-head {
       flex-shrink: 0;
@@ -1248,11 +1290,12 @@
     }
     .notes-panel-close {
       background: none; border: none; cursor: pointer;
-      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 700;
       letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--charcoal-light);
+      color: var(--green-dark); display: flex; align-items: center; gap: 6px;
+      padding: 4px 0;
     }
-    .notes-panel-close:hover { color: var(--charcoal); }
+    .notes-panel-close:hover { color: var(--green); }
     .notes-new-session-btn {
       background: none; border: 1px solid var(--green); border-radius: 4px;
       color: var(--green-dark); font-size: 0.72rem; font-weight: 700;
@@ -1797,11 +1840,7 @@
       }
     }
 
-    @media (max-width: 860px) {
-      .notes-panel { width: 100%; border-left: none; border-top: 2px solid var(--green);
-                     top: auto; max-height: 60vh; }
-      body.notes-open .page-wrap { margin-right: 0; }
-    }
+    /* notes-panel is full-screen on all viewports — no override needed */
 
     /* ── SEARCH PANEL ── */
     .search-panel {
@@ -1858,6 +1897,14 @@
       outline: none; transition: border-color 0.2s;
     }
     .search-input:focus { border-color: var(--green); }
+    .search-clear-btn {
+      display: none;
+      flex-shrink: 0;
+      background: none; border: none; cursor: pointer;
+      color: var(--charcoal-light); font-size: 0.85rem; line-height: 1;
+      padding: 0 8px; transition: color 0.15s;
+    }
+    .search-clear-btn:hover { color: var(--charcoal); }
     .search-go-btn {
       font-family: 'Nunito', sans-serif; font-size: 0.75rem; font-weight: 700;
       letter-spacing: 0.08em; text-transform: uppercase;
@@ -2269,7 +2316,7 @@
       .manuscript-popup::before, .manuscript-popup::after { left: auto; right: 18px; transform: none; }
     }
     .floating-passage {
-      position: fixed; top: 80px; left: 50%;
+      position: fixed; top: 88px; left: 50%;
       transform: translateX(-50%) translateY(-12px);
       z-index: 90; display: flex; align-items: center; gap: 8px;
       padding: 6px 14px; background: rgba(58,58,58,0.92);
@@ -2288,7 +2335,7 @@
 
     /* Pill 2 — right column, in parallel or interlinear mode */
     .floating-passage-2 {
-      position: fixed; top: 80px; left: 75%;
+      position: fixed; top: 88px; left: 75%;
       transform: translateX(-50%) translateY(-12px);
       z-index: 90; display: none; align-items: center; gap: 8px;
       padding: 6px 14px; background: rgba(58,58,58,0.92);
@@ -2306,7 +2353,7 @@
 
     /* Pill 3 — commentary mode only */
     .floating-passage-3 {
-      position: fixed; top: 80px; left: 75%;
+      position: fixed; top: 88px; left: 75%;
       transform: translateX(-50%) translateY(-12px);
       z-index: 90; display: none; align-items: center; gap: 8px;
       padding: 6px 14px; background: rgba(58,58,58,0.92);
@@ -2332,7 +2379,7 @@
       letter-spacing: 0.14em; text-transform: uppercase; color: var(--green);
     }
     @media (max-width: 768px) {
-      .floating-passage, .floating-passage-2 { top: 68px; }
+      .floating-passage, .floating-passage-2, .floating-passage-3 { top: 80px; }
     }
 
     /* ── Fix 5: Mobile translation label — abbr/full toggle ── */
@@ -2702,6 +2749,26 @@
     </div>
 
   </div>
+</div>
+
+<!-- CHAPTER GRID MODAL -->
+<div class="grid-modal-backdrop" id="chapter-grid-backdrop" onclick="closeChapterGrid()"></div>
+<div class="grid-modal" id="chapter-grid-modal">
+  <div class="grid-modal-head">
+    <span class="grid-modal-title" id="chapter-grid-title">Select Chapter</span>
+    <button class="grid-modal-close" onclick="closeChapterGrid()">✕</button>
+  </div>
+  <div class="grid-modal-body" id="chapter-grid-body"></div>
+</div>
+
+<!-- VERSE GRID MODAL -->
+<div class="grid-modal-backdrop" id="verse-grid-backdrop" onclick="closeVerseGrid()"></div>
+<div class="grid-modal" id="verse-grid-modal">
+  <div class="grid-modal-head">
+    <span class="grid-modal-title" id="verse-grid-title">Select Verse</span>
+    <button class="grid-modal-close" onclick="closeVerseGrid()">✕</button>
+  </div>
+  <div class="grid-modal-body" id="verse-grid-body"></div>
 </div>
 
 <!-- SCROLL TO TOP -->
@@ -3361,12 +3428,6 @@ async function showStrongsPanel(num, wordEl) {
 
 // ── Parse bolls.life Strong's HTML into tokens ──
 function parseStrongsHtml(html) {
-  // Log sample to console for debugging
-  if (!parseStrongsHtml._logged) {
-    console.log("[Strongs] raw HTML sample:", html.slice(0, 300));
-    parseStrongsHtml._logged = true;
-  }
-
   const div = document.createElement('div');
   div.innerHTML = html;
   const tokens = [];
@@ -3821,6 +3882,10 @@ function populateVerseSelect(count) {
     sel.appendChild(opt);
   }
   currentVerseCount = count;
+  if (pendingVerseGrid && count > 0) {
+    pendingVerseGrid = false;
+    openVerseGrid();
+  }
 }
 
 function onBookChange() {
@@ -3830,7 +3895,71 @@ function onBookChange() {
   highlightVerse = null;
   populateChapterSelect();
   populateVerseSelect(0);
+  openChapterGrid();
+}
+
+// ── Grid Chapter / Verse Picker ──────────────────────────────────────────────
+
+let pendingVerseGrid = false;
+
+function openChapterGrid() {
+  const title = document.getElementById('chapter-grid-title');
+  const body  = document.getElementById('chapter-grid-body');
+  title.textContent = currentBook.name;
+  body.innerHTML = '';
+  for (let i = 1; i <= currentBook.chapters; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'grid-btn' + (i === currentChapter ? ' current' : '');
+    btn.textContent = i;
+    btn.onclick = () => selectChapterFromGrid(i);
+    body.appendChild(btn);
+  }
+  document.getElementById('chapter-grid-backdrop').classList.add('open');
+  document.getElementById('chapter-grid-modal').classList.add('open');
+}
+
+function closeChapterGrid() {
+  document.getElementById('chapter-grid-backdrop').classList.remove('open');
+  document.getElementById('chapter-grid-modal').classList.remove('open');
+}
+
+function selectChapterFromGrid(num) {
+  currentChapter = num;
+  highlightVerse = null;
+  populateChapterSelect();
+  populateVerseSelect(0);
+  closeChapterGrid();
+  pendingVerseGrid = true;
   renderPassage();
+}
+
+function openVerseGrid() {
+  const title = document.getElementById('verse-grid-title');
+  const body  = document.getElementById('verse-grid-body');
+  title.textContent = currentBook.name + ' ' + currentChapter;
+  body.innerHTML = '';
+  for (let i = 1; i <= currentVerseCount; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'grid-btn';
+    btn.textContent = i;
+    btn.onclick = () => selectVerseFromGrid(i);
+    body.appendChild(btn);
+  }
+  document.getElementById('verse-grid-backdrop').classList.add('open');
+  document.getElementById('verse-grid-modal').classList.add('open');
+}
+
+function closeVerseGrid() {
+  document.getElementById('verse-grid-backdrop').classList.remove('open');
+  document.getElementById('verse-grid-modal').classList.remove('open');
+  pendingVerseGrid = false;
+}
+
+function selectVerseFromGrid(num) {
+  closeVerseGrid();
+  highlightVerse = num;
+  populateVerseSelect(currentVerseCount);
+  setTimeout(() => scrollToVerse(num), 80);
 }
 
 function onChapterChange() {
@@ -4000,12 +4129,18 @@ async function renderPassage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-  } catch {
-    area.innerHTML = '<div class="state-msg"><p>' + 
-      (currentTranslation === 'lxxe' && currentBook.testament === 'nt'
-        ? 'Old Testament Only — the Septuagint does not contain New Testament books.'
-        : 'Could not load passage. Please check your connection and try again.')
-      + '</p></div>';
+  } catch (err) {
+    const isLxxNt = currentTranslation === 'lxxe' && currentBook.testament === 'nt';
+    const isOffline = !navigator.onLine;
+    const msg = isLxxNt
+      ? 'Old Testament Only — the Septuagint does not contain New Testament books.'
+      : isOffline
+        ? 'You appear to be offline. Please check your connection and try again.'
+        : 'Could not load this passage. This may be a temporary network issue.';
+    area.innerHTML = `<div class="state-msg">
+      <p>${msg}</p>
+      ${!isLxxNt ? `<button onclick="renderPassage()" style="margin-top:14px;padding:8px 20px;background:var(--green);color:#fff;border:none;border-radius:3px;font-family:'Nunito',sans-serif;font-size:0.82rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Try Again</button>` : ''}
+    </div>`;
   }
 }
 
@@ -5171,11 +5306,23 @@ function closeSearchPanel() {
   document.documentElement.style.removeProperty('--search-pb');
 }
 
+function clearSearchInput() {
+  const inp = document.getElementById('search-input');
+  inp.value = '';
+  document.getElementById('search-clear-btn').style.display = 'none';
+  document.getElementById('search-body').innerHTML = '<div class="search-placeholder">Enter a word or phrase above and press Go.</div>';
+  inp.focus();
+}
+
 // Allow Enter key to trigger search — handled inline on the input element
 
-// Update Escape key handler to also close search panel
+// Escape closes search panel and grid modals
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeSearchPanel();
+  if (e.key === 'Escape') {
+    closeSearchPanel();
+    closeVerseGrid();
+    closeChapterGrid();
+  }
 }, true);
 
 async function performSearch() {
@@ -5215,12 +5362,10 @@ async function performSearch() {
           }
         }
       });
-      console.log('bolls.life search response:', data);
       // bolls.life returns { total, verses: [{book, chapter, verse, text}] }
       // book is a 1-based integer matching our BOOKS array order
       const scope     = getSearchScope();
       const rawVerses = data.verses || (Array.isArray(data) ? data : []);
-      console.log('Parsed verses:', rawVerses.length);
       const results   = rawVerses
         .map(v => ({
           book:    BOOKS[parseInt(v.book) - 1] || { name: `Book ${v.book}` },
@@ -5229,7 +5374,6 @@ async function performSearch() {
           text:    stripHtml(v.text || ''),
         }))
         .filter(v => v.book && (!scope || scope.includes(v.book.name)));
-      console.log('Final results:', results.length);
       renderSearchResults(results, query, pattern, currentTranslation, TRANSLATIONS[currentTranslation], '');
     } catch (e) {
       console.error('Search error:', e);
@@ -5618,7 +5762,8 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     </div>
     <div class="search-panel-controls">
       <div class="search-input-wrap">
-        <input type="text" class="search-input" id="search-input" placeholder="Enter a word or phrase…" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') performSearch()" />
+        <input type="text" class="search-input" id="search-input" placeholder="Enter a word or phrase…" autocomplete="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') performSearch()" oninput="const cb=document.getElementById('search-clear-btn');cb.style.display=this.value?'block':'none';" />
+        <button class="search-clear-btn" id="search-clear-btn" onclick="clearSearchInput()" title="Clear search">✕</button>
         <button class="search-go-btn" id="search-go-btn" onclick="performSearch()">Go</button>
       </div>
       <div class="search-options">
@@ -5676,7 +5821,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   <div class="notes-panel" id="notes-panel">
     <div class="notes-panel-head">
       <div class="notes-panel-toprow">
-        <button class="notes-panel-close" onclick="closeNotesPanel()">✕</button>
+        <button class="notes-panel-close" onclick="closeNotesPanel()">&#8592; Reader</button>
         <button class="notes-sidebar-toggle" id="notes-sidebar-toggle" onclick="toggleNotesSidebar()" title="Show all sessions">📋</button>
         <button class="notes-new-session-btn" onclick="startNewNotesSession()">+ New Session</button>
       </div>
@@ -5784,12 +5929,14 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 
   function openNotesPanel() {
     closeStrongsPanel();
-    document.getElementById('notes-panel').classList.add('visible');
+    const panel = document.getElementById('notes-panel');
+    panel.style.width = '';
+    document.querySelector('.page-wrap').style.marginRight = '';
+    panel.classList.add('visible');
     document.body.classList.add('notes-open');
     document.getElementById('btn-notes').classList.add('active');
     notesFilterEntries('');
     renderNotesPanel();
-    initNotesResize();
   }
 
   // Notes panel resize
@@ -5833,15 +5980,8 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
   }
 
   function setNotesPanelWidth(width) {
-    const panel = document.getElementById('notes-panel');
-    const handle = document.getElementById('notes-resize-handle');
-    const pageWrap = document.querySelector('.page-wrap');
-
-    panel.style.width = width + 'px';
-    handle.style.right = width + 'px';
-    if (pageWrap) pageWrap.style.marginRight = width + 'px';
-
-    localStorage.setItem(NOTES_WIDTH_KEY, width);
+    // no-op — notes panel is full-screen; remove any stale saved width
+    localStorage.removeItem(NOTES_WIDTH_KEY);
   }
 
   function stopNotesResize() {
