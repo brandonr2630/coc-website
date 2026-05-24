@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-17 (session 7)*
+*Last updated 2026-05-24 (session 8)*
 
 ---
 
@@ -128,9 +128,9 @@ The reader uses three horizontal control rows at the top of the page (not a floa
 
 ### Service Worker
 
-Cache version is `coc-bible-v12`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
+Cache version is `coc-bible-v13`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
 
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v12';`
+Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v13';`
 
 ### Dark Mode
 
@@ -138,6 +138,47 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v12';`
 - Persists to localStorage as `bibleTheme`
 - All colors respond to `[data-theme="dark"]` CSS selector
 - Page wrap applies theme on page load via inline script (line 6)
+
+---
+
+## Session Work — 2026-05-24 (session 8)
+
+### Bug Fixes, Grid Navigation & Notes Overhaul
+
+**PR #17** — `fix/bible-reader-bugs-and-grid-nav` → merged to `master` → deployed (coc-bible-v13)
+
+**Bug fixes:**
+
+| # | Bug | Fix |
+|---|-----|-----|
+| 1 | Scroll-to-top chevron overlapping bottom nav pill on tablet | Extended `bottom: 80px` rule to all viewports ≤900px |
+| 2 | Commentary sub-dropdown spilling off right edge of screen when Study mode active | Changed sub-dropdown to open **left** (`right: calc(100% + 4px)`) instead of right |
+| 3 | No way to clear word search field | Added `×` clear button with `clearSearchInput()` — resets field and results |
+| 4 | Floating book/translation reminder pill top edge clipped by fixed header | Raised all three floating pills: `top: 80px → 88px` (desktop), `top: 68px → 80px` (mobile) |
+| 5 | Chapter/verse dropdowns intermittently transparent during navigation | `.pill-select` now has explicit solid background (`#ffffff` / `#2a2a25` dark) instead of `transparent` |
+| 6 | `renderPassage` silently hangs on network failure | Catch block now detects offline state, shows specific message, and renders a **Try Again** button |
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| Notes full-page view | Notes panel converted from right sidebar to full-screen page. `← Reader` back button in topbar. Resize handle removed. Content centred at max 860px for readability. `setNotesPanelWidth` made no-op; stale saved width cleared on open. |
+| Grid chapter/verse picker (primary nav) | Olive Tree-style: selecting a book opens a floating chapter grid modal. Selecting a chapter fetches the passage then opens a verse grid. Selecting a verse scrolls to it. Escape key closes both grids. Existing pill dropdowns remain as secondary nav. Backdrop click also closes. |
+
+**Quick wins:**
+- Removed 4 `console.log` statements from production (lines 3366, 5218, 5223, 5232)
+- Service worker bumped: `coc-bible-v12` → `coc-bible-v13`
+
+**Files modified:**
+| File | Changes |
+|------|---------|
+| `bible-reader.html` | 215 insertions, 75 deletions |
+| `service-worker.js` | Cache version bump only |
+
+**Deployment:**
+- Commit: `033325c` — squash-merged via PR #17
+- GitHub Actions deployment completed successfully
+- Live at `toddsroadcoctt` ✅
 
 ---
 
@@ -267,18 +308,18 @@ See git log for detailed commit history. Key milestones:
 | Priority | Issue | Impact | Effort | Status |
 |----------|-------|--------|--------|--------|
 | 🔴 CRITICAL | `STRONGS_DATA` embedded in HTML bloats file to 6.9MB | 80% slower initial load on mobile | 3-4 hrs | Not started |
-| 🔴 HIGH | Missing error handling on `fetch()` calls | App hangs on network failure; no user feedback | 2 hrs | Not started |
+| 🔴 HIGH | Missing error handling on `fetch()` calls | App hangs on network failure; no user feedback | 2 hrs | ✅ Done (session 8) |
 | 🟠 MEDIUM | 210+ repeated `getElementById()` calls; no DOM caching | 20-30% slower interaction response time | 1-2 hrs | Not started |
 | 🟠 MEDIUM | Event listeners never cleaned up on navigation | Memory leak; slowdown after 20+ navigations on mobile | 2 hrs | Not started |
 | 🟠 MEDIUM | Interlinear mode loads entire 30MB JSON file into memory | Can crash low-end mobile devices | 3 hrs | Not started |
 | 🟠 MEDIUM | No request cancellation on rapid navigation | Stale data can overwrite current view; wasted bandwidth | 1-2 hrs | Not started |
 | 🟡 LOW-MEDIUM | Browser compatibility gaps (backdrop-filter, CSS variables) | Limited support in older/enterprise browsers | 2 hrs | Not started |
 | 🟡 MEDIUM | Accessibility: missing ARIA labels, keyboard navigation | Screen reader users can't navigate; poor keyboard UX | 4 hrs | Not started |
-| 🟡 LOW | `console.log()` statements left in production | Minor (debug noise, data exposure) | 0.5 hrs | Not started |
+| 🟡 LOW | `console.log()` statements left in production | Minor (debug noise, data exposure) | 0.5 hrs | ✅ Done (session 8) |
 
 ### Quick Wins (Low effort, immediate improvement)
-1. **Remove console.log statements** (lines 2963, 4815, 4820, 4829) — 30 min
-2. **Add user-friendly error messages** for failed chapter/search loads — 1 hr
+1. ~~**Remove console.log statements**~~ — ✅ Done (session 8)
+2. ~~**Add user-friendly error messages** for failed chapter/search loads~~ — ✅ Done (session 8)
 3. **Cache DOM element references** (`const DOM = { versesArea: el, ... }`) — 1-2 hrs
 
 ---
@@ -294,7 +335,7 @@ All notes session management and formatting features now complete. Users can:
 - Search within a session and quickly find verses/notes
 - Switch between sessions via sidebar
 - Format text (B/I/U, font family, font size, lists, indent) from a single global toolbar
-- Resize notes panel width via drag handle
+- Open Notes as a full-screen page and return to the reader via ← Reader
 - Export notes as TXT, DOCX, or PDF
 
 ---
@@ -365,7 +406,7 @@ coc-website/
 ## Deployment Checklist
 
 Before pushing any change to `bible-reader.html`:
-1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)`
+1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)` (currently v13)
 2. `git add bible-reader.html service-worker.js [any new .json files]`
 3. `git commit -m "fix/feat(bible-reader): ..."`
 4. `git push origin <branch>` then open a PR — branch protection requires PRs on `master`
