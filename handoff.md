@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-24 (session 8)*
+*Last updated 2026-05-24 (session 9)*
 
 ---
 
@@ -128,9 +128,9 @@ The reader uses three horizontal control rows at the top of the page (not a floa
 
 ### Service Worker
 
-Cache version is `coc-bible-v13`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
+Cache version is `coc-bible-v14`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
 
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v13';`
+Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v14';`
 
 ### Dark Mode
 
@@ -138,6 +138,41 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v13';`
 - Persists to localStorage as `bibleTheme`
 - All colors respond to `[data-theme="dark"]` CSS selector
 - Page wrap applies theme on page load via inline script (line 6)
+
+---
+
+## Session Work — 2026-05-24 (session 9)
+
+### UI Polish, New Fonts, Sepia Theme & Session History Nav
+
+**PR #19** — `feat/bible-reader-ui-session-9` → pending merge (coc-bible-v14)
+
+**Features:**
+
+| Feature | Description |
+|---------|-------------|
+| Session history nav | `«`/`»` buttons alongside chapter chevrons. Browser-style back/forward across passages visited in the session. Tooltips show destination (e.g. `← Job 3`). History stack lives in memory, resets on reload. |
+| Sepia theme | Warm cream/brown palette. `📜 Sepia` button in reader toolbar. Persists to localStorage. Inline restore script handles all three themes (light/dark/sepia). |
+| Notes text colour picker | `<input type="color">` added to notes formatting toolbar. Uses `foreColor` execCommand. |
+| Reading fonts expanded | Added Merriweather, Inter, Atkinson Hyperlegible. Picker now has 9 options ordered by readability tier. New Google Fonts loaded in `<head>`. |
+| Notes font picker | Replaced system fonts (Comic Sans, Verdana etc.) with the curated reading font list. |
+
+**Polish:**
+
+| Item | Description |
+|------|-------------|
+| Chapter chevrons | `←`/`→` → `‹`/`›` at 1.8rem on all 4 nav buttons. History `«`/`»` visually muted at rest to distinguish function. |
+| Notes back button | `← Reader` → `‹ Reader` |
+| Search filter alignment | Labels get `min-width: 72px; text-align: right` — all dropdowns share a consistent left edge. |
+| BC/AD | `BCE` → `BC`, `CE` → `AD` throughout book info data and manuscript descriptions. |
+
+**Service worker:** `coc-bible-v13` → `coc-bible-v14`
+
+**Files modified:**
+| File | Changes |
+|------|---------|
+| `bible-reader.html` | 250 insertions, 97 deletions |
+| `service-worker.js` | Cache version bump only |
 
 ---
 
@@ -406,7 +441,7 @@ coc-website/
 ## Deployment Checklist
 
 Before pushing any change to `bible-reader.html`:
-1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)` (currently v13)
+1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)` (currently v14)
 2. `git add bible-reader.html service-worker.js [any new .json files]`
 3. `git commit -m "fix/feat(bible-reader): ..."`
 4. `git push origin <branch>` then open a PR — branch protection requires PRs on `master`
