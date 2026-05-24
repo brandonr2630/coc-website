@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-24 (session 9)*
+*Last updated 2026-05-24 (session 10)*
 
 ---
 
@@ -141,11 +141,33 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v14';`
 
 ---
 
+## Session Work — 2026-05-24 (session 10)
+
+### WEB Translation Data Fix — 2 John & 3 John
+
+**PR #20** — `fix/web-json-2john-3john` → merged to `master` → deployed
+
+**Bug:** In the WEB translation, 2 John showed only 1 verse and 3 John showed only 1 verse. Verse grid showed only v1.
+
+**Root cause:** The `web.json` was converted from a Zefania XML source. The WEB source is actually in USFX format (`<v id="N"/>text<ve/>`), not Zefania (`<v>text</v>`). The converter matched only the opening tag and captured nothing after it, leaving just verse 1 in each single-chapter book where the paragraph structure exposed the issue.
+
+**Fix:** Re-extracted from `BIBLE TRANSLATIONS/eng-web.usfx.xml` using a USFX-aware regex. Results:
+- 2 John: 1 verse → **13 verses** ✅
+- 3 John: 1 verse → **14 verses** ✅
+
+**Full audit:** All other books checked against KJV verse counts. Two remaining shortfalls found and confirmed as **intentional WEB text choices**, not bugs:
+- Acts 24:7 — WEB marks this verse as a Textus Receptus addition only (footnote, no verse text); correctly absent
+- Romans 16 (25 vs 27 verses) — the WEB source itself omits the repeated benediction and places the doxology differently per its manuscript tradition
+
+**Files modified:** `web.json` (1 insertion, 1 deletion — two book entries patched)
+
+---
+
 ## Session Work — 2026-05-24 (session 9)
 
 ### UI Polish, New Fonts, Sepia Theme & Session History Nav
 
-**PR #19** — `feat/bible-reader-ui-session-9` → pending merge (coc-bible-v14)
+**PR #19** — `feat/bible-reader-ui-session-9` → merged to `master` → deployed (coc-bible-v14)
 
 **Features:**
 
