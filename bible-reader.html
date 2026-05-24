@@ -5646,6 +5646,43 @@ document.getElementById('btn-nt').classList.toggle('active', currentTestament ==
 populateBookSelect();
 populateChapterSelect();
 populateVerseSelect(0);
+
+// ── Session history (state + render-time fns must precede first renderPassage call) ──
+const readingHistory = [];
+let historyIndex = -1;
+let _histNavActive = false;
+
+function historyPush() {
+  if (_histNavActive) return;
+  const entry = { bookName: currentBook.name, chapter: currentChapter };
+  if (historyIndex >= 0) {
+    const cur = readingHistory[historyIndex];
+    if (cur.bookName === entry.bookName && cur.chapter === entry.chapter) return;
+  }
+  readingHistory.splice(historyIndex + 1);
+  readingHistory.push(entry);
+  historyIndex = readingHistory.length - 1;
+}
+
+function syncHistoryBtns() {
+  const canBack = historyIndex > 0;
+  const canFwd  = historyIndex < readingHistory.length - 1;
+  const backTitle = canBack ? '← ' + readingHistory[historyIndex - 1].bookName + ' ' + readingHistory[historyIndex - 1].chapter : 'No history';
+  const fwdTitle  = canFwd  ? readingHistory[historyIndex + 1].bookName + ' ' + readingHistory[historyIndex + 1].chapter + ' →' : 'No forward history';
+  ['btn-hist-back-top', 'btn-hist-back-bot'].forEach(id => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = !canBack;
+    b.title = backTitle;
+  });
+  ['btn-hist-fwd-top', 'btn-hist-fwd-bot'].forEach(id => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.disabled = !canFwd;
+    b.title = fwdTitle;
+  });
+}
+
 renderPassage();
 
 // ── Floating Passage Bar ──
@@ -6692,42 +6729,6 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       if (saved && FONT_MAP[saved]) applyReadingFont(saved);
     } catch(e) {}
   })();
-
-  // ── Session history ──
-  const readingHistory = [];
-  let historyIndex = -1;
-  let _histNavActive = false;
-
-  function historyPush() {
-    if (_histNavActive) return;
-    const entry = { bookName: currentBook.name, chapter: currentChapter };
-    if (historyIndex >= 0) {
-      const cur = readingHistory[historyIndex];
-      if (cur.bookName === entry.bookName && cur.chapter === entry.chapter) return;
-    }
-    readingHistory.splice(historyIndex + 1);
-    readingHistory.push(entry);
-    historyIndex = readingHistory.length - 1;
-  }
-
-  function syncHistoryBtns() {
-    const canBack = historyIndex > 0;
-    const canFwd  = historyIndex < readingHistory.length - 1;
-    const backTitle = canBack ? '← ' + readingHistory[historyIndex - 1].bookName + ' ' + readingHistory[historyIndex - 1].chapter : 'No history';
-    const fwdTitle  = canFwd  ? readingHistory[historyIndex + 1].bookName + ' ' + readingHistory[historyIndex + 1].chapter + ' →' : 'No forward history';
-    ['btn-hist-back-top', 'btn-hist-back-bot'].forEach(id => {
-      const b = document.getElementById(id);
-      if (!b) return;
-      b.disabled = !canBack;
-      b.title = backTitle;
-    });
-    ['btn-hist-fwd-top', 'btn-hist-fwd-bot'].forEach(id => {
-      const b = document.getElementById(id);
-      if (!b) return;
-      b.disabled = !canFwd;
-      b.title = fwdTitle;
-    });
-  }
 
   function historyBack() {
     if (historyIndex <= 0) return;
