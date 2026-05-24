@@ -522,6 +522,20 @@
     .pill-hist-btn { opacity: 1; color: #111; }
     .pill-hist-btn:not(:disabled):hover { opacity: 1; }
 
+    /* History destination preview chip */
+    #hist-preview {
+      position: fixed; z-index: 500; pointer-events: none;
+      transform: translateX(-50%);
+      background: var(--white); border: 1.5px solid var(--line);
+      border-radius: 8px; padding: 5px 12px;
+      font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 700;
+      color: var(--charcoal); letter-spacing: 0.04em; white-space: nowrap;
+      opacity: 0; transition: opacity 0.15s;
+    }
+    [data-theme="dark"] #hist-preview { background: #2a2a25; }
+    [data-theme="sepia"] #hist-preview { background: var(--white); }
+    #hist-preview.visible { opacity: 1; }
+
     /* ── VERSES ── */
     .verses-area {
       padding: 16px 20px;
@@ -2306,6 +2320,7 @@
       vertical-align: super;
     }
     .commentary-verse-text {
+      font-family: var(--reading-font);
       white-space: pre-wrap;
     }
     .manuscript-bar {
@@ -2555,7 +2570,7 @@
   <div class="pill-divider"></div>
 
   <!-- History back / Prev chapter / Book / Next chapter / History fwd -->
-  <button class="pill-nav-btn pill-hist-btn" id="btn-hist-back-bot" onclick="historyBack()" title="No history" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/><polyline points="9 3 4 12 9 21"/></svg></button>
+  <button class="pill-nav-btn pill-hist-btn" id="btn-hist-back-bot" onclick="historyBack()" title="No history" onmouseenter="showHistPreview('btn-hist-back-bot')" onmouseleave="hideHistPreview()" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/><polyline points="9 3 4 12 9 21"/></svg></button>
   <button class="pill-nav-btn" id="btn-prev-bot" onclick="goChapter(-1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/></svg></button>
 
   <div class="pill-location">
@@ -2568,7 +2583,7 @@
   </div>
 
   <button class="pill-nav-btn" id="btn-next-bot" onclick="goChapter(1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/></svg></button>
-  <button class="pill-nav-btn pill-hist-btn" id="btn-hist-fwd-bot" onclick="historyForward()" title="No forward history" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/><polyline points="15 3 20 12 15 21"/></svg></button>
+  <button class="pill-nav-btn pill-hist-btn" id="btn-hist-fwd-bot" onclick="historyForward()" title="No forward history" onmouseenter="showHistPreview('btn-hist-fwd-bot')" onmouseleave="hideHistPreview()" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/><polyline points="15 3 20 12 15 21"/></svg></button>
 </div><!-- /.pill-nav -->
 
 <div class="pill-tools">
@@ -2626,7 +2641,7 @@
     <div class="pill-dropdown" id="study-dropdown-menu" onclick="event.stopPropagation()">
       <div class="pill-study-row">
         <button class="pill-study-main" id="btn-parallel" onclick="closeParallelDropdown(); toggleParallelMode()">⇔ Parallel</button>
-        <button class="pill-study-arrow" id="btn-parallel-dropdown" onclick="toggleParallelDropdown(event)" title="Choose translation"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:block;pointer-events:none;"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg></button>
+        <button class="pill-study-arrow" id="btn-parallel-dropdown" onclick="toggleParallelDropdown(event)" title="Choose translation"></button>
         <div class="parallel-dropdown-menu" id="parallel-dropdown-menu">
           <div class="parallel-dropdown-group">
             <div class="parallel-dropdown-group-label">English</div>
@@ -2650,7 +2665,7 @@
       </div>
       <div class="pill-study-row">
         <button class="pill-study-main" id="btn-commentary" onclick="closeCommentaryDropdown(); toggleCommentaryMode()">☰ Commentary</button>
-        <button class="pill-study-arrow" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="display:block;pointer-events:none;"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg></button>
+        <button class="pill-study-arrow" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary"></button>
         <div class="parallel-dropdown-menu" id="commentary-dropdown-menu">
           <div class="parallel-dropdown-group">
             <button class="parallel-dropdown-item" onclick="openCommentaryWith('matthew-henry')">Matthew Henry (1706)</button>
@@ -2817,6 +2832,9 @@
 
   </div>
 </div>
+
+<!-- HISTORY PREVIEW CHIP -->
+<div id="hist-preview"></div>
 
 <!-- CHAPTER GRID MODAL -->
 <div class="grid-modal-backdrop" id="chapter-grid-backdrop" onclick="closeChapterGrid()"></div>
@@ -5668,22 +5686,42 @@ function historyPush() {
 }
 
 function syncHistoryBtns() {
-  const canBack = historyIndex > 0;
-  const canFwd  = historyIndex < readingHistory.length - 1;
-  const backTitle = canBack ? '← ' + readingHistory[historyIndex - 1].bookName + ' ' + readingHistory[historyIndex - 1].chapter : 'No history';
-  const fwdTitle  = canFwd  ? readingHistory[historyIndex + 1].bookName + ' ' + readingHistory[historyIndex + 1].chapter + ' →' : 'No forward history';
+  const canBack    = historyIndex > 0;
+  const canFwd     = historyIndex < readingHistory.length - 1;
+  const backTitle  = canBack ? '← ' + readingHistory[historyIndex - 1].bookName + ' ' + readingHistory[historyIndex - 1].chapter : 'No history';
+  const fwdTitle   = canFwd  ? readingHistory[historyIndex + 1].bookName + ' ' + readingHistory[historyIndex + 1].chapter + ' →' : 'No forward history';
+  const backPreview = canBack ? readingHistory[historyIndex - 1].bookName + ' ' + readingHistory[historyIndex - 1].chapter : '';
+  const fwdPreview  = canFwd  ? readingHistory[historyIndex + 1].bookName + ' ' + readingHistory[historyIndex + 1].chapter : '';
   ['btn-hist-back-top', 'btn-hist-back-bot'].forEach(id => {
     const b = document.getElementById(id);
     if (!b) return;
     b.disabled = !canBack;
     b.title = backTitle;
+    b.dataset.preview = backPreview;
   });
   ['btn-hist-fwd-top', 'btn-hist-fwd-bot'].forEach(id => {
     const b = document.getElementById(id);
     if (!b) return;
     b.disabled = !canFwd;
     b.title = fwdTitle;
+    b.dataset.preview = fwdPreview;
   });
+}
+
+function showHistPreview(btnId) {
+  const btn     = document.getElementById(btnId);
+  const preview = document.getElementById('hist-preview');
+  if (!btn || !preview || btn.disabled || !btn.dataset.preview) return;
+  const rect = btn.getBoundingClientRect();
+  preview.textContent  = btn.dataset.preview;
+  preview.style.left   = (rect.left + rect.width / 2) + 'px';
+  preview.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+  preview.classList.add('visible');
+}
+
+function hideHistPreview() {
+  const preview = document.getElementById('hist-preview');
+  if (preview) preview.classList.remove('visible');
 }
 
 renderPassage();
