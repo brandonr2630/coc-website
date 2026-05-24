@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-24 (session 10)*
+*Last updated 2026-05-24 (session 11)*
 
 ---
 
@@ -141,6 +141,22 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v14';`
 
 ---
 
+## Session Work — 2026-05-24 (session 11)
+
+### Critical Load Fix — History Nav Script Order
+
+**PR #22** — `fix/history-load-order` → merged to `master` → deployed
+
+**Bug:** Bible reader showed a permanent loading spinner in Chrome and Firefox after PR #19 was deployed.
+
+**Root cause:** `historyPush()` and `syncHistoryBtns()` were defined in the second `<script>` block (notes/settings, ~line 6700), but called inside `renderPassage()` which fires in the first `<script>` block on initial page load. The browser threw a `ReferenceError` before any verses could render.
+
+**Fix:** Moved the history state variables (`readingHistory`, `historyIndex`, `_histNavActive`) and those two functions into the main script block immediately before the initial `renderPassage()` call. `historyBack()` and `historyForward()` remain in the second block as they are only triggered by user interaction.
+
+**Files modified:** `bible-reader.html` (37 insertions, 36 deletions — move only, no logic change)
+
+---
+
 ## Session Work — 2026-05-24 (session 10)
 
 ### WEB Translation Data Fix — 2 John & 3 John
@@ -167,7 +183,7 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v14';`
 
 ### UI Polish, New Fonts, Sepia Theme & Session History Nav
 
-**PR #19** — `feat/bible-reader-ui-session-9` → merged to `master` → deployed (coc-bible-v14)
+**PR #19** — `feat/bible-reader-ui-session-9` → merged to `master` → deployed (coc-bible-v14) ⚠️ introduced load bug fixed in PR #22
 
 **Features:**
 
