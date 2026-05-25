@@ -1228,6 +1228,111 @@
     /* Shrink reading area when panel is open */
     body.strongs-open .page-wrap { margin-right: 360px; }
 
+    /* ── DICTIONARY PANEL ── */
+    .dictionary-panel {
+      display: none;
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 590;
+      width: 360px;
+      background: var(--white);
+      border-left: 2px solid var(--green);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.10);
+      font-family: 'Nunito', sans-serif;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .dictionary-panel.visible { display: flex; }
+    body.dict-open .page-wrap { margin-right: 360px; }
+    body.dict-open.strongs-open .page-wrap { margin-right: 720px; }
+
+    .dict-panel-head {
+      flex-shrink: 0;
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+    }
+    .dict-panel-close {
+      display: flex; align-items: center; gap: 6px;
+      width: 100%; padding: 12px 16px;
+      border: none; border-bottom: 1px solid var(--line);
+      background: none; cursor: pointer;
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--charcoal-light);
+      text-align: left;
+    }
+    .dict-panel-close:hover { color: var(--charcoal); background: var(--cream); }
+    .dict-panel-titlerow {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px 4px;
+    }
+    .dict-panel-source {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--green-dark);
+    }
+    .dict-nav-back {
+      font-family: 'Nunito', sans-serif; font-size: 0.76rem; font-weight: 700;
+      background: none; border: none; cursor: pointer; color: var(--charcoal-light);
+      padding: 2px 0;
+    }
+    .dict-nav-back:hover { color: var(--green-dark); }
+    .dict-search-wrap { position: relative; padding: 6px 12px 10px; }
+    .dict-search-input {
+      width: 100%; box-sizing: border-box;
+      font-family: 'Nunito', sans-serif; font-size: 0.85rem;
+      padding: 7px 28px 7px 10px;
+      border: 1.5px solid var(--line); border-radius: 6px;
+      background: var(--cream); color: var(--charcoal);
+      outline: none;
+    }
+    [data-theme="dark"] .dict-search-input { background: #1e1e18; }
+    .dict-search-input:focus { border-color: var(--green); }
+    .dict-search-clear {
+      position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      font-size: 0.75rem; color: var(--charcoal-light); padding: 4px;
+    }
+    .dict-panel-body { flex: 1; overflow-y: auto; padding: 0; }
+
+    .dict-list { list-style: none; margin: 0; padding: 0; }
+    .dict-list-section-head {
+      padding: 6px 16px 4px;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--charcoal-light);
+      border-bottom: 1px solid var(--line); background: var(--cream);
+      position: sticky; top: 0; z-index: 1;
+    }
+    .dict-list-item {
+      display: block; width: 100%; text-align: left;
+      padding: 9px 16px;
+      font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 600;
+      border: none; border-bottom: 1px solid var(--line);
+      background: none; cursor: pointer; color: var(--charcoal);
+    }
+    .dict-list-item:hover { background: var(--highlight); color: var(--green-dark); }
+
+    .dict-entry { padding: 16px 18px 40px; }
+    .dict-entry-title {
+      font-size: 1.05rem; font-weight: 800; color: var(--charcoal);
+      margin-bottom: 12px;
+    }
+    .dict-entry-body { font-size: 0.88rem; line-height: 1.65; color: var(--charcoal); }
+    .dict-entry-body p { margin: 0 0 10px; }
+    .dict-open-full-btn {
+      display: inline-block; margin-top: 14px;
+      font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 700;
+      background: none; border: 1.5px solid var(--green); border-radius: 4px;
+      padding: 5px 12px; cursor: pointer; color: var(--green-dark);
+    }
+    .dict-open-full-btn:hover { background: var(--highlight); }
+
+    @media (max-width: 860px) {
+      .dictionary-panel {
+        width: 100%; border-left: none; border-top: 2px solid var(--green);
+        top: auto; height: 55vh; box-shadow: 0 -4px 24px rgba(0,0,0,0.13);
+      }
+      body.dict-open .page-wrap { margin-right: 0; }
+      body.dict-open.strongs-open .page-wrap { margin-right: 0; }
+    }
+
     /* Fixed header — never scrolls */
     .strongs-panel-head {
       flex-shrink: 0;
@@ -2759,6 +2864,16 @@
       <div class="pill-study-row">
         <button class="pill-study-main" id="btn-notes" onclick="toggleNotesPanel()">📝 Notes</button>
       </div>
+      <div class="pill-study-row">
+        <button class="pill-study-main" id="btn-dictionary" onclick="closeDictionaryDropdown(); toggleDictionaryMode()">📖 Dictionary</button>
+        <button class="pill-study-arrow" id="btn-dictionary-dropdown" onclick="toggleDictionaryDropdown(event)" title="Choose dictionary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="parallel-dropdown-menu" id="dictionary-dropdown-menu">
+          <div class="parallel-dropdown-group">
+            <button class="parallel-dropdown-item" onclick="openDictionaryWith('eastons')">Easton's Bible Dictionary (1897)</button>
+            <button class="parallel-dropdown-item" onclick="openDictionaryWith('smiths')">Smith's Bible Dictionary (1863)</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3163,7 +3278,214 @@ document.addEventListener('click', e => {
   if (btn && !btn.contains(e.target)) btn.classList.remove('open');
 });
 
-// ── Strong's Panel ──
+// ── DICTIONARY ───────────────────────────────────────────────────────────────
+
+  async function loadDictionaryData(source) {
+    if (DICT_CACHE[source]) return DICT_CACHE[source];
+    const res = await fetch(`/${source}.json`);
+    if (!res.ok) throw new Error(`Failed to load dictionary: ${source}`);
+    DICT_CACHE[source] = await res.json();
+    return DICT_CACHE[source];
+  }
+
+  function toggleDictionaryMode() {
+    dictMode ? closeDictionaryPanel() : openDictionaryWith(currentDictionary);
+  }
+
+  function openDictionaryWith(source) {
+    currentDictionary = source;
+    document.querySelectorAll('#dictionary-dropdown-menu .parallel-dropdown-item')
+      .forEach(el => el.classList.toggle('selected',
+        (source === 'eastons' && el.textContent.includes('Easton')) ||
+        (source === 'smiths'  && el.textContent.includes('Smith'))
+      ));
+    closeDictionaryDropdown();
+    openDictionaryPanel();
+  }
+
+  function openDictionaryPanel() {
+    dictMode = true;
+    document.getElementById('dictionary-panel').classList.add('visible');
+    document.body.classList.add('dict-open');
+    document.getElementById('btn-dictionary').classList.add('active');
+    document.getElementById('dict-panel-source').textContent = DICT_SOURCE_NAMES[currentDictionary] || currentDictionary;
+    document.getElementById('dict-search-input').value = '';
+    document.getElementById('dict-search-clear').style.display = 'none';
+    document.getElementById('dict-nav-back').style.display = 'none';
+    dictCurrentEntry = null;
+    renderDictionaryChapterTerms();
+  }
+
+  function closeDictionaryPanel() {
+    dictMode = false;
+    document.getElementById('dictionary-panel').classList.remove('visible');
+    document.body.classList.remove('dict-open');
+    document.getElementById('btn-dictionary').classList.remove('active');
+    document.querySelectorAll('#dictionary-dropdown-menu .parallel-dropdown-item')
+      .forEach(el => el.classList.remove('selected'));
+  }
+
+  function toggleDictionaryDropdown(e) {
+    e.stopPropagation();
+    document.getElementById('dictionary-dropdown-menu').classList.toggle('open');
+  }
+
+  function closeDictionaryDropdown() {
+    document.getElementById('dictionary-dropdown-menu')?.classList.remove('open');
+  }
+
+  function debounceDictSearch(val) {
+    clearTimeout(dictSearchTimer);
+    document.getElementById('dict-search-clear').style.display = val ? 'block' : 'none';
+    dictSearchTimer = setTimeout(() => {
+      if (val.trim()) {
+        searchDictionary(val.trim());
+      } else {
+        document.getElementById('dict-nav-back').style.display = 'none';
+        dictCurrentEntry = null;
+        renderDictionaryChapterTerms();
+      }
+    }, 220);
+  }
+
+  function clearDictSearch() {
+    document.getElementById('dict-search-input').value = '';
+    document.getElementById('dict-search-clear').style.display = 'none';
+    document.getElementById('dict-nav-back').style.display = 'none';
+    dictCurrentEntry = null;
+    renderDictionaryChapterTerms();
+  }
+
+  async function renderDictionaryChapterTerms() {
+    const body = document.getElementById('dict-panel-body');
+    body.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Loading…</p></div>';
+    try {
+      const [data, verses] = await Promise.all([
+        loadDictionaryData(currentDictionary),
+        fetchChapter(currentBook, currentChapter, currentTranslation)
+      ]);
+      const seen = new Set();
+      const matches = [];
+      for (const v of verses) {
+        const words = (v.text || '').match(/[A-Za-z’'-]{3,}/g) || [];
+        for (const w of words) {
+          const key = w.toUpperCase().replace(/[’']/g, '');
+          if (!seen.has(key) && data[key]) {
+            seen.add(key);
+            matches.push({ key, topic: data[key].topic });
+          }
+        }
+      }
+      body.innerHTML = '';
+      if (!matches.length) {
+        body.innerHTML = '<div class="state-msg"><p>No dictionary entries found for terms in this chapter.</p></div>';
+        return;
+      }
+      const head = document.createElement('div');
+      head.className = 'dict-list-section-head';
+      head.textContent = `Terms in ${currentBook.name} ${currentChapter}`;
+      body.appendChild(head);
+      matches.forEach(m => {
+        const btn = document.createElement('button');
+        btn.className = 'dict-list-item';
+        btn.textContent = m.topic;
+        btn.addEventListener('click', () => showDictionaryEntry(m.key));
+        body.appendChild(btn);
+      });
+    } catch (e) {
+      body.innerHTML = '<div class="state-msg"><p>Failed to load dictionary.</p></div>';
+    }
+  }
+
+  async function searchDictionary(query) {
+    const body = document.getElementById('dict-panel-body');
+    body.innerHTML = '<div class="state-msg"><div class="spinner"></div></div>';
+    document.getElementById('dict-nav-back').style.display = 'none';
+    dictCurrentEntry = null;
+    try {
+      const data = await loadDictionaryData(currentDictionary);
+      const q = query.toUpperCase();
+      const results = Object.entries(data)
+        .filter(([k]) => k.startsWith(q))
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(0, 100);
+      body.innerHTML = '';
+      if (!results.length) {
+        body.innerHTML = `<div class="state-msg"><p>No entries matching “${query}”.</p></div>`;
+        return;
+      }
+      results.forEach(([k, v]) => {
+        const btn = document.createElement('button');
+        btn.className = 'dict-list-item';
+        btn.textContent = v.topic;
+        btn.addEventListener('click', () => showDictionaryEntry(k));
+        body.appendChild(btn);
+      });
+    } catch (e) {
+      body.innerHTML = '<div class="state-msg"><p>Failed to load dictionary.</p></div>';
+    }
+  }
+
+  async function showDictionaryEntry(key) {
+    const body = document.getElementById('dict-panel-body');
+    body.innerHTML = '<div class="state-msg"><div class="spinner"></div></div>';
+    document.getElementById('dict-nav-back').style.display = 'block';
+    dictCurrentEntry = key;
+    try {
+      const data = await loadDictionaryData(currentDictionary);
+      const entry = data[key];
+      if (!entry) { body.innerHTML = '<div class="state-msg"><p>Entry not found.</p></div>'; return; }
+      body.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'dict-entry';
+      const title = document.createElement('div');
+      title.className = 'dict-entry-title';
+      title.textContent = entry.topic;
+      const content = document.createElement('div');
+      content.className = 'dict-entry-body';
+      content.innerHTML = entry.body;
+      wrap.appendChild(title);
+      wrap.appendChild(content);
+      body.appendChild(wrap);
+      body.scrollTop = 0;
+    } catch (e) {
+      body.innerHTML = '<div class="state-msg"><p>Failed to load entry.</p></div>';
+    }
+  }
+
+  function dictNavBack() {
+    dictCurrentEntry = null;
+    document.getElementById('dict-nav-back').style.display = 'none';
+    const q = document.getElementById('dict-search-input').value.trim();
+    q ? searchDictionary(q) : renderDictionaryChapterTerms();
+  }
+
+  async function loadDictInStrongs(el) {
+    if (!el) return;
+    const word = activeStrongsWord?.textContent?.trim();
+    if (!word) { el.innerHTML = '<p class="strongs-no-result">No word selected.</p>'; return; }
+    el.innerHTML = '<div class="strongs-loading">Loading…</div>';
+    try {
+      const data = await loadDictionaryData(currentDictionary);
+      const key  = word.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const entry = data[key];
+      if (!entry) {
+        const safeWord = word.replace(/'/g, "\\'");
+        el.innerHTML = `<div class="strongs-no-result" style="padding:16px 18px">No entry for <strong>${word}</strong> in ${DICT_SOURCE_NAMES[currentDictionary]}.</div>
+          <div style="padding:0 18px"><button class="dict-open-full-btn" onclick="openDictionaryWith('${currentDictionary}'); document.getElementById('dict-search-input').value='${safeWord}'; debounceDictSearch('${safeWord}')">Search dictionary →</button></div>`;
+        return;
+      }
+      el.innerHTML = `<div style="padding:16px 18px 40px">
+        <div class="dict-entry-title">${entry.topic}</div>
+        <div class="dict-entry-body">${entry.body}</div>
+        <button class="dict-open-full-btn" onclick="openDictionaryWith('${currentDictionary}'); showDictionaryEntry('${key}')">Open in Dictionary →</button>
+        </div>`;
+    } catch (e) {
+      el.innerHTML = '<p class="strongs-no-result" style="padding:16px">Failed to load dictionary.</p>';
+    }
+  }
+
+  // ── Strong's Panel ──
 // ── Manuscript data ───────────────────────────────────────────────────────────
 // ── Commentary data ───────────────────────────────────────────────────────────
 const COMMENTARY_INFO = {
@@ -3234,6 +3556,14 @@ const COMMENTARY_CACHE   = {};
 // Local commentaries — full parsed JSON cached per key to avoid re-fetching
 const LOCAL_COMMENTARY_FULL = {};
 const LOCAL_COMMENTARIES = new Set(['adam-clarke', 'matthew-henry', 'jamieson-fausset-brown']);
+
+  const LOCAL_DICTIONARIES = new Set(['eastons', 'smiths']);
+  const DICT_CACHE          = {};
+  const DICT_SOURCE_NAMES   = { eastons: "Easton's (1897)", smiths: "Smith's (1863)" };
+  let currentDictionary = 'eastons';
+  let dictMode          = false;
+  let dictSearchTimer   = null;
+  let dictCurrentEntry  = null;
 
 const MANUSCRIPTS = {
   'masoretic': {
@@ -3548,6 +3878,9 @@ function switchStrongsTab(tab, clean) {
   if (tab === 'bdbt') {
     loadBDBT(clean, document.getElementById('bdbt-content'));
   }
+  if (tab === 'dict') {
+    loadDictInStrongs(document.getElementById('strongs-dict-content'));
+  }
 }
 
 async function showStrongsPanel(num, wordEl) {
@@ -3573,6 +3906,8 @@ async function showStrongsPanel(num, wordEl) {
       onclick="switchStrongsTab('ubs','${clean}')">UBS</button>
     <button class="strongs-tab${activeStrongsTab === 'dodson' ? ' active' : ''}" data-tab="dodson"
       onclick="switchStrongsTab('dodson','${clean}')">Dodson</button>
+    <button class="strongs-tab${activeStrongsTab === 'dict' ? ' active' : ''}" data-tab="dict"
+      onclick="switchStrongsTab('dict','${clean}')">Dict.</button>
   `;
 
   // Render tab panels into scrollable body
@@ -3588,6 +3923,9 @@ async function showStrongsPanel(num, wordEl) {
     </div>
     <div class="strongs-tab-panel${activeStrongsTab === 'dodson' ? ' active' : ''}" data-tab="dodson">
       ${renderDodsonEntry(clean)}
+    </div>
+    <div class="strongs-tab-panel${activeStrongsTab === 'dict' ? ' active' : ''}" data-tab="dict" id="strongs-dict-content">
+      <div class="strongs-loading">Click Dict. to load.</div>
     </div>
   `;
 
@@ -4427,18 +4765,18 @@ function togglePillDropdown(e, menuId) {
   if (!menu) return;
   const isOpen = menu.classList.contains('open');
   document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'));
-  closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown();
+  closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown(); closeDictionaryDropdown();
   if (!isOpen) menu.classList.add('open');
 }
 
 // Close dropdowns when clicking outside or tapping backdrop
 document.addEventListener('click', () => {
-  closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown();
+  closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown(); closeDictionaryDropdown();
   document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'));
 });
 document.getElementById && document.addEventListener('DOMContentLoaded', () => {
   const bd = document.getElementById('dropdown-backdrop');
-  if (bd) bd.addEventListener('click', () => { closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown(); });
+  if (bd) bd.addEventListener('click', () => { closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown(); closeDictionaryDropdown(); });
 });
 
 function openParallelWith(translation) {
@@ -6209,6 +6547,21 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       <div class="strongs-tabs" id="strongs-tabs-row"></div>
     </div>
     <div class="strongs-panel-body" id="strongs-body"></div>
+  </div>
+
+  <div class="dictionary-panel" id="dictionary-panel">
+    <div class="dict-panel-head">
+      <button class="dict-panel-close" onclick="closeDictionaryPanel()">&#8249; Reader</button>
+      <div class="dict-panel-titlerow">
+        <span class="dict-panel-source" id="dict-panel-source">Easton's</span>
+        <button class="dict-nav-back" id="dict-nav-back" onclick="dictNavBack()" style="display:none">&#8592; Back</button>
+      </div>
+      <div class="dict-search-wrap">
+        <input class="dict-search-input" id="dict-search-input" type="text" placeholder="Search dictionary&#8230;" oninput="debounceDictSearch(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
+        <button class="dict-search-clear" id="dict-search-clear" onclick="clearDictSearch()" style="display:none">&#10005;</button>
+      </div>
+    </div>
+    <div class="dict-panel-body" id="dict-panel-body"></div>
   </div>
 
 
