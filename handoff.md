@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-24 (session 12)*
+*Last updated 2026-05-25 (session 14)*
 
 ---
 
@@ -128,9 +128,9 @@ The reader uses three horizontal control rows at the top of the page (not a floa
 
 ### Service Worker
 
-Cache version is `coc-bible-v15`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
+Cache version is `coc-bible-v19`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
 
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v15';`
+Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v19';`
 
 ### Dark Mode
 
@@ -138,6 +138,78 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v15';`
 - Persists to localStorage as `bibleTheme`
 - All colors respond to `[data-theme="dark"]` CSS selector
 - Page wrap applies theme on page load via inline script (line 6)
+
+---
+
+## Session Work — 2026-05-25 (session 14)
+
+### Mobile UI Bug Fixes
+
+**PR #35** — `fix/mobile-ui-bugs` → merged to `master` → deployed (coc-bible-v19)
+
+**Bug 1 — Verse selection bar overflow (mobile)**
+
+The pill that appears when selecting verses was overflowing both edges of the screen on mobile.
+
+| Change | Detail |
+|--------|--------|
+| Removed verse-count label | "1 verse selected" span eliminated; label served no useful purpose in a compact bar |
+| Dividers between all items | `sel-divider` now appears between every button, not just around Clear |
+| "Clear" → "✕" close button | `.sel-btn-close` replaces the text "Clear" for compactness |
+| Share button added | New `selectionShare()` function — uses Web Share API (native OS sheet) on mobile, falls back to the existing share modal (X / WhatsApp / Facebook / Copy) on desktop |
+| Overflow fix | `max-width: calc(100vw - 20px)` prevents the bar escaping the screen; padding and font reduced at ≤540px |
+
+**Bug 2 — Book name overflows top header on mobile**
+
+`renderPassage()` now sets `passage-ref-top` using `BOOK_ABBR` when `window.innerWidth <= 540` (e.g. "2 Thessalonians" → "2 Thess"). Full name is still used on tablet and desktop.
+
+**Bug 3 — Study button blank in bottom pill nav (mobile)**
+
+On mobile the pill renders in two tiers. The second tier (`.pill-tools`) had `justify-content: flex-end` which pushed items right, and `.pill-study-text { display: none }` hid the "Study" label, leaving a blank gap between two dividers. Fixed by:
+- Removing the `display: none` on `.pill-study-text` (Study label now visible on mobile)
+- Changing `.pill-tools` to `justify-content: space-between` so all items distribute evenly across the full row width
+
+**Files modified:**
+| File | Changes |
+|------|---------|
+| `bible-reader.html` | 51 insertions, 19 deletions — CSS, HTML, `updateSelectionBar`, new `selectionShare`, `renderPassage` book abbr |
+| `service-worker.js` | Cache version bump only (v18 → v19) |
+
+---
+
+## Session Work — 2026-05-25 (session 13)
+
+### Social Media Verse Sharing
+
+**PRs #28–#33** — `feat/verse-share` + four fix/bump PRs → merged to `master` → deployed (coc-bible-v18)
+
+**Feature:** Right-click any verse number → context menu now includes **Share verse**.
+
+| Path | Behaviour |
+|------|-----------|
+| Mobile / Web Share API supported | OS native share sheet (covers WhatsApp, Facebook, X, Messages, etc. in one tap) |
+| Desktop / fallback | Modal with branded buttons: X (Twitter), WhatsApp, Facebook, Copy to clipboard |
+
+Shared content format: `"verse text" — Book Chapter:Verse (ABBR)\nURL#Book.Chapter.Verse`
+
+**Root-cause bug hunt (4 rounds):**
+
+| Round | Symptom | Root cause | Fix |
+|-------|---------|------------|-----|
+| 1 | Verse text = "null" string | `raw.t !== undefined` passes when `raw.t === null`; template literal renders null as "null" | `raw.t != null` in `getVerseText`; `|| ''` in `ctxShare` |
+| 2 | Still "null" | `fetchLocalChapter` also uses `!== undefined`, passing null t-values to render | `val.t != null ? val.t : ''` in `fetchLocalChapter`; `v.text != null` in all 3 render paths |
+| 3 | Still "null" | `stripHtml(null)` sets `tmp.innerHTML = null` which browser serialises as the string `"null"` | Early-return guard `if (!html) return ''` in `stripHtml` |
+| 4 | Still "null" | **Actual root cause:** `ctxShare()` calls `hideVerseCtxMenu()` before using `ctxVerseNum`. `hideVerseCtxMenu()` sets `ctxVerseNum = null`, so ref and `getVerseText` both receive null | Snapshot `const verseNum = ctxVerseNum` before calling `hideVerseCtxMenu()` |
+
+**Lesson:** Always snapshot shared mutable state into a local `const` at the top of a handler before calling any function that might reset it.
+
+**Service worker:** `coc-bible-v16` → `coc-bible-v18` (bumped twice — should have been once with the feature PR)
+
+**Files modified:**
+| File | Changes |
+|------|---------|
+| `bible-reader.html` | Share modal CSS + HTML, `ctxShare` + 5 helper functions, context menu button, null guards in `stripHtml` / `fetchLocalChapter` / render paths |
+| `service-worker.js` | v16 → v18 |
 
 ---
 
@@ -468,6 +540,8 @@ All notes session management and formatting features now complete. Users can:
 - Recommended: Formspree or EmailJS (no server needed)
 
 ### Bible Reader — Feature Queue
+- [x] **Social media sharing** — right-click any verse → Share verse; Web Share API on mobile, modal (X/WhatsApp/Facebook/copy) on desktop ✅ Done (session 13)
+- [x] **Share from selection bar** — selecting verses → Share button in selection bar; same Web Share / modal fallback ✅ Done (session 14)
 - [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
 - [ ] **Copy shareable link** — URL hash deep-linking (`#John.3.16`) works but no copy button; add to selection toolbar
 - [ ] **Verse-level notes** — short personal note per verse, `{ref: text}` in localStorage
@@ -489,7 +563,7 @@ From `seven1m/open-bibles` — all public domain, converter at `SCRIPTS/zefania-
 coc-website/
 ├── index.html                  Landing page
 ├── bible-reader.html           Bible study app (main file, ~5000 lines)
-├── service-worker.js           PWA cache — bump version on every html change (now v15)
+├── service-worker.js           PWA cache — bump version on every html change (now v19)
 ├── manifest.json               PWA manifest
 ├── handoff.md                  This file
 ├── favicon.ico / *.png         Favicons
@@ -519,7 +593,7 @@ coc-website/
 ## Deployment Checklist
 
 Before pushing any change to `bible-reader.html`:
-1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)` (currently v15)
+1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)` (currently v19)
 2. `git add bible-reader.html service-worker.js [any new .json files]`
 3. `git commit -m "fix/feat(bible-reader): ..."`
 4. `git push origin <branch>` then open a PR — branch protection requires PRs on `master`

@@ -767,13 +767,29 @@
     .pill-study-main:hover { background: var(--highlight); }
     .pill-study-main.active { color: var(--green-dark); font-weight: 700; }
     .pill-study-arrow {
-      flex-shrink: 0; background: none; border: none; border-left: 1px solid var(--line);
+      flex-shrink: 0; background: none; border: none;
       padding: 11px 10px; cursor: pointer; color: var(--charcoal-light);
       font-size: 0.7rem; transition: background 0.12s;
+      display: flex; align-items: center;
     }
     .pill-study-arrow:hover { background: var(--highlight); }
-    /* Sub-dropdowns inside study panel open to the left */
+    /* Sub-dropdowns inside study panel open to the left on desktop */
     #study-dropdown-menu .parallel-dropdown-menu { bottom: 0; top: auto; right: calc(100% + 4px); left: auto; transform: none; }
+    /* Settings header row with close button */
+    .pill-settings-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 14px 6px; border-bottom: 1px solid var(--line);
+    }
+    .pill-settings-header-label {
+      font-family: 'Nunito', sans-serif; font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--charcoal-light);
+    }
+    .pill-settings-close {
+      background: none; border: none; cursor: pointer; line-height: 1;
+      color: var(--charcoal-light); font-size: 1rem; padding: 2px 4px;
+      border-radius: 4px; transition: background 0.12s;
+    }
+    .pill-settings-close:hover { background: var(--highlight); color: var(--charcoal); }
 
     /* Settings dropdown sections */
     .pill-settings-section { padding: 10px 14px; border-bottom: 1px solid var(--line); }
@@ -2510,18 +2526,33 @@
 
     /* ── Fix 6: Mobile dropdowns — slide up from bottom as sheet ── */
     @media (max-width: 640px) {
-      .parallel-dropdown-menu {
-        position: fixed;
-        left: 0; right: 0;
-        bottom: 0; top: auto;
-        transform: none;
+      .parallel-dropdown-menu,
+      #study-dropdown-menu .parallel-dropdown-menu {
+        position: fixed !important;
+        left: 0 !important; right: 0 !important;
+        bottom: 0 !important; top: auto !important;
+        transform: none !important;
         width: 100%;
         max-height: 60vh;
         overflow-y: auto;
         border-radius: 16px 16px 0 0;
         box-shadow: 0 -4px 32px rgba(0,0,0,0.22);
         padding-bottom: env(safe-area-inset-bottom, 12px);
-        z-index: 600;
+        z-index: 700;
+      }
+      #translation-dropdown-menu {
+        position: fixed !important;
+        left: 0 !important; right: 0 !important;
+        bottom: 0 !important; top: auto !important;
+        transform: none !important;
+        max-width: none !important;
+        width: 100%;
+        max-height: 60vh;
+        overflow-y: auto;
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -4px 32px rgba(0,0,0,0.22);
+        padding-bottom: env(safe-area-inset-bottom, 12px);
+        z-index: 700;
       }
       .parallel-dropdown-group-label {
         padding: 14px 20px 4px;
@@ -2689,7 +2720,7 @@
     <div class="pill-dropdown" id="study-dropdown-menu" onclick="event.stopPropagation()">
       <div class="pill-study-row">
         <button class="pill-study-main" id="btn-parallel" onclick="closeParallelDropdown(); toggleParallelMode()">⇔ Parallel</button>
-        <button class="pill-study-arrow" id="btn-parallel-dropdown" onclick="toggleParallelDropdown(event)" title="Choose translation"></button>
+        <button class="pill-study-arrow" id="btn-parallel-dropdown" onclick="toggleParallelDropdown(event)" title="Choose translation"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="parallel-dropdown-menu" id="parallel-dropdown-menu">
           <div class="parallel-dropdown-group">
             <div class="parallel-dropdown-group-label">English</div>
@@ -2713,7 +2744,7 @@
       </div>
       <div class="pill-study-row">
         <button class="pill-study-main" id="btn-commentary" onclick="closeCommentaryDropdown(); toggleCommentaryMode()">☰ Commentary</button>
-        <button class="pill-study-arrow" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary"></button>
+        <button class="pill-study-arrow" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="parallel-dropdown-menu" id="commentary-dropdown-menu">
           <div class="parallel-dropdown-group">
             <button class="parallel-dropdown-item" onclick="openCommentaryWith('matthew-henry')">Matthew Henry (1706)</button>
@@ -2739,6 +2770,10 @@
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
     <div class="pill-dropdown" id="settings-dropdown-menu" onclick="event.stopPropagation()">
+      <div class="pill-settings-header">
+        <span class="pill-settings-header-label">Settings</span>
+        <button class="pill-settings-close" onclick="togglePillDropdown(event,'settings-dropdown-menu')" title="Close">✕</button>
+      </div>
       <div class="pill-settings-section">
         <span class="pill-settings-label">Text Size</span>
         <div class="pill-settings-row">
@@ -2750,14 +2785,14 @@
         <span class="pill-settings-label">Font</span>
         <div class="pill-settings-row">
           <select class="pill-font-select" id="sel-reading-font" onchange="applyReadingFont(this.value)">
+            <option value="atkinson">Atkinson</option>
             <option value="cormorant">Cormorant</option>
-            <option value="bookerly">Lora</option>
-            <option value="literata">Literata</option>
-            <option value="merriweather">Merriweather</option>
-            <option value="noto">Noto Serif</option>
             <option value="georgia">Georgia</option>
             <option value="inter">Inter</option>
-            <option value="atkinson">Atkinson</option>
+            <option value="literata">Literata</option>
+            <option value="bookerly">Lora</option>
+            <option value="merriweather">Merriweather</option>
+            <option value="noto">Noto Serif</option>
             <option value="opendyslexic">OpenDyslexic</option>
           </select>
         </div>
