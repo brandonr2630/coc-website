@@ -3327,11 +3327,18 @@ document.addEventListener('click', e => {
 
   function toggleDictionaryDropdown(e) {
     e.stopPropagation();
-    document.getElementById('dictionary-dropdown-menu').classList.toggle('open');
+    const menu  = document.getElementById('dictionary-dropdown-menu');
+    const arrow = document.getElementById('btn-dictionary-dropdown');
+    const isOpen = menu.classList.contains('open');
+    if (!isOpen) { closeParallelDropdown(); closeCommentaryDropdown(); }
+    menu.classList.toggle('open', !isOpen);
+    arrow.classList.toggle('active', !isOpen);
+    setDropdownBackdrop(!isOpen);
   }
 
   function closeDictionaryDropdown() {
     document.getElementById('dictionary-dropdown-menu')?.classList.remove('open');
+    document.getElementById('btn-dictionary-dropdown')?.classList.remove('active');
   }
 
   function debounceDictSearch(val) {
@@ -4753,7 +4760,7 @@ function toggleParallelDropdown(e) {
   const menu = document.getElementById('parallel-dropdown-menu');
   const arrow = document.getElementById('btn-parallel-dropdown');
   const isOpen = menu.classList.contains('open');
-  if (!isOpen) closeCommentaryDropdown();
+  if (!isOpen) { closeCommentaryDropdown(); closeDictionaryDropdown(); }
   menu.classList.toggle('open', !isOpen);
   arrow.classList.toggle('active', !isOpen);
   setDropdownBackdrop(!isOpen);
@@ -4873,7 +4880,7 @@ function toggleCommentaryDropdown(e) {
   const menu  = document.getElementById('commentary-dropdown-menu');
   const arrow = document.getElementById('btn-commentary-dropdown');
   const isOpen = menu.classList.contains('open');
-  if (!isOpen) closeParallelDropdown();
+  if (!isOpen) { closeParallelDropdown(); closeDictionaryDropdown(); }
   menu.classList.toggle('open', !isOpen);
   arrow.classList.toggle('active', !isOpen);
   setDropdownBackdrop(!isOpen);
@@ -6554,7 +6561,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
       <button class="dict-panel-close" onclick="closeDictionaryPanel()">&#8249; Reader</button>
       <div class="dict-panel-titlerow">
         <span class="dict-panel-source" id="dict-panel-source">Easton's</span>
-        <button class="dict-nav-back" id="dict-nav-back" onclick="dictNavBack()" style="display:none">&#8592; Back</button>
+        <button class="dict-nav-back" id="dict-nav-back" onclick="dictNavBack()" style="display:none"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
       </div>
       <div class="dict-search-wrap">
         <input class="dict-search-input" id="dict-search-input" type="text" placeholder="Search dictionary&#8230;" oninput="debounceDictSearch(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
