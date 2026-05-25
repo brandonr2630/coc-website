@@ -3906,7 +3906,7 @@ function getVerseText(verseNum) {
   if (!chapterData) return '';
   const raw = chapterData[verseNum];
   if (!raw) return '';
-  const text = (raw && typeof raw === 'object' && raw.t !== undefined) ? raw.t : String(raw);
+  const text = (raw && typeof raw === 'object' && raw.t != null) ? raw.t : String(raw);
   return stripStrongsNumbers(text);
 }
 
@@ -6606,7 +6606,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 function ctxShare() {
   if (ctxVerseNum === null) return;
   hideVerseCtxMenu();
-  const verseText = getVerseText(ctxVerseNum);
+  const verseText = getVerseText(ctxVerseNum) || '';
   const abbr = TRANSLATION_ABBR[currentTranslation] || currentTranslation.toUpperCase();
   const ref = `${currentBook.name} ${currentChapter}:${ctxVerseNum} (${abbr})`;
   const shareText = `"${verseText}" — ${ref}`;
