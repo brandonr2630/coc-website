@@ -2824,6 +2824,30 @@
     </button>
     <div class="pill-dropdown" id="study-dropdown-menu" onclick="event.stopPropagation()">
       <div class="pill-study-row">
+        <button class="pill-study-main" id="btn-commentary" onclick="closeCommentaryDropdown(); toggleCommentaryMode()">☰ Commentary</button>
+        <button class="pill-study-arrow" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="parallel-dropdown-menu" id="commentary-dropdown-menu">
+          <div class="parallel-dropdown-group">
+            <button class="parallel-dropdown-item" onclick="openCommentaryWith('matthew-henry')">Matthew Henry (1706)</button>
+            <button class="parallel-dropdown-item" onclick="openCommentaryWith('adam-clarke')">Adam Clarke (1810)</button>
+            <button class="parallel-dropdown-item" onclick="openCommentaryWith('jamieson-fausset-brown')">Jamieson, Fausset &amp; Brown (1871)</button>
+            <button class="parallel-dropdown-item" onclick="openCommentaryWith('john-gill')">John Gill (1746)</button>
+            <button class="parallel-dropdown-item" onclick="openCommentaryWith('keil-delitzsch')">Keil &amp; Delitzsch — OT only (1861)</button>
+            <button class="parallel-dropdown-item" onclick="openCommentaryWith('tyndale')">Tyndale Open Study Notes</button>
+          </div>
+        </div>
+      </div>
+      <div class="pill-study-row">
+        <button class="pill-study-main" id="btn-dictionary" onclick="closeDictionaryDropdown(); toggleDictionaryMode()">📖 Dictionary</button>
+        <button class="pill-study-arrow" id="btn-dictionary-dropdown" onclick="toggleDictionaryDropdown(event)" title="Choose dictionary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="parallel-dropdown-menu" id="dictionary-dropdown-menu">
+          <div class="parallel-dropdown-group">
+            <button class="parallel-dropdown-item" onclick="openDictionaryWith('eastons')">Easton's Bible Dictionary (1897)</button>
+            <button class="parallel-dropdown-item" onclick="openDictionaryWith('smiths')">Smith's Bible Dictionary (1863)</button>
+          </div>
+        </div>
+      </div>
+      <div class="pill-study-row">
         <button class="pill-study-main" id="btn-parallel" onclick="closeParallelDropdown(); toggleParallelMode()">⇔ Parallel</button>
         <button class="pill-study-arrow" id="btn-parallel-dropdown" onclick="toggleParallelDropdown(event)" title="Choose translation"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="parallel-dropdown-menu" id="parallel-dropdown-menu">
@@ -2848,31 +2872,7 @@
         <button class="pill-study-main" id="btn-interlinear" onclick="toggleInterlinearMode()">⇕ Interlinear</button>
       </div>
       <div class="pill-study-row">
-        <button class="pill-study-main" id="btn-commentary" onclick="closeCommentaryDropdown(); toggleCommentaryMode()">☰ Commentary</button>
-        <button class="pill-study-arrow" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="parallel-dropdown-menu" id="commentary-dropdown-menu">
-          <div class="parallel-dropdown-group">
-            <button class="parallel-dropdown-item" onclick="openCommentaryWith('matthew-henry')">Matthew Henry (1706)</button>
-            <button class="parallel-dropdown-item" onclick="openCommentaryWith('adam-clarke')">Adam Clarke (1810)</button>
-            <button class="parallel-dropdown-item" onclick="openCommentaryWith('jamieson-fausset-brown')">Jamieson, Fausset &amp; Brown (1871)</button>
-            <button class="parallel-dropdown-item" onclick="openCommentaryWith('john-gill')">John Gill (1746)</button>
-            <button class="parallel-dropdown-item" onclick="openCommentaryWith('keil-delitzsch')">Keil &amp; Delitzsch — OT only (1861)</button>
-            <button class="parallel-dropdown-item" onclick="openCommentaryWith('tyndale')">Tyndale Open Study Notes</button>
-          </div>
-        </div>
-      </div>
-      <div class="pill-study-row">
         <button class="pill-study-main" id="btn-notes" onclick="toggleNotesPanel()">📝 Notes</button>
-      </div>
-      <div class="pill-study-row">
-        <button class="pill-study-main" id="btn-dictionary" onclick="closeDictionaryDropdown(); toggleDictionaryMode()">📖 Dictionary</button>
-        <button class="pill-study-arrow" id="btn-dictionary-dropdown" onclick="toggleDictionaryDropdown(event)" title="Choose dictionary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="parallel-dropdown-menu" id="dictionary-dropdown-menu">
-          <div class="parallel-dropdown-group">
-            <button class="parallel-dropdown-item" onclick="openDictionaryWith('eastons')">Easton's Bible Dictionary (1897)</button>
-            <button class="parallel-dropdown-item" onclick="openDictionaryWith('smiths')">Smith's Bible Dictionary (1863)</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
