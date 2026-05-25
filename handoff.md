@@ -21,7 +21,7 @@ Single-page church website for the Church of Christ at Todd's Road, Trinidad.
 ## Tech Stack
 
 - **Vanilla HTML / CSS / JS** — no build system, no framework, no npm, no bundler
-- **Service worker (`service-worker.js`)** — PWA offline support for `bible-reader.html`, cache version `coc-bible-v15`
+- **Service worker (`service-worker.js`)** — PWA offline support for `bible-reader.html`, cache version `coc-bible-v18`
 - **Translation & reference data** — all served as JSON files from repo root (fetched client-side)
 - **External APIs** (read-only, no auth):
   - `bolls.life` — NKJV translation (copyrighted, API-only, never cached locally)
@@ -504,6 +504,7 @@ All notes session management and formatting features now complete. Users can:
 - Recommended: Formspree or EmailJS (no server needed)
 
 ### Bible Reader — Feature Queue
+- [x] **Social media sharing** — right-click any verse → Share verse; Web Share API on mobile, modal (X/WhatsApp/Facebook/copy) on desktop ✅ Done (session 13)
 - [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
 - [ ] **Copy shareable link** — URL hash deep-linking (`#John.3.16`) works but no copy button; add to selection toolbar
 - [ ] **Verse-level notes** — short personal note per verse, `{ref: text}` in localStorage
@@ -525,7 +526,7 @@ From `seven1m/open-bibles` — all public domain, converter at `SCRIPTS/zefania-
 coc-website/
 ├── index.html                  Landing page
 ├── bible-reader.html           Bible study app (main file, ~5000 lines)
-├── service-worker.js           PWA cache — bump version on every html change (now v15)
+├── service-worker.js           PWA cache — bump version on every html change (now v18)
 ├── manifest.json               PWA manifest
 ├── handoff.md                  This file
 ├── favicon.ico / *.png         Favicons
