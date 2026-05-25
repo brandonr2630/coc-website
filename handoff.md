@@ -21,7 +21,7 @@ Single-page church website for the Church of Christ at Todd's Road, Trinidad.
 ## Tech Stack
 
 - **Vanilla HTML / CSS / JS** — no build system, no framework, no npm, no bundler
-- **Service worker (`service-worker.js`)** — PWA offline support for `bible-reader.html`, cache version `coc-bible-v12`
+- **Service worker (`service-worker.js`)** — PWA offline support for `bible-reader.html`, cache version `coc-bible-v15`
 - **Translation & reference data** — all served as JSON files from repo root (fetched client-side)
 - **External APIs** (read-only, no auth):
   - `bolls.life` — NKJV translation (copyrighted, API-only, never cached locally)
@@ -489,9 +489,9 @@ From `seven1m/open-bibles` — all public domain, converter at `SCRIPTS/zefania-
 coc-website/
 ├── index.html                  Landing page
 ├── bible-reader.html           Bible study app (main file, ~5000 lines)
-├── service-worker.js           PWA cache — bump version on every html change (now v12)
+├── service-worker.js           PWA cache — bump version on every html change (now v15)
 ├── manifest.json               PWA manifest
-├── HANDOVER.md                 This file
+├── handoff.md                  This file
 ├── favicon.ico / *.png         Favicons
 ├── og_banner.jpg               Open Graph preview image
 ├── .gitignore                  Ignores source/working directories
@@ -519,7 +519,7 @@ coc-website/
 ## Deployment Checklist
 
 Before pushing any change to `bible-reader.html`:
-1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)` (currently v14)
+1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)` (currently v15)
 2. `git add bible-reader.html service-worker.js [any new .json files]`
 3. `git commit -m "fix/feat(bible-reader): ..."`
 4. `git push origin <branch>` then open a PR — branch protection requires PRs on `master`
