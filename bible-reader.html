@@ -3644,6 +3644,7 @@ function getBollsBookNum(book) {
 
 // Strip HTML tags from bolls.life verse text
 function stripHtml(html) {
+  if (!html) return '';
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
   return tmp.textContent || tmp.innerText || '';
@@ -3672,7 +3673,7 @@ async function fetchLocalChapter(book, chapter, translation) {
     .map(([verseNum, val]) => {
       // Strong's translations store { t: plainText, h: rawHtml }
       if (val && typeof val === 'object' && val.t !== undefined) {
-        return { verse: parseInt(verseNum), text: val.t, rawHtml: val.h };
+        return { verse: parseInt(verseNum), text: val.t != null ? val.t : '', rawHtml: val.h };
       }
       return { verse: parseInt(verseNum), text: val };
     })
@@ -4247,7 +4248,7 @@ async function renderPassage() {
         txt = document.createElement('span');
         txt.className = 'verse-text';
         txt.style.fontSize = fontSize + 'rem';
-        txt.textContent = v.text;
+        txt.textContent = v.text != null ? v.text : '';
       }
 
       div.appendChild(num);
@@ -4637,7 +4638,7 @@ async function renderCommentaryPassage(area) {
         txt = document.createElement('span');
         txt.className = 'parallel-verse-text';
         txt.style.fontSize = fontSize + 'rem';
-        txt.textContent = v.text;
+        txt.textContent = v.text != null ? v.text : '';
       }
       block.appendChild(num); block.appendChild(txt);
       colA.appendChild(block);
@@ -4874,7 +4875,7 @@ async function renderInterlinearPassage(area) {
         txt = document.createElement('span');
         txt.className = 'parallel-verse-text';
         txt.style.fontSize = fontSize + 'rem';
-        txt.textContent = v.text;
+        txt.textContent = v.text != null ? v.text : '';
       }
       block.appendChild(num);
       block.appendChild(txt);
