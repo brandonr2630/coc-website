@@ -3231,6 +3231,9 @@ function getHelloaoBookCode(bookName) {
 let commentaryMode       = false;
 let currentCommentary    = null;
 const COMMENTARY_CACHE   = {};
+// Local commentaries — full parsed JSON cached per key to avoid re-fetching
+const LOCAL_COMMENTARY_FULL = {};
+const LOCAL_COMMENTARIES = new Set(['adam-clarke', 'matthew-henry', 'jamieson-fausset-brown']);
 
 const MANUSCRIPTS = {
   'masoretic': {
@@ -4643,9 +4646,30 @@ async function loadCommentaryChapter(key, bookName, chapter) {
   const cacheKey = `${key}|${bookCode}|${chapter}`;
   if (COMMENTARY_CACHE[cacheKey]) return COMMENTARY_CACHE[cacheKey];
 
+  if (LOCAL_COMMENTARIES.has(key)) {
+    // Load local JSON file once per session, then slice the needed chapter
+    if (!LOCAL_COMMENTARY_FULL[key]) {
+      const res = await fetch(`/${key}.json`);
+      if (!res.ok) throw new Error(`Failed to load ${key} commentary (${res.status})`);
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('json') && !ct.includes('octet')) {
+        throw new Error(`Unexpected response loading ${key} commentary`);
+      }
+      LOCAL_COMMENTARY_FULL[key] = await res.json();
+    }
+    const verses = LOCAL_COMMENTARY_FULL[key]?.[bookName]?.[String(chapter)] || {};
+    COMMENTARY_CACHE[cacheKey] = verses;
+    return verses;
+  }
+
+  // Helloao API for john-gill, keil-delitzsch, tyndale
   const url = `https://bible.helloao.org/api/c/${key}/${bookCode}/${chapter}.json`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Commentary API returned ${res.status}`);
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('json')) {
+    throw new Error(`Commentary unavailable for this passage`);
+  }
   const data    = await res.json();
   const content = data.chapter?.content || [];
   const verses  = extractCommentaryVerses(content);
