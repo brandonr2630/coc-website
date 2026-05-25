@@ -6606,12 +6606,13 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 
 function ctxShare() {
   if (ctxVerseNum === null) return;
+  const verseNum = ctxVerseNum;
   hideVerseCtxMenu();
-  const verseText = getVerseText(ctxVerseNum) || '';
+  const verseText = getVerseText(verseNum) || '';
   const abbr = TRANSLATION_ABBR[currentTranslation] || currentTranslation.toUpperCase();
-  const ref = `${currentBook.name} ${currentChapter}:${ctxVerseNum} (${abbr})`;
+  const ref = `${currentBook.name} ${currentChapter}:${verseNum} (${abbr})`;
   const shareText = `"${verseText}" — ${ref}`;
-  const url = location.href.split('#')[0] + '#' + encodeURIComponent(currentBook.name) + '.' + currentChapter + '.' + ctxVerseNum;
+  const url = location.href.split('#')[0] + '#' + encodeURIComponent(currentBook.name) + '.' + currentChapter + '.' + verseNum;
 
   if (navigator.share) {
     navigator.share({ title: ref, text: shareText, url }).catch(() => {});
