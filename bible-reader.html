@@ -1249,25 +1249,34 @@
       background: var(--white);
       border-bottom: 1px solid var(--line);
     }
-    .dict-panel-close {
-      display: flex; align-items: center; gap: 6px;
-      width: 100%; padding: 12px 16px;
-      border: none; border-bottom: 1px solid var(--line);
+    /* Tab row: tabs fill left, ✕ pinned right */
+    .dict-panel-tabrow {
+      display: flex; align-items: stretch;
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .dict-panel-tabrow::-webkit-scrollbar { display: none; }
+    .dict-tab {
+      flex: 1; min-width: 0;
+      padding: 10px 12px;
+      border: none; border-bottom: 3px solid transparent;
       background: none; cursor: pointer;
-      font-family: 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 700;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--charcoal-light);
-      text-align: left;
+      font-family: 'Nunito', sans-serif; font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--charcoal-light); white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .dict-tab:hover { color: var(--charcoal); }
+    .dict-tab.active { color: var(--green-dark); border-bottom-color: var(--green); }
+    .dict-panel-close {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 14px;
+      border: none; border-left: 1px solid var(--line);
+      background: none; cursor: pointer;
+      font-size: 1rem; color: var(--charcoal-light);
     }
     .dict-panel-close:hover { color: var(--charcoal); background: var(--cream); }
-    .dict-panel-titlerow {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 16px 4px;
-    }
-    .dict-panel-source {
-      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
-      text-transform: uppercase; color: var(--green-dark);
-    }
     .dict-nav-back {
       font-family: 'Nunito', sans-serif; font-size: 0.76rem; font-weight: 700;
       background: none; border: none; cursor: pointer; color: var(--charcoal-light);
@@ -2852,14 +2861,7 @@
         </div>
       </div>
       <div class="pill-study-row">
-        <button class="pill-study-main" id="btn-dictionary" onclick="closeDictionaryDropdown(); toggleDictionaryMode()">📖 Dictionary</button>
-        <button class="pill-study-arrow" id="btn-dictionary-dropdown" onclick="toggleDictionaryDropdown(event)" title="Choose dictionary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
-        <div class="parallel-dropdown-menu" id="dictionary-dropdown-menu">
-          <div class="parallel-dropdown-group">
-            <button class="parallel-dropdown-item" onclick="openDictionaryWith('eastons')">Easton's Bible Dictionary (1897)</button>
-            <button class="parallel-dropdown-item" onclick="openDictionaryWith('smiths')">Smith's Bible Dictionary (1863)</button>
-          </div>
-        </div>
+        <button class="pill-study-main" id="btn-dictionary" onclick="toggleDictionaryMode()">📖 Dictionary</button>
       </div>
       <div class="pill-study-row">
         <button class="pill-study-main" id="btn-parallel" onclick="closeParallelDropdown(); toggleParallelMode()">⇔ Parallel</button>
@@ -3306,14 +3308,33 @@ document.addEventListener('click', e => {
     dictMode ? closeDictionaryPanel() : openDictionaryWith(currentDictionary);
   }
 
+  function renderDictTabs() {
+    const row = document.getElementById('dict-tab-row');
+    if (!row) return;
+    row.innerHTML = '';
+    for (const [key, label] of Object.entries(DICT_SOURCE_NAMES)) {
+      const btn = document.createElement('button');
+      btn.className = 'dict-tab' + (key === currentDictionary ? ' active' : '');
+      btn.textContent = label;
+      btn.addEventListener('click', () => switchDictTab(key));
+      row.appendChild(btn);
+    }
+  }
+
+  function switchDictTab(source) {
+    if (source === currentDictionary) return;
+    currentDictionary = source;
+    renderDictTabs();
+    if (dictCurrentEntry) {
+      showDictionaryEntry(dictCurrentEntry);
+    } else {
+      const q = document.getElementById('dict-search-input').value.trim();
+      q ? searchDictionary(q) : renderDictionaryChapterTerms();
+    }
+  }
+
   function openDictionaryWith(source) {
     currentDictionary = source;
-    document.querySelectorAll('#dictionary-dropdown-menu .parallel-dropdown-item')
-      .forEach(el => el.classList.toggle('selected',
-        (source === 'eastons' && el.textContent.includes('Easton')) ||
-        (source === 'smiths'  && el.textContent.includes('Smith'))
-      ));
-    closeDictionaryDropdown();
     openDictionaryPanel();
   }
 
@@ -3322,11 +3343,11 @@ document.addEventListener('click', e => {
     document.getElementById('dictionary-panel').classList.add('visible');
     document.body.classList.add('dict-open');
     document.getElementById('btn-dictionary').classList.add('active');
-    document.getElementById('dict-panel-source').textContent = DICT_SOURCE_NAMES[currentDictionary] || currentDictionary;
     document.getElementById('dict-search-input').value = '';
     document.getElementById('dict-search-clear').style.display = 'none';
     document.getElementById('dict-nav-back').style.display = 'none';
     dictCurrentEntry = null;
+    renderDictTabs();
     renderDictionaryChapterTerms();
   }
 
@@ -3335,19 +3356,6 @@ document.addEventListener('click', e => {
     document.getElementById('dictionary-panel').classList.remove('visible');
     document.body.classList.remove('dict-open');
     document.getElementById('btn-dictionary').classList.remove('active');
-    document.querySelectorAll('#dictionary-dropdown-menu .parallel-dropdown-item')
-      .forEach(el => el.classList.remove('selected'));
-  }
-
-  function toggleDictionaryDropdown(e) {
-    e.stopPropagation();
-    const menu  = document.getElementById('dictionary-dropdown-menu');
-    const arrow = document.getElementById('btn-dictionary-dropdown');
-    const isOpen = menu.classList.contains('open');
-    if (!isOpen) { closeParallelDropdown(); closeCommentaryDropdown(); }
-    menu.classList.toggle('open', !isOpen);
-    arrow.classList.toggle('active', !isOpen);
-    setDropdownBackdrop(!isOpen);
   }
 
   function closeDictionaryDropdown() {
@@ -6572,10 +6580,11 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 
   <div class="dictionary-panel" id="dictionary-panel">
     <div class="dict-panel-head">
-      <button class="dict-panel-close" onclick="closeDictionaryPanel()">&#8249; Reader</button>
-      <div class="dict-panel-titlerow">
-        <span class="dict-panel-source" id="dict-panel-source">Easton's</span>
+      <div class="dict-panel-tabrow" id="dict-tab-row"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 12px 0">
         <button class="dict-nav-back" id="dict-nav-back" onclick="dictNavBack()" style="display:none"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
+        <div style="flex:1"></div>
+        <button class="dict-panel-close" onclick="closeDictionaryPanel()">&#10005;</button>
       </div>
       <div class="dict-search-wrap">
         <input class="dict-search-input" id="dict-search-input" type="text" placeholder="Search dictionary&#8230;" oninput="debounceDictSearch(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
