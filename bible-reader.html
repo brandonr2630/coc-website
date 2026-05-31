@@ -4397,27 +4397,33 @@ let currentAuthUser = null;
 
 async function initAuth() {
   // Handle password-reset redirect
-  const hash = new URLSearchParams(window.location.hash.replace('#',''));
+  const hash = new URLSearchParams(window.location.hash.replace('#', ''));
   if (hash.get('type') === 'recovery') {
     openAuthModal('reset');
-    return;
   }
 
-  const { data: { session } } = await supa.auth.getSession();
-  if (session) {
-    currentAuthUser = session.user;
-  } else {
-    const { data } = await supa.auth.signInAnonymously();
-    currentAuthUser = data?.user ?? null;
-  }
-  updateAuthUI();
-  if (currentAuthUser) loadHighlights();
+  let anonFallbackTimer = null;
 
-  supa.auth.onAuthStateChange((_event, session) => {
-    currentAuthUser = session?.user ?? null;
-    updateAuthUI();
-    if (currentAuthUser) loadHighlights();
+  supa.auth.onAuthStateChange(async (event, session) => {
+    clearTimeout(anonFallbackTimer);
+    if (session) {
+      currentAuthUser = session.user;
+      updateAuthUI();
+      loadHighlights();
+    } else {
+      // No session — sign in anonymously after a short delay to let
+      // any in-flight OAuth exchange complete first
+      anonFallbackTimer = setTimeout(async () => {
+        const { data } = await supa.auth.signInAnonymously();
+        currentAuthUser = data?.user ?? null;
+        updateAuthUI();
+        if (currentAuthUser) loadHighlights();
+      }, 1000);
+    }
   });
+
+  // Trigger the initial session check
+  await supa.auth.getSession();
 }
 
 function updateAuthUI() {
