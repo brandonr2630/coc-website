@@ -610,7 +610,28 @@ All notes session management and formatting features now complete. Users can:
 - App is in **testing mode** — add users at Google Cloud → Audience → Test users
 - To open to all church members: Google Cloud → Audience → Publish app
 
-**Current SW version: `coc-bible-v34`**
+**Current SW version: `coc-bible-v36`**
+
+---
+
+## Session Work — 2026-05-31 (session 17)
+
+### Google Sign-In Feedback & Auth Race Condition Fix
+
+**PR #56** — `fix/auth-signin-feedback` → merged → `coc-bible-v35`
+- Added `#auth-toast` — green pill slides in from top after successful sign-in showing "Signed in as user@example.com ✓", auto-dismisses after 3.5s
+- `onAuthStateChange` now calls `closeAuthModal()` on `SIGNED_IN` so any open modal is dismissed
+
+**PR #57** — `fix/auth-real-user-guard` → merged → `coc-bible-v36`
+
+**Root cause of "Browsing anonymously" after Google sign-in:**
+After OAuth redirect, Supabase fires `SIGNED_OUT` for the old anonymous session *after* `SIGNED_IN` for the real Google user. The 1-second anonymous fallback timer was being restarted by that `SIGNED_OUT` event, causing `signInAnonymously()` to run and overwrite the real user.
+
+**Fix:** Added `hasRealUser` flag:
+- Set to `true` once any non-anonymous user authenticates
+- While `hasRealUser` is true, null-session events skip the anonymous fallback entirely
+- Double-checked inside the timer callback
+- Reset to `false` in `signOut()` so anonymous browsing resumes correctly after explicit sign-out
 
 ---
 
