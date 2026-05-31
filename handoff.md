@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-25 (session 14)*
+*Last updated 2026-05-25 (session 15)*
 
 ---
 
@@ -128,9 +128,9 @@ The reader uses three horizontal control rows at the top of the page (not a floa
 
 ### Service Worker
 
-Cache version is `coc-bible-v19`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
+Cache version is `coc-bible-v34`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
 
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v19';`
+Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v34';`
 
 ### Dark Mode
 
@@ -138,6 +138,54 @@ Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v19';`
 - Persists to localStorage as `bibleTheme`
 - All colors respond to `[data-theme="dark"]` CSS selector
 - Page wrap applies theme on page load via inline script (line 6)
+
+---
+
+## Session Work — 2026-05-25 (session 15, continued)
+
+### Adam Clarke Commentary — Mobile JSON Error Fix
+
+**PR #38** — `fix/commentary-mobile-json` → merged to `master` → deployed (coc-bible-v21)
+
+**Bug:** Selecting Adam Clarke (or any of the 3 built-in commentaries) on mobile showed "unexpected token" in the commentary panel. Desktop appeared fine because the browser HTTP cache had a previous valid response.
+
+**Root cause:** `loadCommentaryChapter` always fetched from `bible.helloao.org/api/c/adam-clarke/...`. The API was returning an HTML error page (HTTP 200 but non-JSON body). `res.json()` threw `SyntaxError: Unexpected token '<'`, which was caught and displayed as a raw error string.
+
+**Fix:**
+- Added `LOCAL_COMMENTARIES = new Set(['adam-clarke','matthew-henry','jamieson-fausset-brown'])` and `LOCAL_COMMENTARY_FULL = {}` (in-memory cache for full parsed JSON)
+- `loadCommentaryChapter` now loads `/{key}.json` from the site root for these three commentaries; slices `data[bookName][chapter]` (format already matches what `renderCommentaryPassage` expects)
+- Full parsed object cached in `LOCAL_COMMENTARY_FULL[key]` — chapter navigations after the first are instant
+- Added `Content-Type` guard before `res.json()` on the helloao path (john-gill, keil-delitzsch, tyndale) for cleaner error messages
+- Service worker bumped v20 → v21
+
+**First-load file sizes (then SW-cached for subsequent visits):**
+
+| Commentary | File size |
+|-----------|-----------|
+| Adam Clarke | 11.8 MB |
+| Matthew Henry | 29.9 MB |
+| Jamieson-Fausset-Brown | 9.0 MB |
+
+---
+
+## Session Work — 2026-05-25 (session 15)
+
+### Pill Menu Layout Bug Fixes
+
+**PR #37** — `fix/pill-menu-bugs` → merged to `master` → deployed (coc-bible-v20)
+
+| Bug | Root cause | Fix |
+|-----|-----------|-----|
+| Translation dropdown overflows left on mobile | `.pill-dropdown` uses `left: 50%; transform: translateX(-50%)` relative to the button wrapper — on mobile this pushes the list off the left edge | Added `@media (max-width: 640px)` override: `position: fixed; left/right: 0; bottom: 0` — slides up as bottom sheet |
+| Vestigial partition in Parallel & Commentary rows | `.pill-study-arrow` had `border-left: 1px solid var(--line)` with no content inside the button — showed as a bare divider | Removed `border-left`; added a small `›` chevron SVG inside each arrow button |
+| Commentary & Parallel sub-menus overflow left on mobile | Desktop rule `#study-dropdown-menu .parallel-dropdown-menu { right: calc(100%+4px) }` has higher specificity than the generic `.parallel-dropdown-menu` mobile rule, so sub-menus ignored the fixed-sheet override | Added `#study-dropdown-menu .parallel-dropdown-menu` to the mobile selector with `!important` so all sub-menus slide up from bottom |
+| Settings menu had no close button; fonts unsorted | No close affordance existed; font options were in session-addition order | Added "Settings" header row with ✕ close button; fonts sorted alphabetically (Atkinson → OpenDyslexic) |
+
+**Files modified:**
+| File | Changes |
+|------|---------|
+| `bible-reader.html` | 50 insertions, 15 deletions — CSS, HTML, settings header, font order |
+| `service-worker.js` | Cache version bump only (v19 → v20) |
 
 ---
 
@@ -525,6 +573,47 @@ All notes session management and formatting features now complete. Users can:
 
 ---
 
+## Session Work — 2026-05-31 (session 16)
+
+### Dictionaries
+- **PR #46** — `feat/hitchcock-dictionary` → merged → `coc-bible-v26`
+  - Added `hitchcock.json` (~2,600 name meanings, public domain 1869)
+  - Refactored Study menu Dictionary row to arrow-dropdown pattern (matching Commentary/Parallel)
+  - Sub-menu lists Easton's, Smith's, Hitchcock's
+- `build-hitchcock.mjs` and `build-fausset.mjs` are at repo root (gitignored)
+- `fausset.json` not yet built — `build-fausset.mjs` scrapes bible-history.com; bug fixed (entries now keyed from URL slug). Run `node build-fausset.mjs` from `coc-website/` to generate (~20 min). Once done, add `fausset` to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, and the dictionary dropdown HTML, then PR.
+
+### Swipe Navigation
+- **PR #47** — `feat/swipe-chapter-nav` → merged → `coc-bible-v27`
+  - Swipe left = next chapter, swipe right = previous chapter on mobile
+  - Passive touch listeners on `#verses-area` only; 60px min horizontal, 1.5× H:V ratio guard
+
+### Verse Highlights + Auth (PRs #48–54)
+- **PR #48** — `feat/verse-highlights` → merged → `coc-bible-v28`
+  - Right-click verse number (desktop) or long-press (mobile) → colour picker (yellow, green, blue, pink, ✕ remove)
+  - Supabase project `COC Website` created (`bxdenfhpmbsxvaqoxyei`, us-east-1)
+  - `highlights` table with RLS (`user_id, book, chapter, verse, color`); unique on `(user_id, book, chapter, verse)`
+  - Anonymous session created silently on first visit — highlights work with no sign-in required
+  - Settings → Account section: sign in/up (email+password), Google OAuth, forgot/reset password, sign out
+- **PRs #49–54** — series of auth UI fixes:
+  - `--card` → `--white` (modal was transparent)
+  - `--border` → `--line` (input borders were invisible)
+  - Form field spacing and button margin
+  - `updateAuthUI` robust signed-in detection (checks `email` + `identities`, not just `is_anonymous`)
+  - Auth init race condition fixed: `onAuthStateChange`-first approach; anonymous fallback deferred 1s
+
+### Google OAuth
+- Google Cloud project: `coc-website`; OAuth client: `Web client 1` (Web application)
+- Authorized JS origin: `https://toddsroadcoctt.org`
+- Redirect URI: `https://bxdenfhpmbsxvaqoxyei.supabase.co/auth/v1/callback`
+- Supabase Site URL: `https://toddsroadcoctt.org/bible-reader.html`
+- App is in **testing mode** — add users at Google Cloud → Audience → Test users
+- To open to all church members: Google Cloud → Audience → Publish app
+
+**Current SW version: `coc-bible-v34`**
+
+---
+
 ## Pending Work
 
 ### Homepage (index.html) CRO
@@ -542,6 +631,10 @@ All notes session management and formatting features now complete. Users can:
 ### Bible Reader — Feature Queue
 - [x] **Social media sharing** — right-click any verse → Share verse; Web Share API on mobile, modal (X/WhatsApp/Facebook/copy) on desktop ✅ Done (session 13)
 - [x] **Share from selection bar** — selecting verses → Share button in selection bar; same Web Share / modal fallback ✅ Done (session 14)
+- [x] **Swipe chapter navigation** — swipe left/right on passage to advance/go back ✅ Done (session 16, PR #47)
+- [x] **Verse highlights** — right-click/long-press → colour picker; persisted to Supabase ✅ Done (session 16, PRs #48–54)
+- [x] **Hitchcock's Bible Names dictionary** — added as local dictionary source ✅ Done (session 16, PR #46)
+- [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready; run it to generate `fausset.json`, then wire into UI
 - [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
 - [ ] **Copy shareable link** — URL hash deep-linking (`#John.3.16`) works but no copy button; add to selection toolbar
 - [ ] **Verse-level notes** — short personal note per verse, `{ref: text}` in localStorage
@@ -575,7 +668,7 @@ coc-website/
 │   ├── kjvs.json / asvs.json  (KJV/ASV + Strong's numbers)
 │   ├── hebrew.json / greek-nt.json  (Original languages)
 │   ├── adam-clarke.json / matthew-henry.json / jamieson-fausset-brown.json  (Commentaries)
-│   ├── eastons.json / smiths.json  (Dictionaries)
+│   ├── eastons.json / smiths.json / hitchcock.json  (Dictionaries — fausset.json pending)
 │   └── crossrefs.json          (Cross-references for all 66 books)
 ├── Working/Source Directories (gitignored):
 │   ├── BIBLE TRANSLATIONS/     Source files for all translation JSONs
@@ -593,7 +686,12 @@ coc-website/
 ## Deployment Checklist
 
 Before pushing any change to `bible-reader.html`:
-1. Bump service worker: `service-worker.js` line 7, `coc-bible-vN` → `coc-bible-v(N+1)` (currently v19)
+1. Bump service worker — **always read the version from `origin/master`, not the local file**, to avoid merge conflicts when multiple PRs are open:
+   ```bash
+   git fetch origin master
+   current=$(git show origin/master:service-worker.js | grep -oP "coc-bible-v\K\d+")
+   sed -i "s/coc-bible-v[0-9]*/coc-bible-v$((current + 1))/" service-worker.js
+   ```
 2. `git add bible-reader.html service-worker.js [any new .json files]`
 3. `git commit -m "fix/feat(bible-reader): ..."`
 4. `git push origin <branch>` then open a PR — branch protection requires PRs on `master`
