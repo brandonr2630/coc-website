@@ -4425,11 +4425,12 @@ function updateAuthUI() {
   const btnsWrap   = document.getElementById('auth-settings-btns');
   if (!statusRow) return;
   const u = currentAuthUser;
-  if (!u || u.is_anonymous) {
+  const isAnon = !u || (u.is_anonymous === true && !u.email && !(u.identities?.length));
+  if (isAnon) {
     statusRow.textContent = 'Browsing anonymously';
     btnsWrap.innerHTML = `<button class="pill-settings-item" style="width:100%" onclick="openAuthModal('signin')">Sign in / Sign up</button>`;
   } else {
-    const label = u.email || 'Signed in';
+    const label = u.email || u.identities?.[0]?.identity_data?.email || 'Signed in';
     statusRow.textContent = label;
     btnsWrap.innerHTML = `<button class="pill-settings-item" style="width:100%" onclick="signOut()">Sign out</button>`;
   }
