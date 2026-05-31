@@ -4421,24 +4421,28 @@ async function initAuth() {
   }
 
   let anonFallbackTimer = null;
+  let hasRealUser = false;
 
   supa.auth.onAuthStateChange(async (event, session) => {
     clearTimeout(anonFallbackTimer);
     if (session) {
       currentAuthUser = session.user;
-      updateAuthUI();
-      loadHighlights();
       const u = session.user;
       const isAnon = !u || (u.is_anonymous === true && !u.email && !(u.identities?.length));
+      if (!isAnon) hasRealUser = true;
+      updateAuthUI();
+      loadHighlights();
       if (!isAnon && event === 'SIGNED_IN') {
         closeAuthModal();
         const email = u.email || u.identities?.[0]?.identity_data?.email || '';
         showAuthToast('Signed in' + (email ? ' as ' + email : '') + ' ✓');
       }
-    } else {
-      // No session — sign in anonymously after a short delay to let
-      // any in-flight OAuth exchange complete first
+    } else if (!hasRealUser) {
+      // No session and no real user yet — fall back to anonymous browsing.
+      // Guard prevents a SIGNED_OUT event from the old anonymous session
+      // (fired during OAuth exchange) from overwriting a real signed-in user.
       anonFallbackTimer = setTimeout(async () => {
+        if (hasRealUser) return;
         const { data } = await supa.auth.signInAnonymously();
         currentAuthUser = data?.user ?? null;
         updateAuthUI();
@@ -4477,6 +4481,7 @@ function updateAuthUI() {
 }
 
 async function signOut() {
+  hasRealUser = false;
   await supa.auth.signOut();
   Object.keys(HIGHLIGHT_CACHE).forEach(k => delete HIGHLIGHT_CACHE[k]);
   applyHighlightsToPage();
