@@ -2742,8 +2742,81 @@
       }
     }
 
+
+  /* ── Verse Highlights ── */
+  .verse-block.hl-yellow { background: #fff9c4; border-radius: 3px; }
+  .verse-block.hl-green  { background: #c8f5c8; border-radius: 3px; }
+  .verse-block.hl-blue   { background: #c5dff8; border-radius: 3px; }
+  .verse-block.hl-pink   { background: #fdd5e0; border-radius: 3px; }
+
+  /* ── Highlight color picker popup ── */
+  #hl-picker {
+    position: fixed; z-index: 9999;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 8px;
+    display: none; align-items: center; gap: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  }
+  #hl-picker.open { display: flex; }
+  .hl-swatch {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent;
+    cursor: pointer; flex-shrink: 0; transition: transform .12s;
+  }
+  .hl-swatch:hover { transform: scale(1.2); border-color: #888; }
+  .hl-swatch.hl-clear { background: #fff; border: 2px solid #ccc; font-size: 13px; line-height: 18px; text-align: center; color: #888; }
+
+  /* ── Auth modal ── */
+  #auth-modal-overlay {
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,.45); display: none;
+    align-items: center; justify-content: center;
+  }
+  #auth-modal-overlay.open { display: flex; }
+  #auth-modal {
+    background: var(--card); border-radius: 12px;
+    padding: 28px 28px 24px; width: min(380px, 92vw);
+    box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  #auth-modal h2 { margin: 0; font-size: 1.1rem; color: var(--charcoal); }
+  .auth-input {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 0.92rem; background: var(--bg);
+    color: var(--charcoal); box-sizing: border-box; outline: none;
+  }
+  .auth-input:focus { border-color: var(--green); }
+  .auth-btn {
+    width: 100%; padding: 10px; border: none; border-radius: 6px;
+    font-size: 0.92rem; font-weight: 700; cursor: pointer; transition: opacity .15s;
+  }
+  .auth-btn:hover { opacity: .88; }
+  .auth-btn-primary { background: var(--green); color: #fff; }
+  .auth-btn-google {
+    background: #fff; color: #333; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .auth-btn-link {
+    background: none; border: none; color: var(--green); font-size: 0.85rem;
+    cursor: pointer; padding: 0; text-align: center; width: 100%;
+  }
+  .auth-btn-link:hover { text-decoration: underline; }
+  .auth-msg { font-size: 0.82rem; text-align: center; color: var(--muted, #888); }
+  .auth-msg.error { color: #c0392b; }
+  .auth-modal-close {
+    position: absolute; top: 14px; right: 16px;
+    background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--muted, #888);
+  }
+  #auth-modal { position: relative; }
+
+  /* ── Account section in Settings ── */
+  .auth-status-row {
+    font-size: 0.78rem; color: var(--muted, #888);
+    text-align: center; padding: 2px 0 4px;
+  }
+
   </style>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <body>
 
 <!-- ROTATE PROMPT -->
@@ -2959,10 +3032,35 @@
           <button class="pill-settings-item" id="btn-dark" onclick="toggleDarkMode()">🌙 Dark</button>
         </div>
       </div>
+      <div class="pill-settings-section">
+        <span class="pill-settings-label">Account</span>
+        <div class="auth-status-row" id="auth-status-row">Signing in…</div>
+        <div class="pill-settings-row" style="flex-direction:column;gap:6px;" id="auth-settings-btns">
+          <button class="pill-settings-item" style="width:100%" onclick="openAuthModal('signin')">Sign in / Sign up</button>
+        </div>
+      </div>
     </div>
   </div>
 </div><!-- /.pill-tools -->
 
+</div>
+
+<!-- HIGHLIGHT COLOR PICKER -->
+<div id="hl-picker">
+  <div class="hl-swatch" style="background:#fff9c4" data-color="yellow" title="Yellow"></div>
+  <div class="hl-swatch" style="background:#c8f5c8" data-color="green"  title="Green"></div>
+  <div class="hl-swatch" style="background:#c5dff8" data-color="blue"   title="Blue"></div>
+  <div class="hl-swatch" style="background:#fdd5e0" data-color="pink"   title="Pink"></div>
+  <div class="hl-swatch hl-clear" data-color="" title="Remove highlight">✕</div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="auth-modal-overlay">
+  <div id="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    <h2 id="auth-modal-title">Sign in</h2>
+    <div id="auth-modal-body"></div>
+  </div>
 </div>
 
 <!-- FLOATING PASSAGE PILLS -->
@@ -4284,6 +4382,250 @@ document.addEventListener('keydown', e => {
   }, { passive: true });
 })();
 
+// ── Supabase: Highlights & Auth ──
+const SUPA_URL  = 'https://bxdenfhpmbsxvaqoxyei.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4ZGVuZmhwbWJzeHZhcW94eWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTE2MTcsImV4cCI6MjA5NTgyNzYxN30.vJBmnAHlT8FXSq3U2p1hStrNfC17kw_FMJYs9jcXEtQ';
+const supa      = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// In-memory highlight cache: key = "Book:ch:v" → color string
+const HIGHLIGHT_CACHE = {};
+
+// ── Auth ──
+let currentAuthUser = null;
+
+async function initAuth() {
+  // Handle password-reset redirect
+  const hash = new URLSearchParams(window.location.hash.replace('#',''));
+  if (hash.get('type') === 'recovery') {
+    openAuthModal('reset');
+    return;
+  }
+
+  const { data: { session } } = await supa.auth.getSession();
+  if (session) {
+    currentAuthUser = session.user;
+  } else {
+    const { data } = await supa.auth.signInAnonymously();
+    currentAuthUser = data?.user ?? null;
+  }
+  updateAuthUI();
+  if (currentAuthUser) loadHighlights();
+
+  supa.auth.onAuthStateChange((_event, session) => {
+    currentAuthUser = session?.user ?? null;
+    updateAuthUI();
+    if (currentAuthUser) loadHighlights();
+  });
+}
+
+function updateAuthUI() {
+  const statusRow  = document.getElementById('auth-status-row');
+  const btnsWrap   = document.getElementById('auth-settings-btns');
+  if (!statusRow) return;
+  const u = currentAuthUser;
+  if (!u || u.is_anonymous) {
+    statusRow.textContent = 'Browsing anonymously';
+    btnsWrap.innerHTML = `<button class="pill-settings-item" style="width:100%" onclick="openAuthModal('signin')">Sign in / Sign up</button>`;
+  } else {
+    const label = u.email || 'Signed in';
+    statusRow.textContent = label;
+    btnsWrap.innerHTML = `<button class="pill-settings-item" style="width:100%" onclick="signOut()">Sign out</button>`;
+  }
+}
+
+async function signOut() {
+  await supa.auth.signOut();
+  Object.keys(HIGHLIGHT_CACHE).forEach(k => delete HIGHLIGHT_CACHE[k]);
+  applyHighlightsToPage();
+  const { data } = await supa.auth.signInAnonymously();
+  currentAuthUser = data?.user ?? null;
+  updateAuthUI();
+  if (currentAuthUser) loadHighlights();
+}
+
+// ── Auth Modal ──
+function openAuthModal(view) {
+  document.getElementById('auth-modal-overlay').classList.add('open');
+  renderAuthView(view);
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal-overlay').classList.remove('open');
+}
+
+document.getElementById('auth-modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('auth-modal-overlay')) closeAuthModal();
+});
+
+function renderAuthView(view) {
+  const title = document.getElementById('auth-modal-title');
+  const body  = document.getElementById('auth-modal-body');
+
+  if (view === 'signin') {
+    title.textContent = 'Sign in';
+    body.innerHTML = `
+      <button class="auth-btn auth-btn-google" onclick="signInWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.16C6.51 42.68 14.62 48 24 48z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.16C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.75l7.97-6.16z"/><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.33 2.56 13.25l7.97 6.16C12.43 13.72 17.74 9.5 24 9.5z"/></svg>
+        Continue with Google
+      </button>
+      <div style="text-align:center;color:var(--muted,#888);font-size:.78rem;margin:2px 0">or</div>
+      <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email"/>
+      <input class="auth-input" id="auth-password" type="password" placeholder="Password" autocomplete="current-password"/>
+      <div id="auth-msg" class="auth-msg"></div>
+      <button class="auth-btn auth-btn-primary" onclick="doSignIn()">Sign in</button>
+      <button class="auth-btn-link" onclick="renderAuthView('signup')">No account? Sign up</button>
+      <button class="auth-btn-link" onclick="renderAuthView('forgot')">Forgot password?</button>`;
+  } else if (view === 'signup') {
+    title.textContent = 'Create account';
+    body.innerHTML = `
+      <button class="auth-btn auth-btn-google" onclick="signInWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.16C6.51 42.68 14.62 48 24 48z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.16C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.75l7.97-6.16z"/><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.33 2.56 13.25l7.97 6.16C12.43 13.72 17.74 9.5 24 9.5z"/></svg>
+        Continue with Google
+      </button>
+      <div style="text-align:center;color:var(--muted,#888);font-size:.78rem;margin:2px 0">or</div>
+      <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email"/>
+      <input class="auth-input" id="auth-password" type="password" placeholder="Password (min 6 chars)" autocomplete="new-password"/>
+      <div id="auth-msg" class="auth-msg"></div>
+      <button class="auth-btn auth-btn-primary" onclick="doSignUp()">Create account</button>
+      <button class="auth-btn-link" onclick="renderAuthView('signin')">Already have an account? Sign in</button>`;
+  } else if (view === 'forgot') {
+    title.textContent = 'Reset password';
+    body.innerHTML = `
+      <p class="auth-msg">Enter your email and we'll send a reset link.</p>
+      <input class="auth-input" id="auth-email" type="email" placeholder="Email address" autocomplete="email"/>
+      <div id="auth-msg" class="auth-msg"></div>
+      <button class="auth-btn auth-btn-primary" onclick="doForgotPassword()">Send reset link</button>
+      <button class="auth-btn-link" onclick="renderAuthView('signin')">Back to sign in</button>`;
+  } else if (view === 'reset') {
+    title.textContent = 'Set new password';
+    body.innerHTML = `
+      <input class="auth-input" id="auth-password" type="password" placeholder="New password (min 6 chars)" autocomplete="new-password"/>
+      <div id="auth-msg" class="auth-msg"></div>
+      <button class="auth-btn auth-btn-primary" onclick="doResetPassword()">Update password</button>`;
+  }
+}
+
+function setAuthMsg(msg, isError = false) {
+  const el = document.getElementById('auth-msg');
+  if (el) { el.textContent = msg; el.className = 'auth-msg' + (isError ? ' error' : ''); }
+}
+
+async function signInWithGoogle() {
+  await supa.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+}
+
+async function doSignIn() {
+  const email = document.getElementById('auth-email')?.value.trim();
+  const pass  = document.getElementById('auth-password')?.value;
+  if (!email || !pass) return setAuthMsg('Please enter email and password.', true);
+  setAuthMsg('Signing in…');
+  const { error } = await supa.auth.signInWithPassword({ email, password: pass });
+  if (error) return setAuthMsg(error.message, true);
+  closeAuthModal();
+}
+
+async function doSignUp() {
+  const email = document.getElementById('auth-email')?.value.trim();
+  const pass  = document.getElementById('auth-password')?.value;
+  if (!email || !pass) return setAuthMsg('Please enter email and password.', true);
+  if (pass.length < 6) return setAuthMsg('Password must be at least 6 characters.', true);
+  setAuthMsg('Creating account…');
+  const { error } = await supa.auth.signUp({ email, password: pass });
+  if (error) return setAuthMsg(error.message, true);
+  setAuthMsg('Check your email to confirm your account.');
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('auth-email')?.value.trim();
+  if (!email) return setAuthMsg('Please enter your email.', true);
+  setAuthMsg('Sending…');
+  const { error } = await supa.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href + '#type=recovery'
+  });
+  if (error) return setAuthMsg(error.message, true);
+  setAuthMsg('Reset link sent — check your email.');
+}
+
+async function doResetPassword() {
+  const pass = document.getElementById('auth-password')?.value;
+  if (!pass || pass.length < 6) return setAuthMsg('Password must be at least 6 characters.', true);
+  setAuthMsg('Updating…');
+  const { error } = await supa.auth.updateUser({ password: pass });
+  if (error) return setAuthMsg(error.message, true);
+  setAuthMsg('Password updated! You are now signed in.');
+  setTimeout(closeAuthModal, 1800);
+}
+
+// ── Highlights data layer ──
+async function loadHighlights() {
+  if (!currentAuthUser) return;
+  const { data, error } = await supa.from('highlights').select('book,chapter,verse,color');
+  if (error || !data) return;
+  Object.keys(HIGHLIGHT_CACHE).forEach(k => delete HIGHLIGHT_CACHE[k]);
+  data.forEach(r => { HIGHLIGHT_CACHE[`${r.book}:${r.chapter}:${r.verse}`] = r.color; });
+  applyHighlightsToPage();
+}
+
+async function setHighlight(book, chapter, verse, color) {
+  if (!currentAuthUser) return;
+  const key = `${book}:${chapter}:${verse}`;
+  if (color) {
+    HIGHLIGHT_CACHE[key] = color;
+    await supa.from('highlights').upsert(
+      { user_id: currentAuthUser.id, book, chapter, verse, color },
+      { onConflict: 'user_id,book,chapter,verse' }
+    );
+  } else {
+    delete HIGHLIGHT_CACHE[key];
+    await supa.from('highlights').delete().match({ user_id: currentAuthUser.id, book, chapter, verse });
+  }
+  applyHighlightsToPage();
+}
+
+function applyHighlightsToPage() {
+  document.querySelectorAll('.verse-block[data-verse]').forEach(el => {
+    el.classList.remove('hl-yellow','hl-green','hl-blue','hl-pink');
+    const key = `${el.dataset.book}:${el.dataset.chapter}:${el.dataset.verse}`;
+    const color = HIGHLIGHT_CACHE[key];
+    if (color) el.classList.add('hl-' + color);
+  });
+}
+
+// ── Highlight color picker ──
+let hlPickerVerse = null;
+
+const hlPicker = document.getElementById('hl-picker');
+hlPicker.querySelectorAll('.hl-swatch').forEach(sw => {
+  sw.addEventListener('click', e => {
+    e.stopPropagation();
+    if (hlPickerVerse !== null) {
+      setHighlight(currentBook.name, currentChapter, hlPickerVerse, sw.dataset.color);
+    }
+    hlPicker.classList.remove('open');
+    hlPickerVerse = null;
+  });
+});
+document.addEventListener('click', () => {
+  hlPicker.classList.remove('open');
+  hlPickerVerse = null;
+});
+
+function showHighlightPicker(e, verse) {
+  e.preventDefault(); e.stopPropagation();
+  hlPickerVerse = verse;
+  hlPicker.classList.add('open');
+  const x = Math.min(e.clientX, window.innerWidth  - 180);
+  const y = Math.min(e.clientY + 8, window.innerHeight - 60);
+  hlPicker.style.left = x + 'px';
+  hlPicker.style.top  = y + 'px';
+}
+
+// ── Init ──
+initAuth();
+
 // ── localStorage (Feature 4) ──
 function savePosition() {
   try {
@@ -4696,17 +5038,29 @@ async function renderPassage() {
       const div = document.createElement('div');
       div.className = 'verse-block' + (highlightVerse === v.verse ? ' highlighted' : '');
       div.id = 'v' + v.verse;
+      div.dataset.book    = currentBook.name;
+      div.dataset.chapter = currentChapter;
+      div.dataset.verse   = v.verse;
+      const hlColor = HIGHLIGHT_CACHE[`${currentBook.name}:${currentChapter}:${v.verse}`];
+      if (hlColor) div.classList.add('hl-' + hlColor);
+      // Long-press to highlight on mobile
+      let lpTimer = null;
+      div.addEventListener('touchstart', e => {
+        lpTimer = setTimeout(() => { showHighlightPicker(e.touches[0], v.verse); }, 500);
+      }, { passive: true });
+      div.addEventListener('touchend',   () => clearTimeout(lpTimer), { passive: true });
+      div.addEventListener('touchmove',  () => clearTimeout(lpTimer), { passive: true });
 
       const num = document.createElement('sup');
       num.className = 'verse-num';
       num.textContent = v.verse;
-      num.title = 'Click to select · Right-click for more';
+      num.title = 'Click to select · Right-click to highlight';
       num.addEventListener('click', e => {
         e.stopPropagation();
         toggleVerseSelection(v.verse);
       });
       num.addEventListener('contextmenu', e => {
-        e.preventDefault(); e.stopPropagation(); showVerseCtxMenu(e, v.verse);
+        e.preventDefault(); e.stopPropagation(); showHighlightPicker(e, v.verse);
       });
 
       let txt;
