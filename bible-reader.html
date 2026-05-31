@@ -2860,7 +2860,7 @@
     </button>
     <div class="pill-dropdown" id="study-dropdown-menu" onclick="event.stopPropagation()">
       <div class="pill-study-row">
-        <button class="pill-study-main" id="btn-commentary" onclick="closeCommentaryDropdown(); toggleCommentaryMode()">☰ Commentary</button>
+        <span class="pill-study-main" id="btn-commentary">☰ Commentary</span>
         <button class="pill-study-arrow" id="btn-commentary-dropdown" onclick="toggleCommentaryDropdown(event)" title="Choose commentary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="parallel-dropdown-menu" id="commentary-dropdown-menu">
           <div class="parallel-dropdown-group">
@@ -2874,10 +2874,18 @@
         </div>
       </div>
       <div class="pill-study-row">
-        <button class="pill-study-main" id="btn-dictionary" onclick="toggleDictionaryMode()">📖 Dictionary</button>
+        <span class="pill-study-main" id="btn-dictionary">📖 Dictionary</span>
+        <button class="pill-study-arrow" id="btn-dictionary-dropdown" onclick="toggleDictionaryDropdown(event)" title="Choose dictionary"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="parallel-dropdown-menu" id="dictionary-dropdown-menu">
+          <div class="parallel-dropdown-group">
+            <button class="parallel-dropdown-item" onclick="closeDictionaryDropdown(); openDictionaryWith('eastons')">Easton's Bible Dictionary (1897)</button>
+            <button class="parallel-dropdown-item" onclick="closeDictionaryDropdown(); openDictionaryWith('smiths')">Smith's Bible Dictionary (1863)</button>
+            <button class="parallel-dropdown-item" onclick="closeDictionaryDropdown(); openDictionaryWith('hitchcock')">Hitchcock's Bible Names (1869)</button>
+          </div>
+        </div>
       </div>
       <div class="pill-study-row">
-        <button class="pill-study-main" id="btn-parallel" onclick="closeParallelDropdown(); toggleParallelMode()">⇔ Parallel</button>
+        <span class="pill-study-main" id="btn-parallel">⇔ Parallel</span>
         <button class="pill-study-arrow" id="btn-parallel-dropdown" onclick="toggleParallelDropdown(event)" title="Choose translation"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="parallel-dropdown-menu" id="parallel-dropdown-menu">
           <div class="parallel-dropdown-group">
@@ -2898,10 +2906,12 @@
         </div>
       </div>
       <div class="pill-study-row">
-        <button class="pill-study-main" id="btn-interlinear" onclick="toggleInterlinearMode()">⇕ Interlinear</button>
+        <span class="pill-study-main" id="btn-interlinear">⇕ Interlinear</span>
+        <button class="pill-study-arrow" onclick="toggleInterlinearMode()" title="Open Interlinear"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
       </div>
       <div class="pill-study-row">
-        <button class="pill-study-main" id="btn-notes" onclick="toggleNotesPanel()">📝 Notes</button>
+        <span class="pill-study-main" id="btn-notes">📝 Notes</span>
+        <button class="pill-study-arrow" onclick="toggleNotesPanel()" title="Open Notes"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
       </div>
     </div>
   </div>
@@ -3376,6 +3386,16 @@ document.addEventListener('click', e => {
     document.getElementById('btn-dictionary-dropdown')?.classList.remove('active');
   }
 
+  function toggleDictionaryDropdown(e) {
+    e.stopPropagation();
+    const menu  = document.getElementById('dictionary-dropdown-menu');
+    const arrow = document.getElementById('btn-dictionary-dropdown');
+    const isOpen = menu.classList.contains('open');
+    if (!isOpen) { closeParallelDropdown(); closeCommentaryDropdown(); }
+    menu.classList.toggle('open', !isOpen);
+    arrow.classList.toggle('active', !isOpen);
+  }
+
   function debounceDictSearch(val) {
     clearTimeout(dictSearchTimer);
     document.getElementById('dict-search-clear').style.display = val ? 'block' : 'none';
@@ -3599,9 +3619,9 @@ const COMMENTARY_CACHE   = {};
 const LOCAL_COMMENTARY_FULL = {};
 const LOCAL_COMMENTARIES = new Set(['adam-clarke', 'matthew-henry', 'jamieson-fausset-brown']);
 
-  const LOCAL_DICTIONARIES = new Set(['eastons', 'smiths']);
+  const LOCAL_DICTIONARIES = new Set(['eastons', 'smiths', 'hitchcock']);
   const DICT_CACHE          = {};
-  const DICT_SOURCE_NAMES   = { eastons: "Easton's (1897)", smiths: "Smith's (1863)" };
+  const DICT_SOURCE_NAMES   = { eastons: "Easton's (1897)", smiths: "Smith's (1863)", hitchcock: "Hitchcock's Names (1869)" };
   let currentDictionary = 'eastons';
   let dictMode          = false;
   let dictSearchTimer   = null;
