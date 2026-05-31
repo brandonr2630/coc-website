@@ -4268,6 +4268,22 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ── Swipe to change chapter (mobile) ──
+(function () {
+  let startX = 0, startY = 0;
+  const area = document.getElementById('verses-area');
+  area.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  area.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    goChapter(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
+
 // ── localStorage (Feature 4) ──
 function savePosition() {
   try {
