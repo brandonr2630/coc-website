@@ -2810,6 +2810,21 @@
   }
   #auth-modal { position: relative; }
 
+  /* ── Auth toast ── */
+  #auth-toast {
+    position: fixed; top: 64px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: #2e7d32; color: #fff;
+    padding: 10px 20px; border-radius: 24px;
+    font-size: 0.85rem; font-weight: 600; white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 9999;
+  }
+  #auth-toast.show {
+    opacity: 1; transform: translateX(-50%) translateY(0);
+  }
+
   /* ── Account section in Settings ── */
   .auth-status-row {
     font-size: 0.78rem; color: var(--muted, #888);
@@ -3055,6 +3070,9 @@
   <div class="hl-swatch" style="background:#fdd5e0" data-color="pink"   title="Pink"></div>
   <div class="hl-swatch hl-clear" data-color="" title="Remove highlight">✕</div>
 </div>
+
+<!-- AUTH TOAST -->
+<div id="auth-toast"></div>
 
 <!-- AUTH MODAL -->
 <div id="auth-modal-overlay">
@@ -4410,6 +4428,13 @@ async function initAuth() {
       currentAuthUser = session.user;
       updateAuthUI();
       loadHighlights();
+      const u = session.user;
+      const isAnon = !u || (u.is_anonymous === true && !u.email && !(u.identities?.length));
+      if (!isAnon && event === 'SIGNED_IN') {
+        closeAuthModal();
+        const email = u.email || u.identities?.[0]?.identity_data?.email || '';
+        showAuthToast('Signed in' + (email ? ' as ' + email : '') + ' ✓');
+      }
     } else {
       // No session — sign in anonymously after a short delay to let
       // any in-flight OAuth exchange complete first
@@ -4424,6 +4449,15 @@ async function initAuth() {
 
   // Trigger the initial session check
   await supa.auth.getSession();
+}
+
+function showAuthToast(msg) {
+  const t = document.getElementById('auth-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 function updateAuthUI() {
