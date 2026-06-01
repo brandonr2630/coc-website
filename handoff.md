@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-25 (session 15)*
+*Last updated 2026-06-01 (session 18)*
 
 ---
 
@@ -573,6 +573,33 @@ All notes session management and formatting features now complete. Users can:
 
 ---
 
+## Session Work — 2026-06-01 (session 18)
+
+### Verse Highlight & Underline Picker Redesign
+
+**PR #59** — `feat/verse-highlight-underline` → merged → `coc-bible-v37`
+
+**Feature:** Replaced the bare 4-swatch colour row with a full two-mode picker panel.
+
+| Change | Detail |
+|--------|--------|
+| Mode toggle | `● Highlight` / `U̲ Underline` at top of picker — either/or |
+| 5 colours | Yellow, green, blue, pink, orange (orange added) |
+| Underline options | Style: solid / dotted / wavy; Weight: thin / medium / thick; defaults: solid medium |
+| Mobile layout | Picker renders as a bottom sheet on ≤640px |
+| Batch apply | "Highlight" button in selection bar — opens picker and applies to all selected verses |
+| Picker memory | Re-opening on a marked verse pre-selects correct mode, colour, style and weight |
+
+**Supabase migration:** `highlights` table extended — `style TEXT DEFAULT 'highlight'`, `ul_style TEXT`, `ul_weight TEXT`
+
+**CSS approach:** Underline uses `text-decoration: underline <style> <color> <thickness>` on `.verse-text` spans via compound classes (`ul-blue-wavy-thick`, etc.). 45 underline classes × 5 colours = all combinations pre-declared.
+
+**Data model:** `HIGHLIGHT_CACHE` values upgraded from plain colour strings to `{color, style, ulStyle, ulWeight}` objects. `applyHighlightsToPage` builds compound class names dynamically.
+
+**Sub-verse text selection** — deferred to next session.
+
+---
+
 ## Session Work — 2026-05-31 (session 16)
 
 ### Dictionaries
@@ -610,7 +637,7 @@ All notes session management and formatting features now complete. Users can:
 - App is in **testing mode** — add users at Google Cloud → Audience → Test users
 - To open to all church members: Google Cloud → Audience → Publish app
 
-**Current SW version: `coc-bible-v36`**
+**Current SW version: `coc-bible-v37`**
 
 ---
 
@@ -654,6 +681,7 @@ After OAuth redirect, Supabase fires `SIGNED_OUT` for the old anonymous session 
 - [x] **Share from selection bar** — selecting verses → Share button in selection bar; same Web Share / modal fallback ✅ Done (session 14)
 - [x] **Swipe chapter navigation** — swipe left/right on passage to advance/go back ✅ Done (session 16, PR #47)
 - [x] **Verse highlights** — right-click/long-press → colour picker; persisted to Supabase ✅ Done (session 16, PRs #48–54)
+- [x] **Highlight/underline picker redesign** — two-mode card panel; 5 colours; underline style+weight options; mobile bottom sheet; batch apply from selection bar ✅ Done (session 18, PR #59)
 - [x] **Hitchcock's Bible Names dictionary** — added as local dictionary source ✅ Done (session 16, PR #46)
 - [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready; run it to generate `fausset.json`, then wire into UI
 - [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
