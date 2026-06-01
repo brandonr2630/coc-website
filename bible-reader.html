@@ -2968,7 +2968,8 @@
   @media (max-width: 640px) {
     #hl-picker {
       position: fixed; left: 0; right: 0; bottom: 0;
-      border-radius: 16px 16px 0 0; padding: 16px 16px 24px;
+      border-radius: 16px 16px 0 0;
+      padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px));
       min-width: unset; width: 100%;
     }
   }
@@ -3007,7 +3008,7 @@
   [data-theme="dark"] .hl-swatch.hl-clear { background: #2a2a25; color: #aaa; }
 
   /* ── Tags in highlight picker ── */
-  .hl-tags-section { border-top: 1px solid var(--line); padding-top: 8px; }
+  .hl-tags-section { border-bottom: 1px solid var(--line); padding-bottom: 8px; }
   .hl-tags-label {
     font-family: 'Nunito', sans-serif; font-size: 0.7rem; font-weight: 700;
     letter-spacing: 0.08em; text-transform: uppercase; color: var(--charcoal-light);
@@ -3370,6 +3371,14 @@
     <button class="hl-mode-btn active" id="hl-mode-hl"  onclick="hlSetMode('highlight')">● Highlight</button>
     <button class="hl-mode-btn"        id="hl-mode-ul"  onclick="hlSetMode('underline')"><u>U</u> Underline</button>
   </div>
+  <div class="hl-tags-section" id="hl-tags-section">
+    <div class="hl-tags-label">Tags</div>
+    <div class="hl-picker-tags" id="hl-picker-tags"></div>
+    <div class="hl-tag-input-wrap">
+      <input type="text" class="hl-tag-input" id="hl-tag-input" placeholder="Add tag…" maxlength="30" onkeydown="hlTagInputKeydown(event)">
+      <button class="hl-tag-add-btn" onclick="hlAddTagFromInput()">+</button>
+    </div>
+  </div>
   <div class="hl-swatches-row" id="hl-swatches">
     <div class="hl-swatch" style="background:#fff9c4" data-color="yellow" title="Yellow"></div>
     <div class="hl-swatch" style="background:#c8f5c8" data-color="green"  title="Green"></div>
@@ -3388,14 +3397,6 @@
       <button class="hl-chip"        data-ul-weight="thin"   onclick="hlSetUlWeight('thin')">Thin</button>
       <button class="hl-chip active" data-ul-weight="medium" onclick="hlSetUlWeight('medium')">Medium</button>
       <button class="hl-chip"        data-ul-weight="thick"  onclick="hlSetUlWeight('thick')">Thick</button>
-    </div>
-  </div>
-  <div class="hl-tags-section" id="hl-tags-section">
-    <div class="hl-tags-label">Tags</div>
-    <div class="hl-picker-tags" id="hl-picker-tags"></div>
-    <div class="hl-tag-input-wrap">
-      <input type="text" class="hl-tag-input" id="hl-tag-input" placeholder="Add tag…" maxlength="30" onkeydown="hlTagInputKeydown(event)">
-      <button class="hl-tag-add-btn" onclick="hlAddTagFromInput()">+</button>
     </div>
   </div>
 </div>
@@ -5154,7 +5155,7 @@ function showHighlightPicker(e, verse) {
   document.getElementById('hl-backdrop').classList.add('open');
   if (window.innerWidth > 640) {
     const x = Math.min(e.clientX, window.innerWidth  - 280);
-    const y = Math.min(e.clientY + 8, window.innerHeight - 260);
+    const y = Math.min(e.clientY + 8, window.innerHeight - 210);
     hlPicker.style.left = x + 'px';
     hlPicker.style.top  = y + 'px';
   }
@@ -5174,7 +5175,7 @@ function showHighlightPickerForSelection(e) {
     const x = Math.min(bar.left, window.innerWidth - 280);
     const y = bar.top - 20;
     hlPicker.style.left = x + 'px';
-    hlPicker.style.top  = Math.max(10, y - 220) + 'px';
+    hlPicker.style.top  = Math.max(10, y - 190) + 'px';
   }
 }
 
@@ -8621,13 +8622,12 @@ function shareCtxCopy() {
   function hlPanelNavigate(bookName, chapter, verse) {
     const book = BOOKS.find(b => b.name === bookName);
     if (!book) return;
-    closeHighlightsPanel();
     currentBook = book;
     currentChapter = chapter;
     if (book.testament !== currentTestament) setTestamentSilent(book.testament);
     highlightVerse = verse;
     syncDropdowns();
-    renderPassage();
+    renderPassage().then(() => renderHighlightsPanel());
   }
 
   function hlEsc(s) {
