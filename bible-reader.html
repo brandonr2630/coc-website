@@ -1355,6 +1355,146 @@
       }
     }
 
+    /* ── My Highlights Panel ── */
+    .hl-panel {
+      display: none;
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 592;
+      width: 360px;
+      background: var(--white);
+      border-left: 2px solid var(--green);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.10);
+      font-family: 'Nunito', sans-serif;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .hl-panel.visible { display: flex; }
+    body.hl-panel-open .page-wrap { margin-right: 360px; }
+    body.hl-panel-open.dict-open .page-wrap { margin-right: 720px; }
+
+    .hl-drag-handle { display: none; }
+
+    .hl-panel-head {
+      flex-shrink: 0;
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+    }
+    .hl-panel-titlerow {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px 10px;
+    }
+    .hl-panel-title {
+      font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--charcoal);
+    }
+    .hl-panel-close {
+      display: flex; align-items: center; justify-content: center;
+      padding: 6px 8px; border: none; background: none; cursor: pointer;
+      font-size: 1rem; color: var(--charcoal-light); border-radius: 4px;
+    }
+    .hl-panel-close:hover { color: var(--charcoal); background: var(--cream); }
+
+    .hl-anon-nudge {
+      margin: 0 12px 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      font-size: 0.76rem; color: var(--charcoal-light); line-height: 1.4;
+    }
+    .hl-anon-nudge a { color: var(--green-dark); font-weight: 700; cursor: pointer; text-decoration: none; }
+    .hl-anon-nudge a:hover { text-decoration: underline; }
+
+    .hl-filter-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 12px 10px; flex-wrap: wrap;
+    }
+    .hl-filter-book {
+      flex: 1; min-width: 0;
+      font-family: 'Nunito', sans-serif; font-size: 0.8rem;
+      padding: 6px 8px; border: 1.5px solid var(--line); border-radius: 6px;
+      background: var(--cream); color: var(--charcoal); outline: none; cursor: pointer;
+    }
+    .hl-filter-book:focus { border-color: var(--green); }
+    [data-theme="dark"] .hl-filter-book { background: #1e1e18; }
+
+    .hl-color-filters {
+      display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+    }
+    .hl-cf-btn {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2.5px solid transparent; cursor: pointer; padding: 0;
+      transition: transform 0.1s, border-color 0.15s;
+    }
+    .hl-cf-btn:hover { transform: scale(1.15); }
+    .hl-cf-btn.active { border-color: var(--charcoal); transform: scale(1.1); }
+    .hl-cf-all {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid var(--line); cursor: pointer; padding: 0;
+      background: var(--cream); font-size: 0.65rem; font-weight: 800;
+      color: var(--charcoal-light); display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s;
+    }
+    .hl-cf-all.active { border-color: var(--green-dark); color: var(--green-dark); }
+
+    .hl-panel-body { flex: 1; overflow-y: auto; padding-bottom: 24px; }
+    .hl-empty {
+      padding: 40px 20px; text-align: center;
+      font-size: 0.85rem; color: var(--charcoal-light); line-height: 1.6;
+    }
+
+    .hl-book-group { border-bottom: 1px solid var(--line); }
+    .hl-book-head {
+      padding: 7px 14px;
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--charcoal-light);
+      background: var(--cream); position: sticky; top: 0; z-index: 1;
+    }
+    .hl-verse-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; border-bottom: 1px solid var(--line);
+      cursor: pointer; transition: background 0.12s;
+    }
+    .hl-verse-row:last-child { border-bottom: none; }
+    .hl-verse-row:hover { background: var(--highlight); }
+    .hl-verse-dot {
+      flex-shrink: 0; width: 12px; height: 12px; border-radius: 50%;
+      margin-top: 4px;
+    }
+    .hl-verse-dot.ul-dot {
+      border-radius: 2px;
+      background: transparent !important;
+      border-bottom: 3px solid;
+    }
+    .hl-verse-ref {
+      font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em;
+      color: var(--charcoal-light); white-space: nowrap; flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .hl-verse-text {
+      font-size: 0.84rem; line-height: 1.5; color: var(--charcoal);
+      flex: 1; min-width: 0;
+    }
+    .hl-verse-text.no-text { color: var(--charcoal-light); font-style: italic; }
+
+    @media (max-width: 860px) {
+      .hl-panel {
+        width: 100%; border-left: none; border-top: 2px solid var(--green);
+        top: auto; height: 55vh; box-shadow: 0 -4px 24px rgba(0,0,0,0.13);
+        transition: height 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      }
+      body.hl-panel-open .page-wrap { margin-right: 0; }
+      .hl-drag-handle {
+        display: flex; justify-content: center; align-items: center;
+        padding: 14px 0 10px; flex-shrink: 0; cursor: ns-resize;
+        touch-action: none; user-select: none; min-height: 36px;
+      }
+      .hl-drag-handle::after {
+        content: ''; display: block;
+        width: 36px; height: 4px; border-radius: 2px;
+        background: var(--line);
+      }
+    }
+
     /* Fixed header — never scrolls */
     .strongs-panel-head {
       flex-shrink: 0;
@@ -2754,49 +2894,59 @@
   /* text-decoration-thickness is a separate property for broad browser support */
   .verse-block.ul-yellow-solid-thin    .verse-text { text-decoration: underline solid   #c8920a; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
   .verse-block.ul-yellow-dotted-thin   .verse-text { text-decoration: underline dotted  #c8920a; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-yellow-wavy-thin     .verse-text { text-decoration: underline wavy    #c8920a; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
   .verse-block.ul-yellow-solid-medium  .verse-text { text-decoration: underline solid   #c8920a; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
   .verse-block.ul-yellow-dotted-medium .verse-text { text-decoration: underline dotted  #c8920a; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-yellow-wavy-medium   .verse-text { text-decoration: underline wavy    #c8920a; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
   .verse-block.ul-yellow-solid-thick   .verse-text { text-decoration: underline solid   #c8920a; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
   .verse-block.ul-yellow-dotted-thick  .verse-text { text-decoration: underline dotted  #c8920a; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-yellow-wavy-thick    .verse-text { text-decoration: underline wavy    #c8920a; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
   .verse-block.ul-green-solid-thin     .verse-text { text-decoration: underline solid   #2e7d32; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
   .verse-block.ul-green-dotted-thin    .verse-text { text-decoration: underline dotted  #2e7d32; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-green-wavy-thin      .verse-text { text-decoration: underline wavy    #2e7d32; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
   .verse-block.ul-green-solid-medium   .verse-text { text-decoration: underline solid   #2e7d32; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
   .verse-block.ul-green-dotted-medium  .verse-text { text-decoration: underline dotted  #2e7d32; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-green-wavy-medium    .verse-text { text-decoration: underline wavy    #2e7d32; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
   .verse-block.ul-green-solid-thick    .verse-text { text-decoration: underline solid   #2e7d32; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
   .verse-block.ul-green-dotted-thick   .verse-text { text-decoration: underline dotted  #2e7d32; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-green-wavy-thick     .verse-text { text-decoration: underline wavy    #2e7d32; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
   .verse-block.ul-blue-solid-thin      .verse-text { text-decoration: underline solid   #1565c0; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
   .verse-block.ul-blue-dotted-thin     .verse-text { text-decoration: underline dotted  #1565c0; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-blue-wavy-thin       .verse-text { text-decoration: underline wavy    #1565c0; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
   .verse-block.ul-blue-solid-medium    .verse-text { text-decoration: underline solid   #1565c0; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
   .verse-block.ul-blue-dotted-medium   .verse-text { text-decoration: underline dotted  #1565c0; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-blue-wavy-medium     .verse-text { text-decoration: underline wavy    #1565c0; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
   .verse-block.ul-blue-solid-thick     .verse-text { text-decoration: underline solid   #1565c0; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
   .verse-block.ul-blue-dotted-thick    .verse-text { text-decoration: underline dotted  #1565c0; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-blue-wavy-thick      .verse-text { text-decoration: underline wavy    #1565c0; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
   .verse-block.ul-pink-solid-thin      .verse-text { text-decoration: underline solid   #c2185b; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
   .verse-block.ul-pink-dotted-thin     .verse-text { text-decoration: underline dotted  #c2185b; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-pink-wavy-thin       .verse-text { text-decoration: underline wavy    #c2185b; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
   .verse-block.ul-pink-solid-medium    .verse-text { text-decoration: underline solid   #c2185b; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
   .verse-block.ul-pink-dotted-medium   .verse-text { text-decoration: underline dotted  #c2185b; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-pink-wavy-medium     .verse-text { text-decoration: underline wavy    #c2185b; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
   .verse-block.ul-pink-solid-thick     .verse-text { text-decoration: underline solid   #c2185b; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
   .verse-block.ul-pink-dotted-thick    .verse-text { text-decoration: underline dotted  #c2185b; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-pink-wavy-thick      .verse-text { text-decoration: underline wavy    #c2185b; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
   .verse-block.ul-orange-solid-thin    .verse-text { text-decoration: underline solid   #e65100; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
   .verse-block.ul-orange-dotted-thin   .verse-text { text-decoration: underline dotted  #e65100; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-orange-wavy-thin     .verse-text { text-decoration: underline wavy    #e65100; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
   .verse-block.ul-orange-solid-medium  .verse-text { text-decoration: underline solid   #e65100; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
   .verse-block.ul-orange-dotted-medium .verse-text { text-decoration: underline dotted  #e65100; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-orange-wavy-medium   .verse-text { text-decoration: underline wavy    #e65100; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
   .verse-block.ul-orange-solid-thick   .verse-text { text-decoration: underline solid   #e65100; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
   .verse-block.ul-orange-dotted-thick  .verse-text { text-decoration: underline dotted  #e65100; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-orange-wavy-thick    .verse-text { text-decoration: underline wavy    #e65100; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
+  /* Wavy — freehand SVG path (irregular cubic bezier, not a mechanical sine wave) */
+  .verse-block[class*="-wavy-"] .verse-text {
+    text-decoration: none;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    background-repeat: repeat-x;
+    background-position: 0 100%;
+    background-size: 48px 8px;
+    padding-bottom: 6px;
+  }
+  .verse-block.ul-yellow-wavy-thin    .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23c8920a' stroke-width='1.2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-yellow-wavy-medium  .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23c8920a' stroke-width='2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-yellow-wavy-thick   .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23c8920a' stroke-width='3' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-green-wavy-thin     .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%232e7d32' stroke-width='1.2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-green-wavy-medium   .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%232e7d32' stroke-width='2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-green-wavy-thick    .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%232e7d32' stroke-width='3' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-blue-wavy-thin      .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%231565c0' stroke-width='1.2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-blue-wavy-medium    .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%231565c0' stroke-width='2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-blue-wavy-thick     .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%231565c0' stroke-width='3' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-pink-wavy-thin      .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23c2185b' stroke-width='1.2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-pink-wavy-medium    .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23c2185b' stroke-width='2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-pink-wavy-thick     .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23c2185b' stroke-width='3' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-orange-wavy-thin    .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23e65100' stroke-width='1.2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-orange-wavy-medium  .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23e65100' stroke-width='2' stroke-linecap='round' fill='none'/></svg>"); }
+  .verse-block.ul-orange-wavy-thick   .verse-text { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='8'><path d='M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4' stroke='%23e65100' stroke-width='3' stroke-linecap='round' fill='none'/></svg>"); }
 
   /* ── Highlight picker backdrop ── */
   #hl-backdrop {
@@ -3091,6 +3241,10 @@
       <div class="pill-study-row">
         <span class="pill-study-main" id="btn-notes">📝 Notes</span>
         <button class="pill-study-arrow" onclick="toggleNotesPanel()" title="Open Notes"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
+      </div>
+      <div class="pill-study-row">
+        <span class="pill-study-main" id="btn-my-highlights">🔖 My Highlights</span>
+        <button class="pill-study-arrow" onclick="openHighlightsPanel()" title="Open My Highlights"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
       </div>
     </div>
   </div>
@@ -7305,6 +7459,34 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
     <div class="dict-panel-body" id="dict-panel-body"></div>
   </div>
 
+  <!-- My Highlights Panel -->
+  <div class="hl-panel" id="hl-panel">
+    <div class="hl-drag-handle" id="hl-drag-handle"></div>
+    <div class="hl-panel-head">
+      <div class="hl-panel-titlerow">
+        <span class="hl-panel-title">My Highlights</span>
+        <button class="hl-panel-close" onclick="closeHighlightsPanel()">&#10005;</button>
+      </div>
+      <div id="hl-anon-nudge" class="hl-anon-nudge" style="display:none">
+        <a onclick="openAuthModal('signin')">Sign in</a> to sync your highlights across devices.
+      </div>
+      <div class="hl-filter-row">
+        <select class="hl-filter-book" id="hl-filter-book" onchange="hlFilterChanged()">
+          <option value="">All books</option>
+        </select>
+        <div class="hl-color-filters" id="hl-color-filters">
+          <button class="hl-cf-all active" id="hl-cf-all" onclick="hlSetColorFilter('')" title="All colours">All</button>
+          <button class="hl-cf-btn" style="background:#f5e642;" data-color="yellow" onclick="hlSetColorFilter('yellow')" title="Yellow"></button>
+          <button class="hl-cf-btn" style="background:#6ed67e;" data-color="green" onclick="hlSetColorFilter('green')" title="Green"></button>
+          <button class="hl-cf-btn" style="background:#7ab8f5;" data-color="blue" onclick="hlSetColorFilter('blue')" title="Blue"></button>
+          <button class="hl-cf-btn" style="background:#f5a0c0;" data-color="pink" onclick="hlSetColorFilter('pink')" title="Pink"></button>
+          <button class="hl-cf-btn" style="background:#f5a942;" data-color="orange" onclick="hlSetColorFilter('orange')" title="Orange"></button>
+        </div>
+      </div>
+    </div>
+    <div class="hl-panel-body" id="hl-panel-body"></div>
+  </div>
+
 
   <script>
   // ── NOTES ─────────────────────────────────────────────────────────────────
@@ -8156,6 +8338,165 @@ function shareCtxCopy() {
   notesInit();
   syncThemeBtns();
   syncHistoryBtns();
+
+  // ── My Highlights Panel ──────────────────────────────────────────────────
+
+  const HL_COLOR_HEX = { yellow:'#f5e642', green:'#6ed67e', blue:'#7ab8f5', pink:'#f5a0c0', orange:'#f5a942' };
+
+  let hlPanelFilterBook  = '';
+  let hlPanelFilterColor = '';
+
+  function openHighlightsPanel() {
+    // Close study dropdown
+    const dd = document.getElementById('study-dropdown-menu');
+    if (dd) dd.classList.remove('open');
+    document.getElementById('hl-panel').classList.add('visible');
+    document.body.classList.add('hl-panel-open');
+    renderHighlightsPanel();
+    initHlPanelDrag();
+    // Show anon nudge if needed
+    const u = currentAuthUser;
+    const isAnon = !u || (u.is_anonymous === true && !u.email && !(u.identities?.length));
+    document.getElementById('hl-anon-nudge').style.display = isAnon ? 'block' : 'none';
+  }
+
+  function closeHighlightsPanel() {
+    document.getElementById('hl-panel').classList.remove('visible');
+    document.body.classList.remove('hl-panel-open');
+  }
+
+  function hlFilterChanged() {
+    hlPanelFilterBook = document.getElementById('hl-filter-book').value;
+    renderHighlightsPanel();
+  }
+
+  function hlSetColorFilter(color) {
+    hlPanelFilterColor = color;
+    // Update button states
+    document.getElementById('hl-cf-all').classList.toggle('active', !color);
+    document.querySelectorAll('#hl-color-filters .hl-cf-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.color === color);
+    });
+    renderHighlightsPanel();
+  }
+
+  function renderHighlightsPanel() {
+    const body = document.getElementById('hl-panel-body');
+    const bookSel = document.getElementById('hl-filter-book');
+
+    // Collect all highlights grouped by book (in Bible order)
+    const byBook = {};
+    Object.entries(HIGHLIGHT_CACHE).forEach(([key, entry]) => {
+      const [book, chStr, verseStr] = key.split(':');
+      if (!book) return;
+      if (hlPanelFilterBook && book !== hlPanelFilterBook) return;
+      if (hlPanelFilterColor && entry.color !== hlPanelFilterColor) return;
+      if (!byBook[book]) byBook[book] = [];
+      byBook[book].push({ book, chapter: parseInt(chStr), verse: parseInt(verseStr), entry });
+    });
+
+    // Sort books in Bible order
+    const orderedBooks = BOOKS.map(b => b.name).filter(n => byBook[n]);
+
+    // Rebuild book filter options (preserve selection)
+    const prevBook = bookSel.value;
+    const booksWithHighlights = BOOKS.map(b => b.name).filter(n => {
+      return Object.keys(HIGHLIGHT_CACHE).some(k => k.startsWith(n + ':'));
+    });
+    bookSel.innerHTML = '<option value="">All books</option>';
+    booksWithHighlights.forEach(n => {
+      const opt = document.createElement('option');
+      opt.value = n; opt.textContent = n;
+      if (n === prevBook) opt.selected = true;
+      bookSel.appendChild(opt);
+    });
+
+    if (orderedBooks.length === 0) {
+      body.innerHTML = `<div class="hl-empty">No highlights yet.<br>Right-click any verse to add one.</div>`;
+      return;
+    }
+
+    let html = '';
+    orderedBooks.forEach(bookName => {
+      const verses = byBook[bookName].sort((a, b) => a.chapter - b.chapter || a.verse - b.verse);
+      html += `<div class="hl-book-group"><div class="hl-book-head">${bookName}</div>`;
+      verses.forEach(({ book, chapter, verse, entry }) => {
+        const bookObj = BOOKS.find(b => b.name === book);
+        const bookNum = getBollsBookNum(bookObj);
+        let rawVal = BIBLE_CACHE[currentTranslation]?.[bookNum]?.[chapter]?.[verse];
+        let text = '';
+        if (rawVal && typeof rawVal === 'object' && rawVal.t != null) text = rawVal.t;
+        else if (typeof rawVal === 'string') text = rawVal;
+
+        const dotStyle = entry.style === 'underline'
+          ? `hl-verse-dot ul-dot" style="border-color:${HL_COLOR_HEX[entry.color] || '#ccc'}`
+          : `hl-verse-dot" style="background:${HL_COLOR_HEX[entry.color] || '#ccc'}`;
+
+        html += `<div class="hl-verse-row" onclick="hlPanelNavigate('${book.replace(/'/g,"\\'")}',${chapter},${verse})">
+          <span class="${dotStyle}"></span>
+          <span class="hl-verse-ref">${chapter}:${verse}</span>
+          <span class="hl-verse-text${text ? '' : ' no-text'}">${text ? hlEsc(text) : 'Tap to read'}</span>
+        </div>`;
+      });
+      html += '</div>';
+    });
+    body.innerHTML = html;
+  }
+
+  function hlPanelNavigate(bookName, chapter, verse) {
+    const book = BOOKS.find(b => b.name === bookName);
+    if (!book) return;
+    closeHighlightsPanel();
+    currentBook = book;
+    currentChapter = chapter;
+    if (book.testament !== currentTestament) setTestamentSilent(book.testament);
+    highlightVerse = verse;
+    syncDropdowns();
+    renderPassage();
+  }
+
+  function hlEsc(s) {
+    return String(s).replace(/[&<>"']/g,
+      c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
+  function initHlPanelDrag() {
+    const handle = document.getElementById('hl-drag-handle');
+    const panel  = document.getElementById('hl-panel');
+    if (!handle || !panel || handle._hlDragInit) return;
+    handle._hlDragInit = true;
+
+    const SNAP_COMPACT = 180;
+    const snapMid  = () => Math.round(window.innerHeight * 0.55);
+    const snapFull = () => Math.round(window.innerHeight * 0.85);
+    let startY = 0, startH = 0, dragging = false;
+
+    handle.addEventListener('pointerdown', e => {
+      if (window.innerWidth > 860) return;
+      dragging = true;
+      startY = e.clientY;
+      startH = panel.getBoundingClientRect().height;
+      panel.style.transition = 'none';
+      handle.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    handle.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const dy = startY - e.clientY;
+      panel.style.height = Math.max(SNAP_COMPACT, Math.min(snapFull() + 20, startH + dy)) + 'px';
+    });
+    const snapTo = () => {
+      if (!dragging) return;
+      dragging = false;
+      const cur = panel.getBoundingClientRect().height;
+      const snaps = [SNAP_COMPACT, snapMid(), snapFull()];
+      const target = snaps.reduce((a, b) => Math.abs(b - cur) < Math.abs(a - cur) ? b : a);
+      panel.style.transition = 'height 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+      panel.style.height = target + 'px';
+    };
+    handle.addEventListener('pointerup', snapTo);
+    handle.addEventListener('pointercancel', snapTo);
+  }
   </script>
 
   <script>
