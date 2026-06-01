@@ -2751,53 +2751,58 @@
   .verse-block.hl-pink   { background: #fdd5e0; border-radius: 3px; }
   .verse-block.hl-orange { background: #ffe5c2; border-radius: 3px; }
   /* ── Verse underlines — colour × style × weight ── */
-  /* thin = 1.5px, medium = 2.5px, thick = 4px */
-  .verse-block[class*="ul-"] .verse-text { display: inline; }
-  .verse-block.ul-yellow-solid-thin   .verse-text { text-decoration: underline solid   #c8920a 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-yellow-dotted-thin  .verse-text { text-decoration: underline dotted  #c8920a 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-yellow-wavy-thin    .verse-text { text-decoration: underline wavy    #c8920a 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-yellow-solid-medium .verse-text { text-decoration: underline solid   #c8920a 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-yellow-dotted-medium .verse-text { text-decoration: underline dotted #c8920a 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-yellow-wavy-medium  .verse-text { text-decoration: underline wavy    #c8920a 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-yellow-solid-thick  .verse-text { text-decoration: underline solid   #c8920a 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-yellow-dotted-thick .verse-text { text-decoration: underline dotted  #c8920a 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-yellow-wavy-thick   .verse-text { text-decoration: underline wavy    #c8920a 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-green-solid-thin    .verse-text { text-decoration: underline solid   #2e7d32 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-green-dotted-thin   .verse-text { text-decoration: underline dotted  #2e7d32 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-green-wavy-thin     .verse-text { text-decoration: underline wavy    #2e7d32 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-green-solid-medium  .verse-text { text-decoration: underline solid   #2e7d32 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-green-dotted-medium .verse-text { text-decoration: underline dotted  #2e7d32 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-green-wavy-medium   .verse-text { text-decoration: underline wavy    #2e7d32 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-green-solid-thick   .verse-text { text-decoration: underline solid   #2e7d32 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-green-dotted-thick  .verse-text { text-decoration: underline dotted  #2e7d32 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-green-wavy-thick    .verse-text { text-decoration: underline wavy    #2e7d32 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-blue-solid-thin     .verse-text { text-decoration: underline solid   #1565c0 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-blue-dotted-thin    .verse-text { text-decoration: underline dotted  #1565c0 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-blue-wavy-thin      .verse-text { text-decoration: underline wavy    #1565c0 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-blue-solid-medium   .verse-text { text-decoration: underline solid   #1565c0 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-blue-dotted-medium  .verse-text { text-decoration: underline dotted  #1565c0 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-blue-wavy-medium    .verse-text { text-decoration: underline wavy    #1565c0 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-blue-solid-thick    .verse-text { text-decoration: underline solid   #1565c0 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-blue-dotted-thick   .verse-text { text-decoration: underline dotted  #1565c0 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-blue-wavy-thick     .verse-text { text-decoration: underline wavy    #1565c0 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-pink-solid-thin     .verse-text { text-decoration: underline solid   #c2185b 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-pink-dotted-thin    .verse-text { text-decoration: underline dotted  #c2185b 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-pink-wavy-thin      .verse-text { text-decoration: underline wavy    #c2185b 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-pink-solid-medium   .verse-text { text-decoration: underline solid   #c2185b 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-pink-dotted-medium  .verse-text { text-decoration: underline dotted  #c2185b 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-pink-wavy-medium    .verse-text { text-decoration: underline wavy    #c2185b 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-pink-solid-thick    .verse-text { text-decoration: underline solid   #c2185b 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-pink-dotted-thick   .verse-text { text-decoration: underline dotted  #c2185b 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-pink-wavy-thick     .verse-text { text-decoration: underline wavy    #c2185b 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-orange-solid-thin   .verse-text { text-decoration: underline solid   #e65100 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-orange-dotted-thin  .verse-text { text-decoration: underline dotted  #e65100 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-orange-wavy-thin    .verse-text { text-decoration: underline wavy    #e65100 1.5px; text-underline-offset: 3px; }
-  .verse-block.ul-orange-solid-medium .verse-text { text-decoration: underline solid   #e65100 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-orange-dotted-medium .verse-text { text-decoration: underline dotted #e65100 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-orange-wavy-medium  .verse-text { text-decoration: underline wavy    #e65100 2.5px; text-underline-offset: 3px; }
-  .verse-block.ul-orange-solid-thick  .verse-text { text-decoration: underline solid   #e65100 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-orange-dotted-thick .verse-text { text-decoration: underline dotted  #e65100 4px;   text-underline-offset: 3px; }
-  .verse-block.ul-orange-wavy-thick   .verse-text { text-decoration: underline wavy    #e65100 4px;   text-underline-offset: 3px; }
+  /* text-decoration-thickness is a separate property for broad browser support */
+  .verse-block.ul-yellow-solid-thin    .verse-text { text-decoration: underline solid   #c8920a; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-yellow-dotted-thin   .verse-text { text-decoration: underline dotted  #c8920a; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-yellow-wavy-thin     .verse-text { text-decoration: underline wavy    #c8920a; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+  .verse-block.ul-yellow-solid-medium  .verse-text { text-decoration: underline solid   #c8920a; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-yellow-dotted-medium .verse-text { text-decoration: underline dotted  #c8920a; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-yellow-wavy-medium   .verse-text { text-decoration: underline wavy    #c8920a; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
+  .verse-block.ul-yellow-solid-thick   .verse-text { text-decoration: underline solid   #c8920a; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-yellow-dotted-thick  .verse-text { text-decoration: underline dotted  #c8920a; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-yellow-wavy-thick    .verse-text { text-decoration: underline wavy    #c8920a; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
+  .verse-block.ul-green-solid-thin     .verse-text { text-decoration: underline solid   #2e7d32; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-green-dotted-thin    .verse-text { text-decoration: underline dotted  #2e7d32; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-green-wavy-thin      .verse-text { text-decoration: underline wavy    #2e7d32; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+  .verse-block.ul-green-solid-medium   .verse-text { text-decoration: underline solid   #2e7d32; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-green-dotted-medium  .verse-text { text-decoration: underline dotted  #2e7d32; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-green-wavy-medium    .verse-text { text-decoration: underline wavy    #2e7d32; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
+  .verse-block.ul-green-solid-thick    .verse-text { text-decoration: underline solid   #2e7d32; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-green-dotted-thick   .verse-text { text-decoration: underline dotted  #2e7d32; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-green-wavy-thick     .verse-text { text-decoration: underline wavy    #2e7d32; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
+  .verse-block.ul-blue-solid-thin      .verse-text { text-decoration: underline solid   #1565c0; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-blue-dotted-thin     .verse-text { text-decoration: underline dotted  #1565c0; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-blue-wavy-thin       .verse-text { text-decoration: underline wavy    #1565c0; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+  .verse-block.ul-blue-solid-medium    .verse-text { text-decoration: underline solid   #1565c0; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-blue-dotted-medium   .verse-text { text-decoration: underline dotted  #1565c0; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-blue-wavy-medium     .verse-text { text-decoration: underline wavy    #1565c0; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
+  .verse-block.ul-blue-solid-thick     .verse-text { text-decoration: underline solid   #1565c0; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-blue-dotted-thick    .verse-text { text-decoration: underline dotted  #1565c0; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-blue-wavy-thick      .verse-text { text-decoration: underline wavy    #1565c0; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
+  .verse-block.ul-pink-solid-thin      .verse-text { text-decoration: underline solid   #c2185b; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-pink-dotted-thin     .verse-text { text-decoration: underline dotted  #c2185b; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-pink-wavy-thin       .verse-text { text-decoration: underline wavy    #c2185b; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+  .verse-block.ul-pink-solid-medium    .verse-text { text-decoration: underline solid   #c2185b; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-pink-dotted-medium   .verse-text { text-decoration: underline dotted  #c2185b; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-pink-wavy-medium     .verse-text { text-decoration: underline wavy    #c2185b; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
+  .verse-block.ul-pink-solid-thick     .verse-text { text-decoration: underline solid   #c2185b; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-pink-dotted-thick    .verse-text { text-decoration: underline dotted  #c2185b; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-pink-wavy-thick      .verse-text { text-decoration: underline wavy    #c2185b; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
+  .verse-block.ul-orange-solid-thin    .verse-text { text-decoration: underline solid   #e65100; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-orange-dotted-thin   .verse-text { text-decoration: underline dotted  #e65100; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+  .verse-block.ul-orange-wavy-thin     .verse-text { text-decoration: underline wavy    #e65100; text-decoration-thickness: 1.5px; text-underline-offset: 5px; }
+  .verse-block.ul-orange-solid-medium  .verse-text { text-decoration: underline solid   #e65100; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-orange-dotted-medium .verse-text { text-decoration: underline dotted  #e65100; text-decoration-thickness: 2.5px; text-underline-offset: 3px; }
+  .verse-block.ul-orange-wavy-medium   .verse-text { text-decoration: underline wavy    #e65100; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
+  .verse-block.ul-orange-solid-thick   .verse-text { text-decoration: underline solid   #e65100; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-orange-dotted-thick  .verse-text { text-decoration: underline dotted  #e65100; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
+  .verse-block.ul-orange-wavy-thick    .verse-text { text-decoration: underline wavy    #e65100; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
+
+  /* ── Highlight picker backdrop ── */
+  #hl-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 9998;
+  }
+  #hl-backdrop.open { display: block; }
 
   /* ── Highlight / Underline picker panel ── */
   #hl-picker {
@@ -3147,6 +3152,9 @@
 </div><!-- /.pill-tools -->
 
 </div>
+
+<!-- HIGHLIGHT PICKER BACKDROP (dismisses picker on tap outside) -->
+<div id="hl-backdrop" onclick="closeHlPicker()"></div>
 
 <!-- HIGHLIGHT / UNDERLINE PICKER -->
 <div id="hl-picker">
@@ -4832,6 +4840,7 @@ hlPicker.querySelectorAll('.hl-swatch').forEach(sw => {
 
 function closeHlPicker() {
   hlPicker.classList.remove('open');
+  document.getElementById('hl-backdrop').classList.remove('open');
   hlPickerVerse = null;
   hlPickerBulk  = false;
 }
@@ -4853,6 +4862,7 @@ function showHighlightPicker(e, verse) {
   }
   _hlSyncSwatchActive();
   hlPicker.classList.add('open');
+  document.getElementById('hl-backdrop').classList.add('open');
   // desktop: position near cursor; mobile CSS overrides to bottom sheet
   if (window.innerWidth > 640) {
     const x = Math.min(e.clientX, window.innerWidth  - 240);
@@ -4869,6 +4879,7 @@ function showHighlightPickerForSelection(e) {
   hlSetMode('highlight');
   _hlSyncSwatchActive();
   hlPicker.classList.add('open');
+  document.getElementById('hl-backdrop').classList.add('open');
   if (window.innerWidth > 640) {
     const bar = document.getElementById('selection-bar').getBoundingClientRect();
     const x = Math.min(bar.left, window.innerWidth - 240);
