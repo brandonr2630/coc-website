@@ -2798,6 +2798,12 @@
   .verse-block.ul-orange-dotted-thick  .verse-text { text-decoration: underline dotted  #e65100; text-decoration-thickness: 4px;   text-underline-offset: 3px; }
   .verse-block.ul-orange-wavy-thick    .verse-text { text-decoration: underline wavy    #e65100; text-decoration-thickness: 4px;   text-underline-offset: 5px; }
 
+  /* ── Highlight picker backdrop ── */
+  #hl-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 9998;
+  }
+  #hl-backdrop.open { display: block; }
+
   /* ── Highlight / Underline picker panel ── */
   #hl-picker {
     position: fixed; z-index: 9999;
@@ -3146,6 +3152,9 @@
 </div><!-- /.pill-tools -->
 
 </div>
+
+<!-- HIGHLIGHT PICKER BACKDROP (dismisses picker on tap outside) -->
+<div id="hl-backdrop" onclick="closeHlPicker()"></div>
 
 <!-- HIGHLIGHT / UNDERLINE PICKER -->
 <div id="hl-picker">
@@ -4831,6 +4840,7 @@ hlPicker.querySelectorAll('.hl-swatch').forEach(sw => {
 
 function closeHlPicker() {
   hlPicker.classList.remove('open');
+  document.getElementById('hl-backdrop').classList.remove('open');
   hlPickerVerse = null;
   hlPickerBulk  = false;
 }
@@ -4852,6 +4862,7 @@ function showHighlightPicker(e, verse) {
   }
   _hlSyncSwatchActive();
   hlPicker.classList.add('open');
+  document.getElementById('hl-backdrop').classList.add('open');
   // desktop: position near cursor; mobile CSS overrides to bottom sheet
   if (window.innerWidth > 640) {
     const x = Math.min(e.clientX, window.innerWidth  - 240);
@@ -4868,6 +4879,7 @@ function showHighlightPickerForSelection(e) {
   hlSetMode('highlight');
   _hlSyncSwatchActive();
   hlPicker.classList.add('open');
+  document.getElementById('hl-backdrop').classList.add('open');
   if (window.innerWidth > 640) {
     const bar = document.getElementById('selection-bar').getBoundingClientRect();
     const x = Math.min(bar.left, window.innerWidth - 240);
