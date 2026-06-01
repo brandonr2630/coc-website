@@ -5103,18 +5103,27 @@ function _hlSyncSwatchActive() {
 hlPicker.querySelectorAll('.hl-swatch').forEach(sw => {
   sw.addEventListener('click', e => {
     e.stopPropagation();
-    const color = sw.dataset.color; // '' = remove
+    const color    = sw.dataset.color; // '' = remove
     const style    = color ? hlPickerMode      : null;
     const ulStyle  = color && style === 'underline' ? hlPickerUlStyle  : null;
     const ulWeight = color && style === 'underline' ? hlPickerUlWeight : null;
     if (hlPickerBulk) {
+      // Bulk: apply to all selected verses and close
       const verses = Array.from(selectedVerses);
       verses.forEach(v => setHighlight(currentBook.name, currentChapter, v, color, style, ulStyle, ulWeight));
       clearSelection();
+      closeHlPicker();
     } else if (hlPickerVerse !== null) {
       setHighlight(currentBook.name, currentChapter, hlPickerVerse, color, style, ulStyle, ulWeight);
+      if (!color) {
+        // Remove swatch: close picker
+        closeHlPicker();
+      } else {
+        // Colour picked: stay open so user can add tags; refresh active swatch + tag chips
+        _hlSyncSwatchActive();
+        hlRenderPickerTags();
+      }
     }
-    closeHlPicker();
   });
 });
 
