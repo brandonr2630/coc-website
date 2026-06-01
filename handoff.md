@@ -1,855 +1,447 @@
-# COC Website — Handover File
+# COC Website — Handoff
 
-*Last updated 2026-06-01 (session 20)*
+*Last updated: 2026-06-01 · Session 20 · SW `coc-bible-v46`*
 
 ---
 
-## Project Overview
+## Quick Reference
 
-Single-page church website for the Church of Christ at Todd's Road, Trinidad.
+| Item | Value |
+|------|-------|
+| Live URL | `https://toddsroadcoctt.org` |
+| Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
+| GitHub repo | `brandonr2630/coc-website` |
+| Deploy | Push to `master` via PR → GitHub Actions → GreenGeeks cPanel auto-deploys |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v46`** |
+| Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
+| GreenGeeks secrets | `CPANEL_API_TOKEN`, `CPANEL_HOST` (`https://chi203.greengeeks.net:2083`), `CPANEL_USER` (`terranre`) |
+| Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** |
 
-**Two deployable files:**
-- `index.html` — landing page (hero, CTAs, information)
-- `bible-reader.html` — Bible study app with multiple translations, Strong's numbers, cross-references, commentaries, and notes
-
-**Live URL:** `toddsroadcoctt` (GreenGeeks cPanel)  
-**GitHub repo:** `brandonr2630/coc-website`  
-**Deploy:** Every push to `master` (via PR) auto-deploys via GitHub Actions → cPanel Fileman API.
+> **SW bump rule:** always read the version from `origin/master`, never from the local file.
+> ```bash
+> git fetch origin master
+> current=$(git show origin/master:service-worker.js | grep -oP "coc-bible-v\K\d+")
+> sed -i "s/coc-bible-v[0-9]*/coc-bible-v$((current + 1))/" service-worker.js
+> ```
 
 ---
 
 ## Tech Stack
 
-- **Vanilla HTML / CSS / JS** — no build system, no framework, no npm, no bundler
-- **Service worker (`service-worker.js`)** — PWA offline support for `bible-reader.html`, cache version `coc-bible-v15`
-- **Translation & reference data** — all served as JSON files from repo root (fetched client-side)
-- **External APIs** (read-only, no auth):
-  - `bolls.life` — NKJV translation (copyrighted, API-only, never cached locally)
-  - `bible.helloao.org` — commentaries (Adam Clarke, Matthew Henry, Jamieson-Fausset-Brown)
-
-**No backend servers, no database, no authentication.**
+- **Vanilla HTML / CSS / JS** — no build system, no bundler, no npm, no framework
+- **Two deployable files:** `index.html` (landing page) · `bible-reader.html` (~8 500 lines — entire app)
+- **Service worker** (`service-worker.js`) — PWA offline, cache-first for app shell + JSON data, network-only for `bolls.life` and Google Fonts
+- **Supabase** (`@supabase/supabase-js@2`) — highlights persistence + user auth (anonymous + email/password + Google OAuth)
+- **External read-only APIs:** `bolls.life` (NKJV, never cached), `bible.helloao.org` (additional commentaries, cached in localStorage)
+- **Translation & reference JSON** — all served as static files from repo root, fetched client-side
 
 ---
 
-## Bible Reader Architecture (`bible-reader.html`)
+## Architecture
 
 ### Translations
 
-| Key | Label | Source | Cache | Notes |
-|-----|-------|--------|-------|-------|
-| `kjv` | King James Version | `kjv.json` | Local | Public domain |
-| `asv` | American Standard Version | `asv.json` | Local | Public domain |
-| `web` | World English Bible | `web.json` | Local | Public domain |
-| `ylt` | Young's Literal Translation | `ylt.json` | Local | Public domain |
-| `lsv` | Literal Standard Version | `lsv.json` | Local | Public domain |
-| `lxxe` | English Septuagint (1851) | `lxxe.json` | Local | Public domain |
-| `rvr09` | Reina-Valera 1909 | `rvr09.json` | Local | Public domain |
-| `darby` | Darby Bible (1890) | `darby.json` | Local | Public domain |
-| `kjvs` | KJV + Strong's | `kjvs.json` | Local | Public domain |
-| `asvs` | ASV + Strong's | `asvs.json` | Local | Public domain |
-| `hebrew` | Hebrew OT | `hebrew.json` | Local | Leningrad Codex — free with citation |
-| `greek-nt` | Greek NT | `greek-nt.json` | Local | Public domain |
-| `nkjv` | New King James Version | bolls.life API | Never | Copyrighted — API only, never cached locally |
+| Key | Label | Source | Cached |
+|-----|-------|--------|--------|
+| `kjv` | King James Version | `kjv.json` | SW + localStorage |
+| `asv` | American Standard Version | `asv.json` | SW + localStorage |
+| `web` | World English Bible | `web.json` | SW + localStorage |
+| `ylt` | Young's Literal Translation | `ylt.json` | SW + localStorage |
+| `lsv` | Literal Standard Version | `lsv.json` | SW + localStorage |
+| `lxxe` | English Septuagint (1851) | `lxxe.json` | SW + localStorage |
+| `rvr09` | Reina-Valera 1909 | `rvr09.json` | SW + localStorage |
+| `darby` | Darby Bible (1890) | `darby.json` | SW + localStorage |
+| `kjvs` | KJV + Strong's numbers | `kjvs.json` | SW + localStorage |
+| `asvs` | ASV + Strong's numbers | `asvs.json` | SW + localStorage |
+| `hebrew` | Hebrew OT (Leningrad Codex) | `hebrew.json` | SW + localStorage |
+| `greek-nt` | Greek NT | `greek-nt.json` | SW + localStorage |
+| `nkjv` | New King James Version | `bolls.life` API | **Never** — copyrighted |
 
-**Sets:**
-- `LOCAL_TRANSLATIONS` = all except `nkjv` (fetched from repo root)
-- `STRONGS_TRANSLATIONS` = `{kjvs, asvs}` (Strong's numbers embedded in verse text)
+`LOCAL_TRANSLATIONS` = all except `nkjv` · `STRONGS_TRANSLATIONS` = `{kjvs, asvs}`
 
 ### Reference Data
 
-All stored as JSON files in repo root, fetched on demand:
-- **Commentaries** (from `bible.helloao.org` API, then cached in localStorage):
-  - Adam Clarke Commentary
-  - Matthew Henry Commentary
-  - Jamieson-Fausset-Brown Commentary
-- **Dictionaries** (local):
-  - Easton's Bible Dictionary (`eastons.json`)
-  - Smith's Bible Dictionary (`smiths.json`)
-- **Cross-references** (`crossrefs.json`) — all 66 books with verse-level cross-ref links
+All JSON files live at repo root and are fetched on demand:
+
+| File | Content | Size |
+|------|---------|------|
+| `adam-clarke.json` | Adam Clarke Commentary | 11.8 MB |
+| `matthew-henry.json` | Matthew Henry Commentary | 29.9 MB |
+| `jamieson-fausset-brown.json` | JFB Commentary | 9.0 MB |
+| `eastons.json` | Easton's Bible Dictionary (1897) | — |
+| `smiths.json` | Smith's Bible Dictionary (1863) | — |
+| `hitchcock.json` | Hitchcock's Bible Names (1869) | ~2 600 entries |
+| `crossrefs.json` | Cross-references, all 66 books | — |
+
+`fausset.json` — **pending.** Run `node build-fausset.mjs` from `coc-website/` (~20 min). Then add `fausset` to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, and the dictionary dropdown HTML.
+
+Additional commentaries (John Gill, Keil-Delitzsch, Tyndale) still fetched live from `bible.helloao.org` with a `Content-Type` guard.
+
+### Highlights & Auth (Supabase)
+
+**Supabase schema — `highlights` table:**
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | auto |
+| `user_id` | uuid FK → auth.users | RLS-scoped |
+| `book` | text | |
+| `chapter` | int4 | |
+| `verse` | int4 | |
+| `color` | text | `yellow\|green\|blue\|pink\|orange` |
+| `style` | text | `highlight\|underline` |
+| `ul_style` | text | `solid\|dotted\|wavy` |
+| `ul_weight` | text | `thin\|medium\|thick` |
+| `tags` | text[] | Added session 20 |
+
+Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabled.
+
+**Auth flow:**
+- First visit → `signInAnonymously()` (silent, 1-second deferred fallback)
+- `hasRealUser` flag prevents the anonymous fallback from firing after a real sign-in
+- OAuth: **PKCE flow** — `createClient(..., { auth: { flowType: 'pkce' } })`. `redirectTo: window.location.origin + '/bible-reader.html'`. Google now shows `toddsroadcoctt.org` on the consent screen.
+- Google Cloud Console: add `https://toddsroadcoctt.org/bible-reader.html` to **Authorized redirect URIs** · Supabase dashboard: add same URL to **Redirect URLs** *(required for PKCE to work)*
+- Google app currently in **testing mode** — add users at Google Cloud → Audience → Test users. To open to all: Audience → Publish app.
+
+**In-memory cache:** `HIGHLIGHT_CACHE` — key `"Book:ch:v"` → `{color, style, ulStyle, ulWeight, tags[]}`. Updated synchronously on user action; Supabase persisted asynchronously.
 
 ### Key JS Globals
 
-- `currentBook`, `currentChapter`, `currentTranslation` — current view state
-- `BIBLE_CACHE` — lazily populated per-translation on first load/search
-- `BOOKS` — array of `{name, chapters, testament}` for all 66 books
-- `TRANSLATION_ABBR` — short labels for pill buttons (e.g. `kjv → 'KJV'`)
-- `BOOK_ABBR` — 66-book short names for mobile ≤540px (e.g. `Genesis → 'Gen'`)
+- `currentBook`, `currentChapter`, `currentTranslation` — view state
+- `BIBLE_CACHE` — lazily populated per translation on first load/search
+- `BOOKS` — 66-entry array of `{name, chapters, testament}`
+- `TRANSLATION_ABBR` — pill button labels (`kjv → 'KJV'`)
+- `BOOK_ABBR` — 66-book short names for ≤540px mobile
+- `HIGHLIGHT_CACHE` — in-memory highlight store (see above)
+- `currentAuthUser` — current Supabase user (anonymous or real)
+- `hasRealUser` — prevents anonymous fallback from overwriting a signed-in session
 
 ### UI Layout
 
-**Three zones:**
-1. **Fixed top nav** — logo left, hamburger right (overlay nav on all screens)
-2. **Page wrap** — Bible text centered, max 860px. Large serif font, generous line height, generous padding
-3. **Fixed controls** — now consolidated into the page wrap as regular inline rows
+**Bottom pill nav** (fixed, center-bottom) — Book select, prev/next chapter chevrons, session history `«»`, Translation, Study (Commentary, Parallel, Dictionary, Interlinear, My Highlights, Notes), Settings.
 
-### Controls & Interaction
+**Control rows** (top of page-wrap):
+1. Testament (OT/NT) + Translation
+2. Book select (triggers grid picker) + Search icon
+3. Font A−/A+ · Reading Mode · Present Mode
 
-The reader uses three horizontal control rows at the top of the page (not a floating pill):
+**Panels** (all `position: fixed`):
 
-**Row 1: Old Testament | New Testament | Translation**
-- `testament-row` — flex container with OT/NT buttons and translation picker
-- OT/NT toggle active/inactive state via `.active` class
+| Panel | Desktop | Mobile |
+|-------|---------|--------|
+| Search | Left 360px | Bottom sheet, 3 snaps |
+| Strong's | Right 360px | Bottom sheet |
+| Notes | Full-page view | Full-page view |
+| X-ref | Left 320px | Bottom sheet |
+| Commentary | Right 400px | Bottom sheet |
+| Dictionary | Right 380px | Bottom sheet |
+| My Highlights | Right 360px | Bottom sheet, 3 snaps |
+| Highlight picker | Near cursor | Bottom sheet |
 
-**Row 2: Book | Chapter | Verse | Search**
-- `nav-dropdowns` — flex container with three `<select>` elements + search icon
-- Book select `flex: 2.2`; Chapter `flex: 1.6`; Verse `flex: 1.2` (responsive widths)
-- Search icon (🔍) opens the search panel on mobile/tablet as bottom sheet
-
-**Row 3: Text Size | Reading Mode + Present Mode**
-- `reader-toolbar` — left side has A−/A+ font controls; right side has "Reading Mode" and "Present" toggle buttons
-- Reading Mode hides all controls and navigation; Presentation Mode is fullscreen speaker view
-
-### Panels (all `position: fixed`)
-
-| Panel | Trigger | Desktop position | Mobile position |
-|-------|---------|-----------------|----------------|
-| Search | 🔍 button | Left side, 360px wide | Bottom sheet (draggable, 3 snaps) |
-| Strong's | tap word in KJV+S/ASV+S | Right side, 360px wide | Bottom sheet |
-| Notes | 📝 in toolbar or context menu | Right side, 380px wide | Bottom sheet |
-| X-ref | click verse cross-ref link | Left side, 320px wide | Bottom sheet |
-| Commentary | select commentary in dropdown | Right side, 400px wide | Bottom sheet |
-
-### Search Panel (word search)
-
-- **Two paths:**
-  - `bolls.life` API for NKJV
-  - Local JSON scan for all other translations
-- **Filters:** Testament / Section / Book / Strong's # (Strong's # only for `kjvs`/`asvs`)
-- **Pagination:** 25 results per page; status bar shows "1–25 of 347 results in KJV"
-- **Mobile interaction:** Bottom sheet with 3 snap heights — 180px (compact), 55vh (default), 85vh (expanded)
-- **CSS variable:** `--search-pb` on `:root` drives `.page-wrap` padding-bottom dynamically
-
-### Notes / Sermon Notes Feature
-
-- **Data model:** `coc_notes_sessions` in localStorage (one key = one note session)
-- **Interaction:** Right-click any verse → "Add to Notes"; or use selection toolbar → Notes button
-- **Rich-text toolbar:** Bullet list / numbered list / indent
-- **Export:** TXT, DOCX (via `docx.js` from CDN), PDF (via `window.print`)
-
-### Service Worker
-
-Cache version is `coc-bible-v42`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
-
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v42';`
-
-### Dark Mode
-
-- Toggle via settings gear in toolbar → "Dark Mode"
-- Persists to localStorage as `bibleTheme`
-- All colors respond to `[data-theme="dark"]` CSS selector
-- Page wrap applies theme on page load via inline script (line 6)
+**Highlight picker** — order: Mode toggle → Tags section → Colour swatches → Underline options. Picker stays open after colour pick so tags can be added immediately. Closes on ✕ swatch, backdrop click, or bulk-apply.
 
 ---
 
-## Session Work — 2026-05-25 (session 15, continued)
+## Feature Status
 
-### Adam Clarke Commentary — Mobile JSON Error Fix
+### Completed — Bible Reader
 
-**PR #38** — `fix/commentary-mobile-json` → merged to `master` → deployed (coc-bible-v21)
+| Feature | Session | PRs |
+|---------|---------|-----|
+| Multiple translations (12 local + NKJV API) | 1–5 | — |
+| Strong's concordance (KJV+S, ASV+S) | early | — |
+| Cross-references panel | early | — |
+| Commentaries (3 local JSON + 3 live API) | 15 | #38 |
+| Dictionaries: Easton's, Smith's, Hitchcock's | 16 | #46 |
+| Word search with filters + pagination | early | — |
+| Sermon notes (localStorage, multi-session, export TXT/DOCX/PDF) | 6–7 | #15 |
+| Session history nav `«»` | 9 | #19 |
+| Sepia theme | 9 | #19 |
+| Grid chapter/verse picker | 8 | #17 |
+| Swipe chapter navigation | 16 | #47 |
+| Verse sharing (Web Share API + modal) | 13–14 | #28–35 |
+| Verse highlights (colour + underline) + Supabase auth | 16–18 | #48–64 |
+| Highlight tags (multi-tag, filter in panel) | 20 | #70–73 |
+| My Highlights panel (filter by book, colour, tag) | 19–20 | #68, #70, #73 |
+| Google OAuth (PKCE, shows toddsroadcoctt.org) | 17, 20 | #56–57, #72 |
 
-**Bug:** Selecting Adam Clarke (or any of the 3 built-in commentaries) on mobile showed "unexpected token" in the commentary panel. Desktop appeared fine because the browser HTTP cache had a previous valid response.
+### Pending — Bible Reader
 
-**Root cause:** `loadCommentaryChapter` always fetched from `bible.helloao.org/api/c/adam-clarke/...`. The API was returning an HTML error page (HTTP 200 but non-JSON body). `res.json()` threw `SyntaxError: Unexpected token '<'`, which was caught and displayed as a raw error string.
+- [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready at repo root; run it, then wire into UI (add to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, dropdown HTML)
+- [ ] **Multiple named bookmarks** — one position saved currently; add named localStorage bookmarks ("Sunday sermon", "Home study")
+- [ ] **Copy shareable link** — `#John.3.16` deep-links work but no copy button; add to selection toolbar
+- [ ] **Verse-level notes** — short personal note per verse in localStorage
+- [ ] **Reading plans** — 365-day / NT-in-90 / custom; daily progress tracker in localStorage
+- [ ] **Print stylesheet** — `@media print` to hide nav/controls and output passage only
+- [ ] **Search streaming** — full JSON load on first search stalls on slow devices; chunked `setTimeout` yield
 
-**Fix:**
-- Added `LOCAL_COMMENTARIES = new Set(['adam-clarke','matthew-henry','jamieson-fausset-brown'])` and `LOCAL_COMMENTARY_FULL = {}` (in-memory cache for full parsed JSON)
-- `loadCommentaryChapter` now loads `/{key}.json` from the site root for these three commentaries; slices `data[bookName][chapter]` (format already matches what `renderCommentaryPassage` expects)
-- Full parsed object cached in `LOCAL_COMMENTARY_FULL[key]` — chapter navigations after the first are instant
-- Added `Content-Type` guard before `res.json()` on the helloao path (john-gill, keil-delitzsch, tyndale) for cleaner error messages
-- Service worker bumped v20 → v21
+### Pending — Homepage (`index.html`)
 
-**First-load file sizes (then SW-cached for subsequent visits):**
+- [ ] Hero CTA label: "Service Times" → "Join Us This Sunday"
+- [ ] Phone number in nav (desktop) / below hero CTAs (mobile) — **need from client**
+- [ ] Real congregation photo for hero — group photo after Sunday service
+- [ ] "Your First Visit" section — service length, dress, parking, children's program
+- [ ] Hero tagline rewrite — **need founding year from client**
+- [ ] Bible reader callout card on homepage
+- [ ] Contact / enquiry form — no backend yet; recommend Formspree or EmailJS (zero server required)
 
-| Commentary | File size |
-|-----------|-----------|
-| Adam Clarke | 11.8 MB |
-| Matthew Henry | 29.9 MB |
-| Jamieson-Fausset-Brown | 9.0 MB |
+### Pending — Translations to Consider
 
----
-
-## Session Work — 2026-05-25 (session 15)
-
-### Pill Menu Layout Bug Fixes
-
-**PR #37** — `fix/pill-menu-bugs` → merged to `master` → deployed (coc-bible-v20)
-
-| Bug | Root cause | Fix |
-|-----|-----------|-----|
-| Translation dropdown overflows left on mobile | `.pill-dropdown` uses `left: 50%; transform: translateX(-50%)` relative to the button wrapper — on mobile this pushes the list off the left edge | Added `@media (max-width: 640px)` override: `position: fixed; left/right: 0; bottom: 0` — slides up as bottom sheet |
-| Vestigial partition in Parallel & Commentary rows | `.pill-study-arrow` had `border-left: 1px solid var(--line)` with no content inside the button — showed as a bare divider | Removed `border-left`; added a small `›` chevron SVG inside each arrow button |
-| Commentary & Parallel sub-menus overflow left on mobile | Desktop rule `#study-dropdown-menu .parallel-dropdown-menu { right: calc(100%+4px) }` has higher specificity than the generic `.parallel-dropdown-menu` mobile rule, so sub-menus ignored the fixed-sheet override | Added `#study-dropdown-menu .parallel-dropdown-menu` to the mobile selector with `!important` so all sub-menus slide up from bottom |
-| Settings menu had no close button; fonts unsorted | No close affordance existed; font options were in session-addition order | Added "Settings" header row with ✕ close button; fonts sorted alphabetically (Atkinson → OpenDyslexic) |
-
-**Files modified:**
-| File | Changes |
-|------|---------|
-| `bible-reader.html` | 50 insertions, 15 deletions — CSS, HTML, settings header, font order |
-| `service-worker.js` | Cache version bump only (v19 → v20) |
-
----
-
-## Session Work — 2026-05-25 (session 14)
-
-### Mobile UI Bug Fixes
-
-**PR #35** — `fix/mobile-ui-bugs` → merged to `master` → deployed (coc-bible-v19)
-
-**Bug 1 — Verse selection bar overflow (mobile)**
-
-The pill that appears when selecting verses was overflowing both edges of the screen on mobile.
-
-| Change | Detail |
-|--------|--------|
-| Removed verse-count label | "1 verse selected" span eliminated; label served no useful purpose in a compact bar |
-| Dividers between all items | `sel-divider` now appears between every button, not just around Clear |
-| "Clear" → "✕" close button | `.sel-btn-close` replaces the text "Clear" for compactness |
-| Share button added | New `selectionShare()` function — uses Web Share API (native OS sheet) on mobile, falls back to the existing share modal (X / WhatsApp / Facebook / Copy) on desktop |
-| Overflow fix | `max-width: calc(100vw - 20px)` prevents the bar escaping the screen; padding and font reduced at ≤540px |
-
-**Bug 2 — Book name overflows top header on mobile**
-
-`renderPassage()` now sets `passage-ref-top` using `BOOK_ABBR` when `window.innerWidth <= 540` (e.g. "2 Thessalonians" → "2 Thess"). Full name is still used on tablet and desktop.
-
-**Bug 3 — Study button blank in bottom pill nav (mobile)**
-
-On mobile the pill renders in two tiers. The second tier (`.pill-tools`) had `justify-content: flex-end` which pushed items right, and `.pill-study-text { display: none }` hid the "Study" label, leaving a blank gap between two dividers. Fixed by:
-- Removing the `display: none` on `.pill-study-text` (Study label now visible on mobile)
-- Changing `.pill-tools` to `justify-content: space-between` so all items distribute evenly across the full row width
-
-**Files modified:**
-| File | Changes |
-|------|---------|
-| `bible-reader.html` | 51 insertions, 19 deletions — CSS, HTML, `updateSelectionBar`, new `selectionShare`, `renderPassage` book abbr |
-| `service-worker.js` | Cache version bump only (v18 → v19) |
+From `seven1m/open-bibles` (all public domain, converter at `SCRIPTS/zefania-to-json.js`):
+- **BBE** (Bible in Basic English) — simple vocabulary, good for new readers
+- WEB-BE, OEB-US, OEB-CW, DRA (Catholic/Vulgate-based)
 
 ---
 
-## Session Work — 2026-05-25 (session 13)
-
-### Social Media Verse Sharing
-
-**PRs #28–#33** — `feat/verse-share` + four fix/bump PRs → merged to `master` → deployed (coc-bible-v18)
-
-**Feature:** Right-click any verse number → context menu now includes **Share verse**.
-
-| Path | Behaviour |
-|------|-----------|
-| Mobile / Web Share API supported | OS native share sheet (covers WhatsApp, Facebook, X, Messages, etc. in one tap) |
-| Desktop / fallback | Modal with branded buttons: X (Twitter), WhatsApp, Facebook, Copy to clipboard |
-
-Shared content format: `"verse text" — Book Chapter:Verse (ABBR)\nURL#Book.Chapter.Verse`
-
-**Root-cause bug hunt (4 rounds):**
-
-| Round | Symptom | Root cause | Fix |
-|-------|---------|------------|-----|
-| 1 | Verse text = "null" string | `raw.t !== undefined` passes when `raw.t === null`; template literal renders null as "null" | `raw.t != null` in `getVerseText`; `|| ''` in `ctxShare` |
-| 2 | Still "null" | `fetchLocalChapter` also uses `!== undefined`, passing null t-values to render | `val.t != null ? val.t : ''` in `fetchLocalChapter`; `v.text != null` in all 3 render paths |
-| 3 | Still "null" | `stripHtml(null)` sets `tmp.innerHTML = null` which browser serialises as the string `"null"` | Early-return guard `if (!html) return ''` in `stripHtml` |
-| 4 | Still "null" | **Actual root cause:** `ctxShare()` calls `hideVerseCtxMenu()` before using `ctxVerseNum`. `hideVerseCtxMenu()` sets `ctxVerseNum = null`, so ref and `getVerseText` both receive null | Snapshot `const verseNum = ctxVerseNum` before calling `hideVerseCtxMenu()` |
-
-**Lesson:** Always snapshot shared mutable state into a local `const` at the top of a handler before calling any function that might reset it.
-
-**Service worker:** `coc-bible-v16` → `coc-bible-v18` (bumped twice — should have been once with the feature PR)
-
-**Files modified:**
-| File | Changes |
-|------|---------|
-| `bible-reader.html` | Share modal CSS + HTML, `ctxShare` + 5 helper functions, context menu button, null guards in `stripHtml` / `fetchLocalChapter` / render paths |
-| `service-worker.js` | v16 → v18 |
-
----
-
-## Session Work — 2026-05-24 (session 12)
-
-### Nav Pill Redesign — Grid-Only Navigation & Compact Layout
-
-**PR #24** — `feat/pill-nav-redesign` → merged to `master` → deployed (coc-bible-v15)
-**PR #25** — `chore/sw-bump-v15` → merged to `master` → deployed (service worker bump)
-
-**Navigation overhaul:**
-
-| Change | Detail |
-|--------|--------|
-| Chapter & verse dropdowns removed | Grid picker is now the sole nav mechanism for chapter and verse |
-| Book dropdown always triggers grid | `onmousedown` saves and blanks the value so re-selecting the same book fires `onchange` and opens the chapter grid; `onblur` restores if dismissed without picking |
-| Same-book re-selection | When already on John 3 and user opens Book → picks John again, chapter grid opens with current chapter highlighted |
-| Bottom nav stripped | Arrow buttons removed from `#bottom-nav`; now a centred strip showing translation full name + ⓘ info button only |
-| Chevrons merged into pill | `«` `‹` `›` `»` moved into `.pill-nav` flanking the book select, reusing the `-bot` IDs so all JS sync logic (`syncHistoryBtns`, prev/next disable) works unchanged |
-
-**SVG chevrons:**
-
-All four chevrons in both the pill and the top nav are now matched SVGs — same arm geometry (`polyline points="14 3 9 12 14 21"` / mirrored), `stroke-width="2.5"`, `width="16" height="16"`. Replaced Nunito Unicode glyphs which had inconsistent stroke weight. `nav-arrow-btn` and `nav-hist-btn` updated to `display:flex` for proper centering.
-
-**Pill polish:**
-
-| Item | Detail |
-|------|--------|
-| Filter icons | `▾` replaced with 3-line SVG filter icon on Translation, Study, Parallel sub-arrow, Commentary sub-arrow (menus open upward) |
-| Book select caret | CSS `::after` `▾` removed — native select has no indicator |
-| Compact pill | `.pill-nav` changed to `flex:none`; pill drops fixed `width`; shrinks to content, stays centred via `translateX(-50%)` |
-| Book select width | `.pill-location` and `.pill-select` set to `flex:none` / `width:auto` — sizes to longest option ("2 Thessalonians") |
-| Study/Settings divider | `pill-divider` added between Study and Settings buttons |
-| Scroll-to-top on mobile | Added `@media (max-width:540px) { bottom:140px }` to clear the two-row pill layout |
-
-**Files modified:**
-| File | Changes |
-|------|---------|
-| `bible-reader.html` | 57 insertions, 54 deletions |
-| `service-worker.js` | Cache version bump only (v14 → v15) |
-
----
-
-## Session Work — 2026-05-24 (session 11)
-
-### Critical Load Fix — History Nav Script Order
-
-**PR #22** — `fix/history-load-order` → merged to `master` → deployed
-
-**Bug:** Bible reader showed a permanent loading spinner in Chrome and Firefox after PR #19 was deployed.
-
-**Root cause:** `historyPush()` and `syncHistoryBtns()` were defined in the second `<script>` block (notes/settings, ~line 6700), but called inside `renderPassage()` which fires in the first `<script>` block on initial page load. The browser threw a `ReferenceError` before any verses could render.
-
-**Fix:** Moved the history state variables (`readingHistory`, `historyIndex`, `_histNavActive`) and those two functions into the main script block immediately before the initial `renderPassage()` call. `historyBack()` and `historyForward()` remain in the second block as they are only triggered by user interaction.
-
-**Files modified:** `bible-reader.html` (37 insertions, 36 deletions — move only, no logic change)
-
----
-
-## Session Work — 2026-05-24 (session 10)
-
-### WEB Translation Data Fix — 2 John & 3 John
-
-**PR #20** — `fix/web-json-2john-3john` → merged to `master` → deployed
-
-**Bug:** In the WEB translation, 2 John showed only 1 verse and 3 John showed only 1 verse. Verse grid showed only v1.
-
-**Root cause:** The `web.json` was converted from a Zefania XML source. The WEB source is actually in USFX format (`<v id="N"/>text<ve/>`), not Zefania (`<v>text</v>`). The converter matched only the opening tag and captured nothing after it, leaving just verse 1 in each single-chapter book where the paragraph structure exposed the issue.
-
-**Fix:** Re-extracted from `BIBLE TRANSLATIONS/eng-web.usfx.xml` using a USFX-aware regex. Results:
-- 2 John: 1 verse → **13 verses** ✅
-- 3 John: 1 verse → **14 verses** ✅
-
-**Full audit:** All other books checked against KJV verse counts. Two remaining shortfalls found and confirmed as **intentional WEB text choices**, not bugs:
-- Acts 24:7 — WEB marks this verse as a Textus Receptus addition only (footnote, no verse text); correctly absent
-- Romans 16 (25 vs 27 verses) — the WEB source itself omits the repeated benediction and places the doxology differently per its manuscript tradition
-
-**Files modified:** `web.json` (1 insertion, 1 deletion — two book entries patched)
-
----
-
-## Session Work — 2026-05-24 (session 9)
-
-### UI Polish, New Fonts, Sepia Theme & Session History Nav
-
-**PR #19** — `feat/bible-reader-ui-session-9` → merged to `master` → deployed (coc-bible-v14) ⚠️ introduced load bug fixed in PR #22
-
-**Features:**
-
-| Feature | Description |
-|---------|-------------|
-| Session history nav | `«`/`»` buttons alongside chapter chevrons. Browser-style back/forward across passages visited in the session. Tooltips show destination (e.g. `← Job 3`). History stack lives in memory, resets on reload. |
-| Sepia theme | Warm cream/brown palette. `📜 Sepia` button in reader toolbar. Persists to localStorage. Inline restore script handles all three themes (light/dark/sepia). |
-| Notes text colour picker | `<input type="color">` added to notes formatting toolbar. Uses `foreColor` execCommand. |
-| Reading fonts expanded | Added Merriweather, Inter, Atkinson Hyperlegible. Picker now has 9 options ordered by readability tier. New Google Fonts loaded in `<head>`. |
-| Notes font picker | Replaced system fonts (Comic Sans, Verdana etc.) with the curated reading font list. |
-
-**Polish:**
-
-| Item | Description |
-|------|-------------|
-| Chapter chevrons | `←`/`→` → `‹`/`›` at 1.8rem on all 4 nav buttons. History `«`/`»` visually muted at rest to distinguish function. |
-| Notes back button | `← Reader` → `‹ Reader` |
-| Search filter alignment | Labels get `min-width: 72px; text-align: right` — all dropdowns share a consistent left edge. |
-| BC/AD | `BCE` → `BC`, `CE` → `AD` throughout book info data and manuscript descriptions. |
-
-**Service worker:** `coc-bible-v13` → `coc-bible-v14`
-
-**Files modified:**
-| File | Changes |
-|------|---------|
-| `bible-reader.html` | 250 insertions, 97 deletions |
-| `service-worker.js` | Cache version bump only |
-
----
-
-## Session Work — 2026-05-24 (session 8)
-
-### Bug Fixes, Grid Navigation & Notes Overhaul
-
-**PR #17** — `fix/bible-reader-bugs-and-grid-nav` → merged to `master` → deployed (coc-bible-v13)
-
-**Bug fixes:**
-
-| # | Bug | Fix |
-|---|-----|-----|
-| 1 | Scroll-to-top chevron overlapping bottom nav pill on tablet | Extended `bottom: 80px` rule to all viewports ≤900px |
-| 2 | Commentary sub-dropdown spilling off right edge of screen when Study mode active | Changed sub-dropdown to open **left** (`right: calc(100% + 4px)`) instead of right |
-| 3 | No way to clear word search field | Added `×` clear button with `clearSearchInput()` — resets field and results |
-| 4 | Floating book/translation reminder pill top edge clipped by fixed header | Raised all three floating pills: `top: 80px → 88px` (desktop), `top: 68px → 80px` (mobile) |
-| 5 | Chapter/verse dropdowns intermittently transparent during navigation | `.pill-select` now has explicit solid background (`#ffffff` / `#2a2a25` dark) instead of `transparent` |
-| 6 | `renderPassage` silently hangs on network failure | Catch block now detects offline state, shows specific message, and renders a **Try Again** button |
-
-**Features:**
-
-| Feature | Description |
-|---------|-------------|
-| Notes full-page view | Notes panel converted from right sidebar to full-screen page. `← Reader` back button in topbar. Resize handle removed. Content centred at max 860px for readability. `setNotesPanelWidth` made no-op; stale saved width cleared on open. |
-| Grid chapter/verse picker (primary nav) | Olive Tree-style: selecting a book opens a floating chapter grid modal. Selecting a chapter fetches the passage then opens a verse grid. Selecting a verse scrolls to it. Escape key closes both grids. Existing pill dropdowns remain as secondary nav. Backdrop click also closes. |
-
-**Quick wins:**
-- Removed 4 `console.log` statements from production (lines 3366, 5218, 5223, 5232)
-- Service worker bumped: `coc-bible-v12` → `coc-bible-v13`
-
-**Files modified:**
-| File | Changes |
-|------|---------|
-| `bible-reader.html` | 215 insertions, 75 deletions |
-| `service-worker.js` | Cache version bump only |
-
-**Deployment:**
-- Commit: `033325c` — squash-merged via PR #17
-- GitHub Actions deployment completed successfully
-- Live at `toddsroadcoctt` ✅
-
----
-
-## Session Work — 2026-05-17 (session 7)
-
-### Global Formatting Toolbar Implementation
-
-**Feature 1a + 1b completion:**
-Completed consolidation of notes formatting controls into a single global toolbar at the top of the notes panel.
-
-**Changes Made:**
-- **Removed per-entry formatting toolbars** — Each entry no longer has its own formatting controls
-- **Implemented global focus tracking** — New `notesActiveFocusedElement` variable tracks which contenteditable area is active (intro or entry)
-- **Created 4 global formatting functions:**
-  - `notesGlobalFmt(cmd)` — applies bold, italic, underline, insertUnorderedList, insertOrderedList
-  - `notesGlobalFmtFont(fontName)` — applies font family to active element
-  - `notesGlobalFmtSize(size)` — applies font size to active element  
-  - `notesGlobalIndent(dir)` — applies indent (+1) or outdent (-1) to active element
-  - `notesActiveElementSyncToolbar()` — syncs list button active states
-- **Updated event handlers** — Both intro and entry contenteditable areas track focus via `onfocus="notesActiveFocusedElement=this"`
-- **Added complete CSS styling** — Toolbar with light/dark mode support, hover states, active states (green for list buttons when in list mode)
-- **Removed obsolete functions** — Deleted `notesEntryFmt()`, `notesEntryIndent()`, `syncEntryToolbar()`, old intro-level formatting functions
-
-**UI/UX Improvements:**
-- Single point of control for all formatting — no confusion about which toolbar to use
-- Cleaner entry layout without per-entry toolbars
-- Consistent button styling and behavior across all editors
-- List buttons (≡ and 1.) highlight green when formatting is active in current selection
-- Font and size dropdowns reset after selection (no lingering state)
-
-**Files Modified:**
-| File | Changes |
-|------|---------|
-| `bible-reader.html` | 177 insertions, 94 deletions — global toolbar, functions, CSS, entry rendering |
-
-**Deployment:**
-- Commit: `87057ac` — "feat(notes): consolidate formatting toolbar to global, single-point control"
-- PR #15 created and merged to `master`
-- GitHub Actions deployment completed successfully (12s)
-- Live at `toddsroadcoctt` ✅
-
----
-
-## Session Work — 2026-05-17 (session 6)
-
-### Bug Investigation & Code Audit
-
-**NKJV Search Bug**
-- Investigated word search failure on NKJV
-- Root cause: bolls.life API returning HTTP 429 (Too Many Requests) rate-limit errors
-- Added client-side rate limiting with exponential backoff retry logic (3 retries, 1s/2s/4s waits)
-- Attempted fix unsuccessful — bolls.life API continues rate-limiting
-- Determined no free, reliable alternative exists without copyright issues
-- **Decision:** Leave as-is; users can read NKJV but search is disabled; 12 other translations have working search
-
-**Comprehensive Code Audit**
-- Reviewed entire 5,793-line `bible-reader.html` file
-- Identified 10 improvement categories: performance, memory leaks, accessibility, error handling, mobile UX
-- Created prioritized issue list with effort estimates and impact assessment
-- See "Known Issues & Technical Debt" section above for full details
-
-### Files Modified
-| File | Change |
-|------|--------|
-| `bible-reader.html` | Added rate-limiting queue for bolls.life API calls with exponential backoff retry logic |
-| `handoff.md` | Added "Known Issues & Technical Debt" section with prioritized improvement list |
-| `handoff.md` | Updated architecture note about NKJV search limitation |
-
----
-
-## Session Work — 2026-05-16 (session 4)
-
-### GitHub Infrastructure
-
-Switched to the centralised reusable deploy workflow.
-
-| Change | Commit |
-|--------|--------|
-| Reusable deploy workflow — 130-line script → 14-line call to `brandonr2630/projects` | `7fec0d2` |
-| Auto-merge enabled on repo | — |
-| GitHub Projects board linked | [projects/1](https://github.com/users/brandonr2630/projects/1) |
-
----
-
-## Session Work — 2026-05-16 (session 3)
-
-### Infrastructure Overhaul
-
-| Change | Commit |
-|--------|--------|
-| Deploy workflow: hybrid binary/text upload, directory creation, `workflow_dispatch` | `acb2af4` |
-| Removed dead `.cpanel.yml` | `952ea8e` |
-| `HOST` and `CPANEL_USER` moved to GitHub Secrets | `a47061d` |
-| README corrected (deploy section, live URL) | `b20b783` |
-| Branch protection ruleset on `master` — requires PR | — |
-| Folder renamed `COC Website/` → `coc-website/` | — |
-
-**Required GitHub Secrets:** `CPANEL_API_TOKEN`, `CPANEL_HOST` (`https://chi203.greengeeks.net:2083`), `CPANEL_USER` (`terranre`)
-
----
-
-## Previous Session Work
-
-### Session 2 (2026-05-13) & Earlier
-
-See git log for detailed commit history. Key milestones:
-- Floating pill nav → consolidated controls at page top
-- Multiple translation support with local JSON + NKJV API fallback
-- Commentary integration via `bible.helloao.org` API
-- Search, cross-references, notes, Strong's concordance, dark mode
-- PWA with service worker caching
-- Responsive mobile/tablet layout
-
----
-
-## Known Issues & Technical Debt
-
-### NKJV Word Search Not Working
-- **Issue:** bolls.life API returns HTTP 429 (Too Many Requests) — rate limiting prevents searches
-- **Root cause:** API is heavily rate-limited; no reliable free alternative without copyright issues
-- **Status:** NKJV chapters still load and display, but word search fails
-- **Workaround:** Use one of 12 other public-domain searchable translations (KJV, ASV, WEB, YLT, etc.)
-- **Long-term:** Consider licensing NKJV from Thomas Nelson or switching to public-domain translations
-
-### Code Quality & Performance Issues (Prioritized by Impact)
+## Known Issues & Tech Debt
 
 | Priority | Issue | Impact | Effort | Status |
 |----------|-------|--------|--------|--------|
-| 🔴 CRITICAL | `STRONGS_DATA` embedded in HTML bloats file to 6.9MB | 80% slower initial load on mobile | 3-4 hrs | Not started |
-| 🔴 HIGH | Missing error handling on `fetch()` calls | App hangs on network failure; no user feedback | 2 hrs | ✅ Done (session 8) |
-| 🟠 MEDIUM | 210+ repeated `getElementById()` calls; no DOM caching | 20-30% slower interaction response time | 1-2 hrs | Not started |
-| 🟠 MEDIUM | Event listeners never cleaned up on navigation | Memory leak; slowdown after 20+ navigations on mobile | 2 hrs | Not started |
-| 🟠 MEDIUM | Interlinear mode loads entire 30MB JSON file into memory | Can crash low-end mobile devices | 3 hrs | Not started |
-| 🟠 MEDIUM | No request cancellation on rapid navigation | Stale data can overwrite current view; wasted bandwidth | 1-2 hrs | Not started |
-| 🟡 LOW-MEDIUM | Browser compatibility gaps (backdrop-filter, CSS variables) | Limited support in older/enterprise browsers | 2 hrs | Not started |
-| 🟡 MEDIUM | Accessibility: missing ARIA labels, keyboard navigation | Screen reader users can't navigate; poor keyboard UX | 4 hrs | Not started |
-| 🟡 LOW | `console.log()` statements left in production | Minor (debug noise, data exposure) | 0.5 hrs | ✅ Done (session 8) |
-
-### Quick Wins (Low effort, immediate improvement)
-1. ~~**Remove console.log statements**~~ — ✅ Done (session 8)
-2. ~~**Add user-friendly error messages** for failed chapter/search loads~~ — ✅ Done (session 8)
-3. **Cache DOM element references** (`const DOM = { versesArea: el, ... }`) — 1-2 hrs
+| 🔴 HIGH | `STRONGS_DATA` embedded in HTML bloats file | Slow first load on mobile | 3–4 h | Open |
+| 🟠 MEDIUM | `getElementById()` called 210+ times; no DOM caching | 20–30% slower interactions | 1–2 h | Open |
+| 🟠 MEDIUM | Event listeners never removed on navigation | Memory leak after 20+ navigations on mobile | 2 h | Open |
+| 🟠 MEDIUM | Interlinear loads full 30 MB JSON into memory | Can crash low-end phones | 3 h | Open |
+| 🟠 MEDIUM | No request cancellation on rapid chapter nav | Stale data can overwrite current view | 1–2 h | Open |
+| 🟡 LOW | NKJV word search disabled (bolls.life rate-limits at 429) | Users must switch translation to search | — | Won't fix short-term |
+| 🟡 LOW | Accessibility: missing ARIA labels, keyboard nav | Screen reader users underserved | 4 h | Open |
+| 🟡 LOW | Google OAuth app in "testing" mode | Must manually add each church member as a test user | 10 min | Publish when ready |
 
 ---
 
-## Completed Notes Features (Phase 1)
+## Runbooks
 
-✅ **1a: In-Session Search** — Real-time filtering of notes within current session with text highlighting  
-✅ **1b: Session Sidebar** — Browse, load, and delete all saved note sessions with metadata (verse count, book count, date)  
-✅ **1c: Global Formatting Toolbar** — Single consolidated toolbar at top of notes panel; applies to focused element  
+### Deploy Checklist
 
-All notes session management and formatting features now complete. Users can:
-- Create and manage multiple note sessions
-- Search within a session and quickly find verses/notes
-- Switch between sessions via sidebar
-- Format text (B/I/U, font family, font size, lists, indent) from a single global toolbar
-- Open Notes as a full-screen page and return to the reader via ← Reader
-- Export notes as TXT, DOCX, or PDF
-
----
-
-## Session Work — 2026-06-01 (session 18)
-
-### Verse Highlight & Underline Picker
-
-**PRs #59–63** → `coc-bible-v37` → `v38` → `v39`
-
-Replaced the bare 4-swatch colour row with a full two-mode picker panel.
-
-| Change | Detail |
-|--------|--------|
-| Mode toggle | `● Highlight` / `U̲ Underline` at top — either/or |
-| 5 colours | Yellow, green, blue, pink, orange |
-| Underline options | Style: solid / dotted / wavy; Weight: thin (1.5px) / medium (2.5px) / thick (4px); defaults solid medium |
-| Mobile layout | Picker bottom sheet on ≤640px (`position:fixed; left:0; right:0; bottom:0`) |
-| Backdrop | `#hl-backdrop` (z:9998, `inset:0`) opens behind picker; tap outside closes it — prevents bottom sheet blocking pill nav |
-| Batch apply | "Highlight" button in selection bar applies to all selected verses at once |
-| Picker memory | Re-opening on a marked verse pre-selects the current mode/colour/style/weight |
-| Immediate feedback | Cache + page update synchronously on swatch click; Supabase persist runs async |
-
-**Supabase migration:** `highlights` table — `style TEXT DEFAULT 'highlight'`, `ul_style TEXT`, `ul_weight TEXT`
-
-**CSS:** `text-decoration-thickness` as a separate property (4-value shorthand not broadly supported). 45 pre-declared compound classes (`ul-blue-wavy-thick`, etc.) on `.verse-text` spans.
-
-**Data model:** `HIGHLIGHT_CACHE` values are `{color, style, ulStyle, ulWeight}` objects. `hlClassForEntry()` builds the compound class name.
-
-**Bugs fixed during session:**
-- Picker closed immediately on open — `stopPropagation` missing on Highlight button (PR #61)
-- Colour pick did nothing — visual update gated behind `await` + auth guard; moved both after sync cache update (PR #62)
-- Underline not rendering — 4-value `text-decoration` shorthand; split `text-decoration-thickness` to own property (PR #63)
-- Pill nav blocked on mobile — picker bottom sheet (z:9999) covered pill (z:400); tapping pill background kept picker open via `hlPicker.contains(hlPicker)` — added `#hl-backdrop` to intercept (PR #63)
-
-### Firefox Book Select Fix
-
-**PR #64** → `coc-bible-v40`
-
-**Bug:** In Firefox, selecting any book froze navigation (pill went blank, chapter grid didn't open).
-
-**Root cause:** `onmousedown="this.value=''"` — Firefox fires `change` from the programmatic value clear, consuming the event before the user's actual pick. The real pick then either doesn't fire `change` or produces a confused select state.
-
-**Fix:** Removed `onmousedown` and `onblur` from `#sel-book` entirely. `onchange` only.
-
-**Tradeoff:** Re-selecting the current book no longer reopens the chapter grid (since `onchange` only fires on value change). Use `‹` / `›` chevrons to navigate chapters within the same book.
-
----
-
-## Session Work — 2026-05-31 (session 16)
-
-### Dictionaries
-- **PR #46** — `feat/hitchcock-dictionary` → merged → `coc-bible-v26`
-  - Added `hitchcock.json` (~2,600 name meanings, public domain 1869)
-  - Refactored Study menu Dictionary row to arrow-dropdown pattern (matching Commentary/Parallel)
-  - Sub-menu lists Easton's, Smith's, Hitchcock's
-- `build-hitchcock.mjs` and `build-fausset.mjs` are at repo root (gitignored)
-- `fausset.json` not yet built — `build-fausset.mjs` scrapes bible-history.com; bug fixed (entries now keyed from URL slug). Run `node build-fausset.mjs` from `coc-website/` to generate (~20 min). Once done, add `fausset` to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, and the dictionary dropdown HTML, then PR.
-
-### Swipe Navigation
-- **PR #47** — `feat/swipe-chapter-nav` → merged → `coc-bible-v27`
-  - Swipe left = next chapter, swipe right = previous chapter on mobile
-  - Passive touch listeners on `#verses-area` only; 60px min horizontal, 1.5× H:V ratio guard
-
-### Verse Highlights + Auth (PRs #48–54)
-- **PR #48** — `feat/verse-highlights` → merged → `coc-bible-v28`
-  - Right-click verse number (desktop) or long-press (mobile) → colour picker (yellow, green, blue, pink, ✕ remove)
-  - Supabase project `COC Website` created (`bxdenfhpmbsxvaqoxyei`, us-east-1)
-  - `highlights` table with RLS (`user_id, book, chapter, verse, color`); unique on `(user_id, book, chapter, verse)`
-  - Anonymous session created silently on first visit — highlights work with no sign-in required
-  - Settings → Account section: sign in/up (email+password), Google OAuth, forgot/reset password, sign out
-- **PRs #49–54** — series of auth UI fixes:
-  - `--card` → `--white` (modal was transparent)
-  - `--border` → `--line` (input borders were invisible)
-  - Form field spacing and button margin
-  - `updateAuthUI` robust signed-in detection (checks `email` + `identities`, not just `is_anonymous`)
-  - Auth init race condition fixed: `onAuthStateChange`-first approach; anonymous fallback deferred 1s
-
-### Google OAuth
-- Google Cloud project: `coc-website`; OAuth client: `Web client 1` (Web application)
-- Authorized JS origin: `https://toddsroadcoctt.org`
-- Redirect URI: `https://bxdenfhpmbsxvaqoxyei.supabase.co/auth/v1/callback`
-- Supabase Site URL: `https://toddsroadcoctt.org/bible-reader.html`
-- App is in **testing mode** — add users at Google Cloud → Audience → Test users
-- To open to all church members: Google Cloud → Audience → Publish app
-
-**Current SW version: `coc-bible-v43`**
-
----
-
-## Session Work — 2026-06-01 (session 20)
-
-### Menu Mutual Exclusivity, Hitchcock Fix, Highlight Tags
-
-**PR #70** → `coc-bible-v43`
-
-**Bug 1 — Translation & Study menus could both be open**
-
-`toggleTranslationDropdown` closed Parallel/Commentary sub-menus when opening, but not the `.pill-dropdown` menus (Study, Settings). Added `document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'))` to the open path of `toggleTranslationDropdown`. The reverse (Study→closes Translation) was already working via `togglePillDropdown`.
-
-**Bug 2 — Hitchcock's Bible Names text spilling off dictionary sub-menu**
-
-`.parallel-dropdown-item` had no `white-space` rule. Long item labels wrapped instead of expanding the container. Added `white-space: nowrap` — the container now sizes to the longest item.
-
-**Feature — Highlight Tags**
-
-| Item | Detail |
-|------|--------|
-| Picker tags section | Appears below underline options when a single verse is selected (hidden in bulk mode). Text input: Enter or comma commits a tag. Existing tags shown as chips with × to remove. Max 10 tags per verse. |
-| Tag storage | `entry.tags: string[]` on every `HIGHLIGHT_CACHE` entry. Persisted to Supabase `highlights.tags TEXT[]` (migration applied). `setHighlight` preserves existing tags when updating colour/style. `setHighlightTags` updates tags only. |
-| Panel tag filter row | Below colour filters in My Highlights panel. Chips for every unique tag across all highlights. Clicking a chip sets `hlPanelFilterTag` and re-renders. "All tags" chip clears the filter. Row hidden when no tags exist. |
-| Verse row tags | Each row in My Highlights panel shows the verse's tags as small chips below the verse text. |
-
-**Supabase migration applied:** `ALTER TABLE highlights ADD COLUMN IF NOT EXISTS tags TEXT[];`
-
----
-
-## Session Work — 2026-06-01 (session 19)
-
-### My Highlights Panel
-
-**PR #68** (squash merge) → `coc-bible-v42`
-
-Also includes the wavy SVG underline fix (previously committed locally but unpushed).
-
-**Feature:** Study menu → **🔖 My Highlights** row (under Notes) opens a right-side panel showing every verse the user has highlighted.
-
-| Detail | Description |
-|--------|-------------|
-| Layout | Right-side panel 360px wide (desktop); draggable bottom sheet (mobile ≤860px) with 3 snap heights: 180px compact / 55vh / 85vh |
-| Drag handle | Pill handle at top of mobile sheet; same pointer-capture pattern as dictionary panel |
-| Filters | Book `<select>` (auto-populated with only books that have highlights) + 5 colour swatches + "All" button; both filters work together |
-| Verse list | Grouped by book in canonical Bible order; each row: colour dot (filled circle for highlight, underlined rect for underline), `Chapter:Verse` ref, verse text from current translation cache (falls back to "Tap to read" if chapter not loaded) |
-| Navigation | Tapping any verse closes panel, sets `currentBook`/`currentChapter`/`highlightVerse`, calls `renderPassage()` — existing scroll logic handles scrolling to the verse |
-| Anon nudge | Panel header shows "Sign in to sync your highlights across devices" for anonymous sessions; taps open auth modal |
-
-**JS globals added:** `hlPanelFilterBook`, `hlPanelFilterColor`
-
-**Functions added:** `openHighlightsPanel`, `closeHighlightsPanel`, `hlFilterChanged`, `hlSetColorFilter`, `renderHighlightsPanel`, `hlPanelNavigate`, `hlEsc`, `initHlPanelDrag`
-
-### Wavy SVG Underline Fix (bundled)
-
-**Previously committed, unpushed — included in PR #68**
-
-CSS `text-decoration: wavy` renders a perfectly regular sine wave. Replaced all 15 wavy underline rules with `SVG background-image` using an irregular cubic bezier path (`M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4`) — three unequal-width S-curves giving a flat, hand-drawn feel. `box-decoration-break: clone` ensures the wave repeats per line on multi-line verses.
-
----
-
-## Session Work — 2026-05-31 (session 17)
-
-### Google Sign-In Feedback & Auth Race Condition Fix
-
-**PR #56** — `fix/auth-signin-feedback` → merged → `coc-bible-v35`
-- Added `#auth-toast` — green pill slides in from top after successful sign-in showing "Signed in as user@example.com ✓", auto-dismisses after 3.5s
-- `onAuthStateChange` now calls `closeAuthModal()` on `SIGNED_IN` so any open modal is dismissed
-
-**PR #57** — `fix/auth-real-user-guard` → merged → `coc-bible-v36`
-
-**Root cause of "Browsing anonymously" after Google sign-in:**
-After OAuth redirect, Supabase fires `SIGNED_OUT` for the old anonymous session *after* `SIGNED_IN` for the real Google user. The 1-second anonymous fallback timer was being restarted by that `SIGNED_OUT` event, causing `signInAnonymously()` to run and overwrite the real user.
-
-**Fix:** Added `hasRealUser` flag:
-- Set to `true` once any non-anonymous user authenticates
-- While `hasRealUser` is true, null-session events skip the anonymous fallback entirely
-- Double-checked inside the timer callback
-- Reset to `false` in `signOut()` so anonymous browsing resumes correctly after explicit sign-out
-
----
-
-## Pending Work
-
-### Homepage (index.html) CRO
-- [ ] Hero CTA: change button label from "Service Times" → "Join Us This Sunday"
-- [ ] Phone number in nav (desktop) / below hero CTAs (mobile) — **need actual number from client**
-- [ ] Real congregation photo — group photo after Sunday service, hero background or full-width strip
-- [ ] "Your First Visit" section — service length, dress, parking, children's program
-- [ ] Hero tagline rewrite — current is too abstract; **need founding year from client**
-- [ ] Bible reader callout card on homepage
-
-### Contact / Enquiry Form
-- Currently no backend — highest CRO priority for curious visitors
-- Recommended: Formspree or EmailJS (no server needed)
-
-### Bible Reader — Feature Queue
-- [x] **Social media sharing** — right-click any verse → Share verse; Web Share API on mobile, modal (X/WhatsApp/Facebook/copy) on desktop ✅ Done (session 13)
-- [x] **Share from selection bar** — selecting verses → Share button in selection bar; same Web Share / modal fallback ✅ Done (session 14)
-- [x] **Swipe chapter navigation** — swipe left/right on passage to advance/go back ✅ Done (session 16, PR #47)
-- [x] **Verse highlights** — right-click/long-press → colour picker; persisted to Supabase ✅ Done (session 16, PRs #48–54)
-- [x] **Highlight/underline picker redesign** — two-mode card; 5 colours; underline style+weight; mobile bottom sheet; batch from selection bar ✅ Done (session 18, PRs #59–64)
-- [x] **My Highlights panel** — Study → My Highlights; filter by book & colour; tap to navigate ✅ Done (session 19, PR #68)
-- [x] **Hitchcock's Bible Names dictionary** — added as local dictionary source ✅ Done (session 16, PR #46)
-- [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready; run it to generate `fausset.json`, then wire into UI
-- [x] **Highlight tags** — tag any highlighted verse (multi-tag); filter My Highlights panel by tag ✅ Done (session 20, PR #70)
-- [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
-- [ ] **Copy shareable link** — URL hash deep-linking (`#John.3.16`) works but no copy button; add to selection toolbar
-- [ ] **Verse-level notes** — short personal note per verse, `{ref: text}` in localStorage
-- [ ] **Reading plans** — 365-day or curated plans (NT in 90 days, etc.), daily tracker in localStorage
-- [ ] **Print stylesheet** — nav and controls currently print; add `@media print` to output passage only
-- [ ] **Search streaming** — full JSON load on first search can stall on slow devices; consider chunked iteration with `setTimeout` yield
-
-### Translations to Consider Adding
-
-From `seven1m/open-bibles` — all public domain, converter at `SCRIPTS/zefania-to-json.js`:
-- **BBE** (Bible in Basic English) — dynamic equivalence, simple vocabulary, good for new readers
-- Others available: WEB-BE, OEB-US, OEB-CW, DRA (Catholic/Vulgate-based)
-
----
-
-## File Locations
-
-```
-coc-website/
-├── index.html                  Landing page
-├── bible-reader.html           Bible study app (main file, ~5000 lines)
-├── service-worker.js           PWA cache — bump version on every html change (now v19)
-├── manifest.json               PWA manifest
-├── handoff.md                  This file
-├── favicon.ico / *.png         Favicons
-├── og_banner.jpg               Open Graph preview image
-├── .gitignore                  Ignores source/working directories
-├── README.md                   Project README
-├── Translations & Reference Data (all deployed to root for fetching):
-│   ├── kjv.json / asv.json / web.json / ylt.json / lsv.json / lxxe.json / rvr09.json / darby.json
-│   ├── kjvs.json / asvs.json  (KJV/ASV + Strong's numbers)
-│   ├── hebrew.json / greek-nt.json  (Original languages)
-│   ├── adam-clarke.json / matthew-henry.json / jamieson-fausset-brown.json  (Commentaries)
-│   ├── eastons.json / smiths.json / hitchcock.json  (Dictionaries — fausset.json pending)
-│   └── crossrefs.json          (Cross-references for all 66 books)
-├── Working/Source Directories (gitignored):
-│   ├── BIBLE TRANSLATIONS/     Source files for all translation JSONs
-│   ├── COMMENTARIES/           Source files & scripts for commentary data
-│   ├── DICTIONARY/             Source files for dictionary data
-│   ├── SCRIPTS/                Node.js converters (zefania-to-json.js, etc.)
-│   ├── BRAND/                  Logo assets
-│   ├── LIBRARY/                E-book conversion scripts
-│   └── ARCHIVES/               Versioned snapshots of bible-reader.html
-└── .git/                       Git repository
-```
-
----
-
-## Deployment Checklist
-
-Before pushing any change to `bible-reader.html`:
-1. Bump service worker — **always read the version from `origin/master`, not the local file**, to avoid merge conflicts when multiple PRs are open:
-   ```bash
-   git fetch origin master
-   current=$(git show origin/master:service-worker.js | grep -oP "coc-bible-v\K\d+")
-   sed -i "s/coc-bible-v[0-9]*/coc-bible-v$((current + 1))/" service-worker.js
-   ```
+1. **Bump SW** — use the one-liner from Quick Reference (reads from `origin/master` to avoid conflicts)
 2. `git add bible-reader.html service-worker.js [any new .json files]`
-3. `git commit -m "fix/feat(bible-reader): ..."`
-4. `git push origin <branch>` then open a PR — branch protection requires PRs on `master`
-5. Merge PR → deploy triggers automatically
-6. `gh run watch <run-id>` — confirm green
-7. Hard-refresh on device to force SW update
+3. `git commit -m "feat/fix(bible-reader): ..."`
+4. `git push origin <branch>` → open PR (branch protection requires PR on `master`)
+5. Merge → deploy triggers automatically (~20 s)
+6. Verify: `gh run list --limit 1`
+7. Reload the page on device to pick up the new SW (`F5` is enough — SW has `skipWaiting` + `clients.claim`)
 
-For `index.html` changes, no service worker bump needed.
+`index.html` changes don't need a SW bump.
 
----
-
-## Translation Addition Workflow
-
-To add a new public-domain translation from `seven1m/open-bibles`:
+### Adding a Translation
 
 ```powershell
-# 1. Download the XML
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/seven1m/open-bibles/master/<filename>.xml" `
-  -OutFile "BIBLE TRANSLATIONS/<filename>.xml"
+# 1. Download the Zefania XML
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/seven1m/open-bibles/master/<file>.xml" `
+  -OutFile "BIBLE TRANSLATIONS/<file>.xml"
 
-# 2. Convert to JSON
-node SCRIPTS/zefania-to-json.js "BIBLE TRANSLATIONS/<filename>.xml" "<key>.json"
+# 2. Convert
+node SCRIPTS/zefania-to-json.js "BIBLE TRANSLATIONS/<file>.xml" "<key>.json"
 
-# 3. Copy to repo root (reader fetches from root)
+# 3. Copy to repo root (reader fetches from there)
 Copy-Item "BIBLE TRANSLATIONS/<key>.json" "<key>.json"
 ```
 
 Then in `bible-reader.html`:
-- `TRANSLATIONS` object — add `key: 'Label'`
-- `TRANSLATION_ABBR` — add `key: 'ABBR'`
-- `LOCAL_TRANSLATIONS` — add `'key'` to the Set
-- Translation dropdown HTML (×2 — main selector and parallel selector)
-- Hidden `<select>` — add `<option>`
-- Bump service worker version
+- `TRANSLATIONS` object → add `key: 'Label'`
+- `TRANSLATION_ABBR` → add `key: 'ABBR'`
+- `LOCAL_TRANSLATIONS` Set → add `'key'`
+- Translation dropdown HTML (×2 — main picker and parallel picker)
+- Bump SW version
+
+### Supabase Configuration (reference)
+
+- **Dashboard:** supabase.com → COC Website project
+- **Auth → URL Configuration → Redirect URLs:** must include `https://toddsroadcoctt.org/bible-reader.html` (required for PKCE OAuth)
+- **Auth → Providers → Google:** Client ID + Secret from Google Cloud Console → `coc-website` project → Web client 1
+- **RLS:** `highlights` table — users can only read/write their own rows (policy on `user_id = auth.uid()`)
+
+---
+
+## Changelog
+
+Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 20 — 2026-06-01
+
+**PRs #70–73 · SW v43 → v46**
+
+#### Menu mutual exclusivity (PR #70 · v43)
+Opening the Translation dropdown previously didn't close the Study/Settings pill menus. Added `querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'))` to `toggleTranslationDropdown`.
+
+#### Hitchcock dictionary overflow (PR #70 · v43)
+`.parallel-dropdown-item` had no `white-space` rule. Added `white-space: nowrap` — container now expands to the longest label instead of wrapping.
+
+#### Highlight tags (PR #70 · v43)
+- Picker gets a **Tags section** (between mode toggle and swatches) — type a tag, Enter or comma to add; chips with × to remove; max 10 per verse; hidden in bulk-select mode.
+- My Highlights panel gets a **tag filter row** — chips for every unique tag, click to filter, "All tags" to clear. Row hidden when no tags exist. Tags shown as chips on each verse row.
+- `HIGHLIGHT_CACHE` entries gain `tags: string[]`. `setHighlight` preserves existing tags when colour/style changes. New `setHighlightTags(book, ch, v, tags)` updates tags only.
+- Supabase migration applied: `ALTER TABLE highlights ADD COLUMN IF NOT EXISTS tags TEXT[];`
+
+#### Picker stays open after colour pick (PR #71 · v44)
+Swatch click previously called `closeHlPicker()` for every pick including single-verse mode. Now single-verse colour picks keep the picker open (active swatch highlighted, tag chips refreshed). Remove swatch and bulk-select mode still close immediately.
+
+#### Google OAuth — PKCE flow (PR #72 · v45)
+`createClient` gains `{ auth: { flowType: 'pkce' } }`. `signInWithGoogle` `redirectTo` changed to `window.location.origin + '/bible-reader.html'`. Google consent screen now reads "toddsroadcoctt.org" instead of the raw Supabase project URL.
+*Requires:* Supabase Auth → Redirect URLs includes `https://toddsroadcoctt.org/bible-reader.html`; Google Cloud → Web client 1 → Authorized redirect URIs includes same URL.
+
+#### Highlights panel & tags polish (PR #73 · v46)
+- `hlPanelNavigate` no longer calls `closeHighlightsPanel()` — panel stays open when tapping a verse. Also calls `renderHighlightsPanel()` after `renderPassage()` resolves so "Tap to read" rows fill in with real text.
+- Tags reordered above swatches in picker (was below — hidden by iPhone home bar on bottom sheet).
+- `.hl-tags-section` border changed from `border-top` to `border-bottom`.
+- Mobile picker `padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px))` — clears iPhone home indicator.
+- Desktop Y cap adjusted to `window.innerHeight - 210`.
+
+---
+
+### Session 19 — 2026-06-01
+
+**PR #68 · SW v42**
+
+#### My Highlights panel
+Study menu → 🔖 My Highlights. Right-side panel (desktop, 360px) / draggable bottom sheet (mobile ≤860px, 3 snaps: 180px / 55vh / 85vh). Filter by book + colour. Verse list in Bible order, tap to navigate. Anon nudge for signed-out users.
+
+#### Wavy SVG underline fix (bundled in PR #68)
+CSS `text-decoration: wavy` produces a perfectly regular sine wave. Replaced all 15 wavy rules with `SVG background-image` using an irregular cubic-bezier path — flat, hand-drawn appearance. `box-decoration-break: clone` for multi-line verses.
+
+---
+
+### Session 18 — 2026-06-01
+
+**PRs #59–64 · SW v37 → v40**
+
+#### Highlight/underline picker redesign (PRs #59–63)
+Replaced the bare 4-swatch row with a full picker panel. Mode toggle (Highlight / Underline). 5 colours. Underline options: style (solid/dotted/wavy) + weight (thin/medium/thick). Mobile bottom sheet with `#hl-backdrop` to prevent pill nav being blocked. Batch apply from selection bar. Picker memory — re-opening on a marked verse pre-selects current state.
+
+45 pre-declared compound underline classes (`ul-blue-wavy-thick`, etc.). `text-decoration-thickness` split to its own property (4-value shorthand not broadly supported).
+
+#### Firefox book select fix (PR #64 · v40)
+`onmousedown="this.value=''"` caused Firefox to fire `change` on the programmatic clear, consuming the event. Removed `onmousedown`/`onblur` entirely — `onchange` only. Tradeoff: re-selecting the current book no longer reopens the chapter grid.
+
+---
+
+### Session 17 — 2026-05-31
+
+**PRs #56–57 · SW v35–v36**
+
+#### Sign-in feedback (PR #56)
+`#auth-toast` — green pill slides in from top on `SIGNED_IN`, auto-dismisses after 3.5s. Auth modal auto-closes on sign-in event.
+
+#### Auth race condition fix (PR #57)
+After Google OAuth redirect, Supabase fires `SIGNED_OUT` for the old anon session *after* `SIGNED_IN` for the real user. The 1-second anon fallback timer was restarting, overwriting the real session. Fixed with `hasRealUser` flag — set true on any real auth, blocks anon fallback; reset to false on explicit sign-out.
+
+---
+
+### Session 16 — 2026-05-31
+
+**PRs #46–54 · SW v26–v34**
+
+- **Hitchcock dictionary** (PR #46) — `hitchcock.json` (~2 600 entries). Study menu Dictionary row refactored to arrow-dropdown pattern matching Commentary/Parallel.
+- **Swipe navigation** (PR #47) — left = next chapter, right = previous. Passive touch listeners on `#verses-area`; 60px min horizontal, 1.5× H:V ratio guard.
+- **Verse highlights + auth** (PRs #48–54) — Supabase project created. `highlights` table with RLS. Anonymous sessions on first visit. Settings → Account: email/password + Google OAuth + reset password + sign-out. Multiple auth UI fix rounds (transparent modal, invisible borders, race condition).
+
+---
+
+### Session 15 — 2026-05-25
+
+**PRs #35–38 · SW v18–v21**
+
+- **Mobile UI bugs** (PR #35 · v19) — Verse selection bar overflow; book name overflow in header (`BOOK_ABBR` at ≤540px); "Study" label hidden in pill bottom tier.
+- **Pill menu bugs** (PR #37 · v20) — Translation dropdown mobile overflow; vestigial dividers; Commentary/Parallel sub-menu mobile override; Settings close button + sorted fonts.
+- **Commentary local JSON** (PR #38 · v21) — Adam Clarke/Matthew Henry/JFB no longer fetched from `bible.helloao.org`. Now loaded from local JSON (`/{key}.json`) and cached in-memory in `LOCAL_COMMENTARY_FULL`. First-load sizes: AC 11.8 MB, MH 29.9 MB, JFB 9.0 MB.
+
+---
+
+### Session 14 — 2026-05-25
+
+**PRs #28–33 · SW v18**
+
+Verse sharing via right-click context menu. Web Share API on mobile; X/WhatsApp/Facebook/Copy modal on desktop. Four-round null-value bug hunt — root cause was `ctxShare()` calling `hideVerseCtxMenu()` before using `ctxVerseNum`, which reset it to null. Fix: snapshot `const verseNum = ctxVerseNum` before any function calls.
+
+**Lesson:** Always snapshot shared mutable state into a local `const` before calling any function that might reset it.
+
+---
+
+### Session 13 — 2026-05-25
+
+**PR #24–25 · SW v15**
+
+Nav pill redesign — chapter/verse dropdowns removed; grid picker is sole nav mechanism. Bottom nav stripped to translation name + ⓘ. Chevrons merged into pill. SVG chevrons replacing Unicode glyphs. Scroll-to-top clears two-row pill layout on mobile. Firefox book-select re-selection via `onmousedown`/`onblur` (later replaced in session 18).
+
+---
+
+### Sessions 8–12 — 2026-05-24
+
+**PRs #17–22 · SW v12–v15**
+
+- **Session 12** (PR #22) — Critical load fix: `historyPush`/`syncHistoryBtns` called before defined across `<script>` block boundary. Moved to main block.
+- **Session 11** (PR #20) — WEB translation 2 John/3 John fix (USFX vs Zefania format; 1 verse → 13 and 14).
+- **Session 10** (PR #19) — Session history nav `«»`, sepia theme, notes colour picker, 9 reading fonts. ⚠️ Introduced the load bug fixed in session 12.
+- **Session 9** (PR #17) — Grid chapter/verse picker, notes full-page view, 6 bug fixes including offline error handling.
+
+---
+
+### Sessions 3–7 — 2026-05-13 to 2026-05-17
+
+- Sessions 3–4: Infrastructure (deploy workflow → reusable, branch protection, Secrets)
+- Session 6: NKJV search investigated (bolls.life 429 — left as-is); code audit
+- Session 7 (PR #15): Notes global formatting toolbar — consolidated from per-entry toolbars; `notesActiveFocusedElement` focus tracking
+
+---
+
+### Sessions 1–2 — 2026-05-13
+
+Foundation: floating pill nav → consolidated controls, multiple translations (local JSON + NKJV API), commentary integration, word search, cross-references, Strong's concordance, dark mode, PWA service worker, responsive layout.
+
+---
+
+## File Map
+
+```
+coc-website/
+├── index.html                    Landing page
+├── bible-reader.html             Bible study app (~8 500 lines — CSS + HTML + JS)
+├── service-worker.js             PWA cache — current version: coc-bible-v46
+├── manifest.json                 PWA manifest
+├── handoff.md                    This file
+├── favicon.ico / *.png           Favicons
+├── og_banner.jpg                 Open Graph image
+├── README.md
+│
+├── Translation JSONs (deployed, fetched client-side):
+│   ├── kjv.json asv.json web.json ylt.json lsv.json lxxe.json rvr09.json darby.json
+│   ├── kjvs.json asvs.json          (Strong's embedded)
+│   ├── hebrew.json greek-nt.json    (Original languages)
+│   ├── adam-clarke.json matthew-henry.json jamieson-fausset-brown.json
+│   ├── eastons.json smiths.json hitchcock.json   (fausset.json pending)
+│   └── crossrefs.json
+│
+└── Gitignored source directories:
+    ├── BIBLE TRANSLATIONS/        Source XML files
+    ├── COMMENTARIES/              Commentary source + scripts
+    ├── DICTIONARY/                Dictionary source + scripts
+    ├── SCRIPTS/                   zefania-to-json.js, etc.
+    ├── BRAND/                     Logo assets
+    ├── LIBRARY/                   E-book conversion scripts
+    └── ARCHIVES/                  Versioned snapshots of bible-reader.html
+```
+
+---
+
+## Recommendations
+
+### 1 — Split handoff into two files
+`handoff.md` is now the right length for a reference document. As the changelog grows it will become unwieldy. Consider:
+- **`handoff.md`** — Quick Reference, Architecture, Feature Status, Known Issues, Runbooks (stays current)
+- **`CHANGELOG.md`** — full session history (append-only, never needs restructuring)
+
+### 2 — Automate the SW bump
+The bash one-liner in Quick Reference works but requires manual copy-paste every session. A 10-line shell script (`scripts/bump-sw.sh`) checked into the repo would make it a single command and prevent the "forgot to bump" error that has caused multiple extra PRs.
+
+### 3 — Add the Supabase schema to this file
+The `highlights` table schema is now documented above. Keep it updated whenever a migration runs — it saves a round-trip to the Supabase dashboard at the start of any session that touches the DB layer.
+
+### 4 — Publish the Google OAuth app
+The app is still in testing mode. Publishing it (Google Cloud → OAuth consent screen → Audience → Publish) takes 5 minutes and removes the need to manually add each church member as a test user. No Google review is required for personal/internal apps using only basic scopes.
+
+### 5 — Session-start checklist in CLAUDE.md
+The project `CLAUDE.md` has basic architecture but doesn't point to this file. Adding a one-liner like `"See handoff.md for current feature status, known issues, and runbooks"` would orient a new Claude session immediately without needing the user to paste the handoff.
+
+### 6 — Consider a `changelog:` git trailer
+Commit messages currently follow `feat/fix(scope): description`. Adding a short `Changelog: Session N` trailer to squash-merge commits would make `git log --grep="Changelog:"` produce an instant changelog without any other tooling.
