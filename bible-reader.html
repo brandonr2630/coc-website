@@ -5023,7 +5023,13 @@ function hlAddTagFromInput() {
   if (!raw) return;
   const newTags = raw.split(/[,，]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
   const key     = `${currentBook.name}:${currentChapter}:${hlPickerVerse}`;
-  const entry   = HIGHLIGHT_CACHE[key];
+  let entry = HIGHLIGHT_CACHE[key];
+  if (!entry) {
+    // Auto-create a yellow highlight so the tag has somewhere to live
+    setHighlight(currentBook.name, currentChapter, hlPickerVerse, 'yellow', 'highlight', null, null);
+    entry = HIGHLIGHT_CACHE[key];
+    _hlSyncSwatchActive();
+  }
   if (!entry) { input.value = ''; return; }
   entry.tags = [...new Set([...(entry.tags || []), ...newTags])].slice(0, 10);
   setHighlightTags(currentBook.name, currentChapter, hlPickerVerse, entry.tags);
@@ -5069,6 +5075,7 @@ function applyHighlightsToPage() {
 // ── Highlight / Underline picker ──
 let hlPickerVerse = null;       // single verse (right-click/long-press)
 let hlPickerBulk  = false;      // true when opened from selection bar
+let hlPickerJustOpened = false; // blocks the post-long-press synthetic click from closing picker
 let hlPickerMode  = 'highlight';
 let hlPickerUlStyle  = 'solid';
 let hlPickerUlWeight = 'medium';
@@ -5136,6 +5143,7 @@ function closeHlPicker() {
 }
 
 document.addEventListener('click', e => {
+  if (hlPickerJustOpened) { hlPickerJustOpened = false; return; }
   if (!hlPicker.contains(e.target)) closeHlPicker();
 });
 
@@ -5152,6 +5160,7 @@ function showHighlightPicker(e, verse) {
   _hlSyncSwatchActive();
   hlRenderPickerTags();
   hlPicker.classList.add('open');
+  hlPickerJustOpened = true;
   document.getElementById('hl-backdrop').classList.add('open');
   if (window.innerWidth > 640) {
     const x = Math.min(e.clientX, window.innerWidth  - 280);
