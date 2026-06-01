@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-05-25 (session 15)*
+*Last updated 2026-06-01 (session 18)*
 
 ---
 
@@ -128,9 +128,9 @@ The reader uses three horizontal control rows at the top of the page (not a floa
 
 ### Service Worker
 
-Cache version is `coc-bible-v34`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
+Cache version is `coc-bible-v40`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
 
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v34';`
+Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v40';`
 
 ### Dark Mode
 
@@ -573,6 +573,51 @@ All notes session management and formatting features now complete. Users can:
 
 ---
 
+## Session Work — 2026-06-01 (session 18)
+
+### Verse Highlight & Underline Picker
+
+**PRs #59–63** → `coc-bible-v37` → `v38` → `v39`
+
+Replaced the bare 4-swatch colour row with a full two-mode picker panel.
+
+| Change | Detail |
+|--------|--------|
+| Mode toggle | `● Highlight` / `U̲ Underline` at top — either/or |
+| 5 colours | Yellow, green, blue, pink, orange |
+| Underline options | Style: solid / dotted / wavy; Weight: thin (1.5px) / medium (2.5px) / thick (4px); defaults solid medium |
+| Mobile layout | Picker bottom sheet on ≤640px (`position:fixed; left:0; right:0; bottom:0`) |
+| Backdrop | `#hl-backdrop` (z:9998, `inset:0`) opens behind picker; tap outside closes it — prevents bottom sheet blocking pill nav |
+| Batch apply | "Highlight" button in selection bar applies to all selected verses at once |
+| Picker memory | Re-opening on a marked verse pre-selects the current mode/colour/style/weight |
+| Immediate feedback | Cache + page update synchronously on swatch click; Supabase persist runs async |
+
+**Supabase migration:** `highlights` table — `style TEXT DEFAULT 'highlight'`, `ul_style TEXT`, `ul_weight TEXT`
+
+**CSS:** `text-decoration-thickness` as a separate property (4-value shorthand not broadly supported). 45 pre-declared compound classes (`ul-blue-wavy-thick`, etc.) on `.verse-text` spans.
+
+**Data model:** `HIGHLIGHT_CACHE` values are `{color, style, ulStyle, ulWeight}` objects. `hlClassForEntry()` builds the compound class name.
+
+**Bugs fixed during session:**
+- Picker closed immediately on open — `stopPropagation` missing on Highlight button (PR #61)
+- Colour pick did nothing — visual update gated behind `await` + auth guard; moved both after sync cache update (PR #62)
+- Underline not rendering — 4-value `text-decoration` shorthand; split `text-decoration-thickness` to own property (PR #63)
+- Pill nav blocked on mobile — picker bottom sheet (z:9999) covered pill (z:400); tapping pill background kept picker open via `hlPicker.contains(hlPicker)` — added `#hl-backdrop` to intercept (PR #63)
+
+### Firefox Book Select Fix
+
+**PR #64** → `coc-bible-v40`
+
+**Bug:** In Firefox, selecting any book froze navigation (pill went blank, chapter grid didn't open).
+
+**Root cause:** `onmousedown="this.value=''"` — Firefox fires `change` from the programmatic value clear, consuming the event before the user's actual pick. The real pick then either doesn't fire `change` or produces a confused select state.
+
+**Fix:** Removed `onmousedown` and `onblur` from `#sel-book` entirely. `onchange` only.
+
+**Tradeoff:** Re-selecting the current book no longer reopens the chapter grid (since `onchange` only fires on value change). Use `‹` / `›` chevrons to navigate chapters within the same book.
+
+---
+
 ## Session Work — 2026-05-31 (session 16)
 
 ### Dictionaries
@@ -610,7 +655,7 @@ All notes session management and formatting features now complete. Users can:
 - App is in **testing mode** — add users at Google Cloud → Audience → Test users
 - To open to all church members: Google Cloud → Audience → Publish app
 
-**Current SW version: `coc-bible-v36`**
+**Current SW version: `coc-bible-v40`**
 
 ---
 
@@ -654,6 +699,7 @@ After OAuth redirect, Supabase fires `SIGNED_OUT` for the old anonymous session 
 - [x] **Share from selection bar** — selecting verses → Share button in selection bar; same Web Share / modal fallback ✅ Done (session 14)
 - [x] **Swipe chapter navigation** — swipe left/right on passage to advance/go back ✅ Done (session 16, PR #47)
 - [x] **Verse highlights** — right-click/long-press → colour picker; persisted to Supabase ✅ Done (session 16, PRs #48–54)
+- [x] **Highlight/underline picker redesign** — two-mode card; 5 colours; underline style+weight; mobile bottom sheet; batch from selection bar ✅ Done (session 18, PRs #59–64)
 - [x] **Hitchcock's Bible Names dictionary** — added as local dictionary source ✅ Done (session 16, PR #46)
 - [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready; run it to generate `fausset.json`, then wire into UI
 - [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
