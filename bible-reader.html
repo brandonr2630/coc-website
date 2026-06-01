@@ -2529,7 +2529,7 @@
       display: block; width: 100%; text-align: left;
       font-family: 'Nunito', sans-serif; font-size: 0.8rem; font-weight: 600;
       color: var(--charcoal); background: none; border: none;
-      padding: 8px 14px; cursor: pointer;
+      padding: 8px 14px; cursor: pointer; white-space: nowrap;
       transition: background 0.1s;
     }
     .parallel-dropdown-item:hover { background: var(--highlight); }
@@ -3006,6 +3006,62 @@
   [data-theme="dark"] .hl-mode-btn, [data-theme="dark"] .hl-chip { color: #ccc; }
   [data-theme="dark"] .hl-swatch.hl-clear { background: #2a2a25; color: #aaa; }
 
+  /* ── Tags in highlight picker ── */
+  .hl-tags-section { border-top: 1px solid var(--line); padding-top: 8px; }
+  .hl-tags-label {
+    font-family: 'Nunito', sans-serif; font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--charcoal-light);
+    margin-bottom: 5px;
+  }
+  .hl-picker-tags { display: flex; flex-wrap: wrap; gap: 4px; min-height: 20px; margin-bottom: 6px; }
+  .hl-picker-tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: var(--highlight); border: 1.5px solid var(--green);
+    color: var(--green-dark); border-radius: 20px;
+    padding: 2px 6px 2px 10px; font-size: 0.72rem; font-weight: 700;
+    font-family: 'Nunito', sans-serif;
+  }
+  .hl-picker-tag-rm {
+    background: none; border: none; padding: 0 0 0 1px; cursor: pointer;
+    color: var(--green-dark); font-size: 1rem; line-height: 1;
+  }
+  .hl-picker-tag-rm:hover { color: var(--charcoal); }
+  .hl-tag-input-wrap { display: flex; gap: 5px; }
+  .hl-tag-input {
+    flex: 1; font-family: 'Nunito', sans-serif; font-size: 0.8rem;
+    border: 1.5px solid var(--line); border-radius: 6px;
+    padding: 5px 8px; background: var(--cream); color: var(--charcoal); outline: none;
+  }
+  .hl-tag-input:focus { border-color: var(--green); }
+  [data-theme="dark"] .hl-tag-input { background: #2a2a25; color: #e8e4da; }
+  .hl-tag-add-btn {
+    padding: 5px 11px; border-radius: 6px; border: 1.5px solid var(--green);
+    background: none; color: var(--green-dark); font-family: 'Nunito', sans-serif;
+    font-size: 1rem; font-weight: 700; cursor: pointer; line-height: 1;
+  }
+  .hl-tag-add-btn:hover { background: var(--highlight); }
+
+  /* ── Tag filter chips in My Highlights panel ── */
+  .hl-tag-filter-row { padding: 0 12px 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+  .hl-tag-filter-chip {
+    padding: 3px 11px; border-radius: 20px;
+    border: 1.5px solid var(--line); background: none;
+    font-family: 'Nunito', sans-serif; font-size: 0.74rem; font-weight: 700;
+    color: var(--charcoal-light); cursor: pointer; transition: all 0.12s; white-space: nowrap;
+  }
+  .hl-tag-filter-chip.active,
+  .hl-tag-filter-chip:hover { background: var(--highlight); border-color: var(--green); color: var(--green-dark); }
+
+  /* ── Tags on verse rows in panel ── */
+  .hl-verse-row-inner { flex: 1; min-width: 0; }
+  .hl-verse-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+  .hl-verse-tag {
+    display: inline-block; padding: 1px 7px; border-radius: 20px;
+    background: var(--cream); border: 1px solid var(--line);
+    font-size: 0.66rem; font-weight: 700;
+    font-family: 'Nunito', sans-serif; color: var(--charcoal-light);
+  }
+
   /* ── Auth modal ── */
   #auth-modal-overlay {
     position: fixed; inset: 0; z-index: 10000;
@@ -3332,6 +3388,14 @@
       <button class="hl-chip"        data-ul-weight="thin"   onclick="hlSetUlWeight('thin')">Thin</button>
       <button class="hl-chip active" data-ul-weight="medium" onclick="hlSetUlWeight('medium')">Medium</button>
       <button class="hl-chip"        data-ul-weight="thick"  onclick="hlSetUlWeight('thick')">Thick</button>
+    </div>
+  </div>
+  <div class="hl-tags-section" id="hl-tags-section">
+    <div class="hl-tags-label">Tags</div>
+    <div class="hl-picker-tags" id="hl-picker-tags"></div>
+    <div class="hl-tag-input-wrap">
+      <input type="text" class="hl-tag-input" id="hl-tag-input" placeholder="Add tag…" maxlength="30" onkeydown="hlTagInputKeydown(event)">
+      <button class="hl-tag-add-btn" onclick="hlAddTagFromInput()">+</button>
     </div>
   </div>
 </div>
@@ -4875,13 +4939,14 @@ async function doResetPassword() {
 // ── Highlights data layer ──
 async function loadHighlights() {
   if (!currentAuthUser) return;
-  const { data, error } = await supa.from('highlights').select('book,chapter,verse,color,style,ul_style,ul_weight');
+  const { data, error } = await supa.from('highlights').select('book,chapter,verse,color,style,ul_style,ul_weight,tags');
   if (error || !data) return;
   Object.keys(HIGHLIGHT_CACHE).forEach(k => delete HIGHLIGHT_CACHE[k]);
   data.forEach(r => {
     HIGHLIGHT_CACHE[`${r.book}:${r.chapter}:${r.verse}`] = {
       color: r.color, style: r.style || 'highlight',
-      ulStyle: r.ul_style || 'solid', ulWeight: r.ul_weight || 'medium'
+      ulStyle: r.ul_style || 'solid', ulWeight: r.ul_weight || 'medium',
+      tags: Array.isArray(r.tags) ? r.tags : []
     };
   });
   applyHighlightsToPage();
@@ -4889,23 +4954,86 @@ async function loadHighlights() {
 
 async function setHighlight(book, chapter, verse, color, style, ulStyle, ulWeight) {
   const key = `${book}:${chapter}:${verse}`;
-  // Update cache and re-render immediately — never wait on network for visual feedback
+  const existingTags = HIGHLIGHT_CACHE[key]?.tags || [];
   if (color) {
-    HIGHLIGHT_CACHE[key] = { color, style: style || 'highlight', ulStyle: ulStyle || 'solid', ulWeight: ulWeight || 'medium' };
+    HIGHLIGHT_CACHE[key] = {
+      color, style: style || 'highlight',
+      ulStyle: ulStyle || 'solid', ulWeight: ulWeight || 'medium',
+      tags: existingTags
+    };
   } else {
     delete HIGHLIGHT_CACHE[key];
   }
   applyHighlightsToPage();
-  if (!currentAuthUser) return; // persist only when authed
+  if (!currentAuthUser) return;
   if (color) {
     await supa.from('highlights').upsert(
       { user_id: currentAuthUser.id, book, chapter, verse, color,
-        style: style || 'highlight', ul_style: ulStyle || null, ul_weight: ulWeight || null },
+        style: style || 'highlight', ul_style: ulStyle || null, ul_weight: ulWeight || null,
+        tags: existingTags.length ? existingTags : null },
       { onConflict: 'user_id,book,chapter,verse' }
     );
   } else {
     await supa.from('highlights').delete().match({ user_id: currentAuthUser.id, book, chapter, verse });
   }
+}
+
+async function setHighlightTags(book, chapter, verse, tags) {
+  const key = `${book}:${chapter}:${verse}`;
+  const entry = HIGHLIGHT_CACHE[key];
+  if (!entry) return;
+  entry.tags = tags;
+  if (!currentAuthUser) return;
+  await supa.from('highlights').update({ tags: tags.length ? tags : null })
+    .match({ user_id: currentAuthUser.id, book, chapter, verse });
+}
+
+function hlRenderPickerTags() {
+  const section   = document.getElementById('hl-tags-section');
+  const container = document.getElementById('hl-picker-tags');
+  if (!section || !container) return;
+  section.style.display = hlPickerBulk ? 'none' : '';
+  if (hlPickerBulk) return;
+  const key  = hlPickerVerse !== null ? `${currentBook.name}:${currentChapter}:${hlPickerVerse}` : null;
+  const tags = (key && HIGHLIGHT_CACHE[key]?.tags) || [];
+  container.innerHTML = tags.map(t => {
+    const safe = t.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const esc  = t.replace(/'/g, "\\'");
+    return `<span class="hl-picker-tag">${safe}<button class="hl-picker-tag-rm" onclick="hlRemovePickerTag('${esc}')">×</button></span>`;
+  }).join('');
+}
+
+function hlRemovePickerTag(tag) {
+  if (hlPickerVerse === null) return;
+  const key   = `${currentBook.name}:${currentChapter}:${hlPickerVerse}`;
+  const entry = HIGHLIGHT_CACHE[key];
+  if (!entry) return;
+  entry.tags = (entry.tags || []).filter(t => t !== tag);
+  setHighlightTags(currentBook.name, currentChapter, hlPickerVerse, entry.tags);
+  hlRenderPickerTags();
+  const panel = document.getElementById('hl-panel');
+  if (panel && panel.classList.contains('visible')) renderHighlightsPanel();
+}
+
+function hlAddTagFromInput() {
+  const input = document.getElementById('hl-tag-input');
+  if (!input || hlPickerVerse === null) { if (input) input.value = ''; return; }
+  const raw = input.value.trim();
+  if (!raw) return;
+  const newTags = raw.split(/[,，]+/).map(t => t.trim().toLowerCase()).filter(Boolean);
+  const key     = `${currentBook.name}:${currentChapter}:${hlPickerVerse}`;
+  const entry   = HIGHLIGHT_CACHE[key];
+  if (!entry) { input.value = ''; return; }
+  entry.tags = [...new Set([...(entry.tags || []), ...newTags])].slice(0, 10);
+  setHighlightTags(currentBook.name, currentChapter, hlPickerVerse, entry.tags);
+  input.value = '';
+  hlRenderPickerTags();
+  const panel = document.getElementById('hl-panel');
+  if (panel && panel.classList.contains('visible')) renderHighlightsPanel();
+}
+
+function hlTagInputKeydown(e) {
+  if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); hlAddTagFromInput(); }
 }
 
 const HL_COLORS = ['yellow','green','blue','pink','orange'];
@@ -5005,7 +5133,6 @@ function showHighlightPicker(e, verse) {
   e.preventDefault(); e.stopPropagation();
   hlPickerVerse = verse;
   hlPickerBulk  = false;
-  // restore picker to saved state for this verse
   const entry = HIGHLIGHT_CACHE[`${currentBook.name}:${currentChapter}:${verse}`];
   hlSetMode(entry?.style === 'underline' ? 'underline' : 'highlight');
   if (entry?.style === 'underline') {
@@ -5013,12 +5140,12 @@ function showHighlightPicker(e, verse) {
     hlSetUlWeight(entry.ulWeight || 'medium');
   }
   _hlSyncSwatchActive();
+  hlRenderPickerTags();
   hlPicker.classList.add('open');
   document.getElementById('hl-backdrop').classList.add('open');
-  // desktop: position near cursor; mobile CSS overrides to bottom sheet
   if (window.innerWidth > 640) {
-    const x = Math.min(e.clientX, window.innerWidth  - 240);
-    const y = Math.min(e.clientY + 8, window.innerHeight - 180);
+    const x = Math.min(e.clientX, window.innerWidth  - 280);
+    const y = Math.min(e.clientY + 8, window.innerHeight - 260);
     hlPicker.style.left = x + 'px';
     hlPicker.style.top  = y + 'px';
   }
@@ -5030,14 +5157,15 @@ function showHighlightPickerForSelection(e) {
   hlPickerBulk  = true;
   hlSetMode('highlight');
   _hlSyncSwatchActive();
+  hlRenderPickerTags();
   hlPicker.classList.add('open');
   document.getElementById('hl-backdrop').classList.add('open');
   if (window.innerWidth > 640) {
     const bar = document.getElementById('selection-bar').getBoundingClientRect();
-    const x = Math.min(bar.left, window.innerWidth - 240);
+    const x = Math.min(bar.left, window.innerWidth - 280);
     const y = bar.top - 20;
     hlPicker.style.left = x + 'px';
-    hlPicker.style.top  = Math.max(10, y - 160) + 'px';
+    hlPicker.style.top  = Math.max(10, y - 220) + 'px';
   }
 }
 
@@ -5564,7 +5692,10 @@ function toggleTranslationDropdown(e) {
   const menu   = document.getElementById('translation-dropdown-menu');
   const btn    = document.getElementById('btn-translation-label');
   const isOpen = menu.classList.contains('open');
-  if (!isOpen) { closeParallelDropdown(); closeCommentaryDropdown(); }
+  if (!isOpen) {
+    closeParallelDropdown(); closeCommentaryDropdown();
+    document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'));
+  }
   menu.classList.toggle('open', !isOpen);
   btn.classList.toggle('active', !isOpen);
   setDropdownBackdrop(!isOpen);
@@ -7483,6 +7614,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
           <button class="hl-cf-btn" style="background:#f5a942;" data-color="orange" onclick="hlSetColorFilter('orange')" title="Orange"></button>
         </div>
       </div>
+      <div class="hl-tag-filter-row" id="hl-tag-filter-row" style="display:none"></div>
     </div>
     <div class="hl-panel-body" id="hl-panel-body"></div>
   </div>
@@ -8345,16 +8477,15 @@ function shareCtxCopy() {
 
   let hlPanelFilterBook  = '';
   let hlPanelFilterColor = '';
+  let hlPanelFilterTag   = '';
 
   function openHighlightsPanel() {
-    // Close study dropdown
     const dd = document.getElementById('study-dropdown-menu');
     if (dd) dd.classList.remove('open');
     document.getElementById('hl-panel').classList.add('visible');
     document.body.classList.add('hl-panel-open');
     renderHighlightsPanel();
     initHlPanelDrag();
-    // Show anon nudge if needed
     const u = currentAuthUser;
     const isAnon = !u || (u.is_anonymous === true && !u.email && !(u.identities?.length));
     document.getElementById('hl-anon-nudge').style.display = isAnon ? 'block' : 'none';
@@ -8372,7 +8503,6 @@ function shareCtxCopy() {
 
   function hlSetColorFilter(color) {
     hlPanelFilterColor = color;
-    // Update button states
     document.getElementById('hl-cf-all').classList.toggle('active', !color);
     document.querySelectorAll('#hl-color-filters .hl-cf-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.color === color);
@@ -8380,29 +8510,56 @@ function shareCtxCopy() {
     renderHighlightsPanel();
   }
 
+  function hlSetTagFilter(tag) {
+    hlPanelFilterTag = tag;
+    renderHighlightsPanel();
+  }
+
   function renderHighlightsPanel() {
-    const body = document.getElementById('hl-panel-body');
+    const body    = document.getElementById('hl-panel-body');
     const bookSel = document.getElementById('hl-filter-book');
 
-    // Collect all highlights grouped by book (in Bible order)
+    // Collect all unique tags across every highlight (for the tag chip bar)
+    const allTagsSet = new Set();
+    Object.values(HIGHLIGHT_CACHE).forEach(e => (e.tags || []).forEach(t => allTagsSet.add(t)));
+    const allTags = [...allTagsSet].sort();
+
+    // Rebuild tag filter row
+    const tagRow = document.getElementById('hl-tag-filter-row');
+    if (tagRow) {
+      if (allTags.length === 0) {
+        tagRow.style.display = 'none';
+      } else {
+        tagRow.style.display = '';
+        const allChip = `<button class="hl-tag-filter-chip${hlPanelFilterTag === '' ? ' active' : ''}" onclick="hlSetTagFilter('')">All tags</button>`;
+        const chips = allTags.map(t => {
+          const safe = hlEsc(t);
+          const esc  = t.replace(/'/g, "\\'");
+          return `<button class="hl-tag-filter-chip${hlPanelFilterTag === t ? ' active' : ''}" onclick="hlSetTagFilter('${esc}')">${safe}</button>`;
+        }).join('');
+        tagRow.innerHTML = allChip + chips;
+      }
+    }
+
+    // Collect highlights, applying all active filters
     const byBook = {};
     Object.entries(HIGHLIGHT_CACHE).forEach(([key, entry]) => {
       const [book, chStr, verseStr] = key.split(':');
       if (!book) return;
-      if (hlPanelFilterBook && book !== hlPanelFilterBook) return;
+      if (hlPanelFilterBook  && book !== hlPanelFilterBook) return;
       if (hlPanelFilterColor && entry.color !== hlPanelFilterColor) return;
+      if (hlPanelFilterTag   && !(entry.tags || []).includes(hlPanelFilterTag)) return;
       if (!byBook[book]) byBook[book] = [];
       byBook[book].push({ book, chapter: parseInt(chStr), verse: parseInt(verseStr), entry });
     });
 
-    // Sort books in Bible order
     const orderedBooks = BOOKS.map(b => b.name).filter(n => byBook[n]);
 
-    // Rebuild book filter options (preserve selection)
+    // Rebuild book filter options
     const prevBook = bookSel.value;
-    const booksWithHighlights = BOOKS.map(b => b.name).filter(n => {
-      return Object.keys(HIGHLIGHT_CACHE).some(k => k.startsWith(n + ':'));
-    });
+    const booksWithHighlights = BOOKS.map(b => b.name).filter(n =>
+      Object.keys(HIGHLIGHT_CACHE).some(k => k.startsWith(n + ':'))
+    );
     bookSel.innerHTML = '<option value="">All books</option>';
     booksWithHighlights.forEach(n => {
       const opt = document.createElement('option');
@@ -8412,7 +8569,7 @@ function shareCtxCopy() {
     });
 
     if (orderedBooks.length === 0) {
-      body.innerHTML = `<div class="hl-empty">No highlights yet.<br>Right-click any verse to add one.</div>`;
+      body.innerHTML = `<div class="hl-empty">No highlights match these filters.</div>`;
       return;
     }
 
@@ -8432,10 +8589,19 @@ function shareCtxCopy() {
           ? `hl-verse-dot ul-dot" style="border-color:${HL_COLOR_HEX[entry.color] || '#ccc'}`
           : `hl-verse-dot" style="background:${HL_COLOR_HEX[entry.color] || '#ccc'}`;
 
-        html += `<div class="hl-verse-row" onclick="hlPanelNavigate('${book.replace(/'/g,"\\'")}',${chapter},${verse})">
+        const tags = entry.tags || [];
+        const tagsHtml = tags.length
+          ? `<div class="hl-verse-tags">${tags.map(t => `<span class="hl-verse-tag">${hlEsc(t)}</span>`).join('')}</div>`
+          : '';
+
+        const bookEsc = book.replace(/'/g, "\\'");
+        html += `<div class="hl-verse-row" onclick="hlPanelNavigate('${bookEsc}',${chapter},${verse})">
           <span class="${dotStyle}"></span>
           <span class="hl-verse-ref">${chapter}:${verse}</span>
-          <span class="hl-verse-text${text ? '' : ' no-text'}">${text ? hlEsc(text) : 'Tap to read'}</span>
+          <div class="hl-verse-row-inner">
+            <span class="hl-verse-text${text ? '' : ' no-text'}">${text ? hlEsc(text) : 'Tap to read'}</span>
+            ${tagsHtml}
+          </div>
         </div>`;
       });
       html += '</div>';
