@@ -4734,7 +4734,7 @@ document.addEventListener('keydown', e => {
 // ── Supabase: Highlights & Auth ──
 const SUPA_URL  = 'https://bxdenfhpmbsxvaqoxyei.supabase.co';
 const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4ZGVuZmhwbWJzeHZhcW94eWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTE2MTcsImV4cCI6MjA5NTgyNzYxN30.vJBmnAHlT8FXSq3U2p1hStrNfC17kw_FMJYs9jcXEtQ';
-const supa      = supabase.createClient(SUPA_URL, SUPA_KEY);
+const supa      = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { flowType: 'pkce' } });
 
 // In-memory highlight cache: key = "Book:ch:v" → color string
 const HIGHLIGHT_CACHE = {};
@@ -4890,7 +4890,7 @@ function setAuthMsg(msg, isError = false) {
 async function signInWithGoogle() {
   await supa.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.href }
+    options: { redirectTo: window.location.origin + '/bible-reader.html' }
   });
 }
 
