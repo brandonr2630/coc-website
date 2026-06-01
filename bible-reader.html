@@ -4858,7 +4858,8 @@ function showHighlightPicker(e, verse) {
   }
 }
 
-function showHighlightPickerForSelection() {
+function showHighlightPickerForSelection(e) {
+  if (e) e.stopPropagation();
   hlPickerVerse = null;
   hlPickerBulk  = true;
   hlSetMode('highlight');
@@ -7020,7 +7021,7 @@ const DODSON_DATA={"G1":{"l":"a)/lfa","b":"the first letter of the Greek alphabe
 <div class="selection-bar" id="selection-bar">
   <button class="sel-btn sel-btn-copy" id="sel-btn-copy" onclick="copySelection()">Copy</button>
   <div class="sel-divider"></div>
-  <button class="sel-btn" onclick="showHighlightPickerForSelection()">Highlight</button>
+  <button class="sel-btn" onclick="showHighlightPickerForSelection(event)">Highlight</button>
   <div class="sel-divider"></div>
   <button class="sel-btn" id="sel-btn-xref" onclick="selectionXref()">Cross-refs</button>
   <div class="sel-divider"></div>
