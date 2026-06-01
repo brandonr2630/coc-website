@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-06-01 (session 19)*
+*Last updated 2026-06-01 (session 20)*
 
 ---
 
@@ -655,7 +655,34 @@ Replaced the bare 4-swatch colour row with a full two-mode picker panel.
 - App is in **testing mode** — add users at Google Cloud → Audience → Test users
 - To open to all church members: Google Cloud → Audience → Publish app
 
-**Current SW version: `coc-bible-v42`**
+**Current SW version: `coc-bible-v43`**
+
+---
+
+## Session Work — 2026-06-01 (session 20)
+
+### Menu Mutual Exclusivity, Hitchcock Fix, Highlight Tags
+
+**PR #70** → `coc-bible-v43`
+
+**Bug 1 — Translation & Study menus could both be open**
+
+`toggleTranslationDropdown` closed Parallel/Commentary sub-menus when opening, but not the `.pill-dropdown` menus (Study, Settings). Added `document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'))` to the open path of `toggleTranslationDropdown`. The reverse (Study→closes Translation) was already working via `togglePillDropdown`.
+
+**Bug 2 — Hitchcock's Bible Names text spilling off dictionary sub-menu**
+
+`.parallel-dropdown-item` had no `white-space` rule. Long item labels wrapped instead of expanding the container. Added `white-space: nowrap` — the container now sizes to the longest item.
+
+**Feature — Highlight Tags**
+
+| Item | Detail |
+|------|--------|
+| Picker tags section | Appears below underline options when a single verse is selected (hidden in bulk mode). Text input: Enter or comma commits a tag. Existing tags shown as chips with × to remove. Max 10 tags per verse. |
+| Tag storage | `entry.tags: string[]` on every `HIGHLIGHT_CACHE` entry. Persisted to Supabase `highlights.tags TEXT[]` (migration applied). `setHighlight` preserves existing tags when updating colour/style. `setHighlightTags` updates tags only. |
+| Panel tag filter row | Below colour filters in My Highlights panel. Chips for every unique tag across all highlights. Clicking a chip sets `hlPanelFilterTag` and re-renders. "All tags" chip clears the filter. Row hidden when no tags exist. |
+| Verse row tags | Each row in My Highlights panel shows the verse's tags as small chips below the verse text. |
+
+**Supabase migration applied:** `ALTER TABLE highlights ADD COLUMN IF NOT EXISTS tags TEXT[];`
 
 ---
 
@@ -734,6 +761,7 @@ After OAuth redirect, Supabase fires `SIGNED_OUT` for the old anonymous session 
 - [x] **My Highlights panel** — Study → My Highlights; filter by book & colour; tap to navigate ✅ Done (session 19, PR #68)
 - [x] **Hitchcock's Bible Names dictionary** — added as local dictionary source ✅ Done (session 16, PR #46)
 - [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready; run it to generate `fausset.json`, then wire into UI
+- [x] **Highlight tags** — tag any highlighted verse (multi-tag); filter My Highlights panel by tag ✅ Done (session 20, PR #70)
 - [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
 - [ ] **Copy shareable link** — URL hash deep-linking (`#John.3.16`) works but no copy button; add to selection toolbar
 - [ ] **Verse-level notes** — short personal note per verse, `{ref: text}` in localStorage
