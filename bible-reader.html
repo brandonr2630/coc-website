@@ -5305,12 +5305,10 @@ async function renderPassage() {
       div.dataset.book    = currentBook.name;
       div.dataset.chapter = currentChapter;
       div.dataset.verse   = v.verse;
-      const hlColor = HIGHLIGHT_CACHE[`${currentBook.name}:${currentChapter}:${v.verse}`];
-      if (hlColor) div.classList.add('hl-' + hlColor);
       // Long-press to highlight on mobile
       let lpTimer = null;
       div.addEventListener('touchstart', e => {
-        lpTimer = setTimeout(() => { showHighlightPicker(e.touches[0], v.verse); }, 500);
+        lpTimer = setTimeout(() => { showHighlightPicker(e, v.verse); }, 500);
       }, { passive: true });
       div.addEventListener('touchend',   () => clearTimeout(lpTimer), { passive: true });
       div.addEventListener('touchmove',  () => clearTimeout(lpTimer), { passive: true });
@@ -5357,6 +5355,7 @@ async function renderPassage() {
       div.appendChild(txt);
       area.appendChild(div);
     });
+    applyHighlightsToPage();
 
     if (highlightVerse) {
       setTimeout(() => scrollToVerse(highlightVerse), 80);
