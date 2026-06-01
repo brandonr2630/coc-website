@@ -1,6 +1,6 @@
 # COC Website — Handover File
 
-*Last updated 2026-06-01 (session 18)*
+*Last updated 2026-06-01 (session 19)*
 
 ---
 
@@ -128,9 +128,9 @@ The reader uses three horizontal control rows at the top of the page (not a floa
 
 ### Service Worker
 
-Cache version is `coc-bible-v40`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
+Cache version is `coc-bible-v42`. **Bump this on every deploy that changes `bible-reader.html`** — otherwise returning visitors on mobile get stale cached files.
 
-Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v40';`
+Location: `service-worker.js`, line 7: `const CACHE = 'coc-bible-v42';`
 
 ### Dark Mode
 
@@ -655,7 +655,38 @@ Replaced the bare 4-swatch colour row with a full two-mode picker panel.
 - App is in **testing mode** — add users at Google Cloud → Audience → Test users
 - To open to all church members: Google Cloud → Audience → Publish app
 
-**Current SW version: `coc-bible-v40`**
+**Current SW version: `coc-bible-v42`**
+
+---
+
+## Session Work — 2026-06-01 (session 19)
+
+### My Highlights Panel
+
+**PR #68** (squash merge) → `coc-bible-v42`
+
+Also includes the wavy SVG underline fix (previously committed locally but unpushed).
+
+**Feature:** Study menu → **🔖 My Highlights** row (under Notes) opens a right-side panel showing every verse the user has highlighted.
+
+| Detail | Description |
+|--------|-------------|
+| Layout | Right-side panel 360px wide (desktop); draggable bottom sheet (mobile ≤860px) with 3 snap heights: 180px compact / 55vh / 85vh |
+| Drag handle | Pill handle at top of mobile sheet; same pointer-capture pattern as dictionary panel |
+| Filters | Book `<select>` (auto-populated with only books that have highlights) + 5 colour swatches + "All" button; both filters work together |
+| Verse list | Grouped by book in canonical Bible order; each row: colour dot (filled circle for highlight, underlined rect for underline), `Chapter:Verse` ref, verse text from current translation cache (falls back to "Tap to read" if chapter not loaded) |
+| Navigation | Tapping any verse closes panel, sets `currentBook`/`currentChapter`/`highlightVerse`, calls `renderPassage()` — existing scroll logic handles scrolling to the verse |
+| Anon nudge | Panel header shows "Sign in to sync your highlights across devices" for anonymous sessions; taps open auth modal |
+
+**JS globals added:** `hlPanelFilterBook`, `hlPanelFilterColor`
+
+**Functions added:** `openHighlightsPanel`, `closeHighlightsPanel`, `hlFilterChanged`, `hlSetColorFilter`, `renderHighlightsPanel`, `hlPanelNavigate`, `hlEsc`, `initHlPanelDrag`
+
+### Wavy SVG Underline Fix (bundled)
+
+**Previously committed, unpushed — included in PR #68**
+
+CSS `text-decoration: wavy` renders a perfectly regular sine wave. Replaced all 15 wavy underline rules with `SVG background-image` using an irregular cubic bezier path (`M 0,4 C 6,-1 11,9 18,4 C 25,0 30,8 38,4 C 43,2 46,5.5 48,4`) — three unequal-width S-curves giving a flat, hand-drawn feel. `box-decoration-break: clone` ensures the wave repeats per line on multi-line verses.
 
 ---
 
@@ -700,6 +731,7 @@ After OAuth redirect, Supabase fires `SIGNED_OUT` for the old anonymous session 
 - [x] **Swipe chapter navigation** — swipe left/right on passage to advance/go back ✅ Done (session 16, PR #47)
 - [x] **Verse highlights** — right-click/long-press → colour picker; persisted to Supabase ✅ Done (session 16, PRs #48–54)
 - [x] **Highlight/underline picker redesign** — two-mode card; 5 colours; underline style+weight; mobile bottom sheet; batch from selection bar ✅ Done (session 18, PRs #59–64)
+- [x] **My Highlights panel** — Study → My Highlights; filter by book & colour; tap to navigate ✅ Done (session 19, PR #68)
 - [x] **Hitchcock's Bible Names dictionary** — added as local dictionary source ✅ Done (session 16, PR #46)
 - [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready; run it to generate `fausset.json`, then wire into UI
 - [ ] **Multiple named bookmarks** — currently saves one position only; add named localStorage bookmarks (e.g. "Sunday sermon", "Home study")
