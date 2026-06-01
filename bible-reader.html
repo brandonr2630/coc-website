@@ -4728,20 +4728,24 @@ async function loadHighlights() {
 }
 
 async function setHighlight(book, chapter, verse, color, style, ulStyle, ulWeight) {
-  if (!currentAuthUser) return;
   const key = `${book}:${chapter}:${verse}`;
+  // Update cache and re-render immediately — never wait on network for visual feedback
   if (color) {
     HIGHLIGHT_CACHE[key] = { color, style: style || 'highlight', ulStyle: ulStyle || 'solid', ulWeight: ulWeight || 'medium' };
+  } else {
+    delete HIGHLIGHT_CACHE[key];
+  }
+  applyHighlightsToPage();
+  if (!currentAuthUser) return; // persist only when authed
+  if (color) {
     await supa.from('highlights').upsert(
       { user_id: currentAuthUser.id, book, chapter, verse, color,
         style: style || 'highlight', ul_style: ulStyle || null, ul_weight: ulWeight || null },
       { onConflict: 'user_id,book,chapter,verse' }
     );
   } else {
-    delete HIGHLIGHT_CACHE[key];
     await supa.from('highlights').delete().match({ user_id: currentAuthUser.id, book, chapter, verse });
   }
-  applyHighlightsToPage();
 }
 
 const HL_COLORS = ['yellow','green','blue','pink','orange'];
