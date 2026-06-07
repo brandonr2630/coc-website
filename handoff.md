@@ -252,7 +252,7 @@ Then in `bible-reader.html`:
 
 ---
 
-## Changelog
+## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
 
