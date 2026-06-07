@@ -740,6 +740,16 @@
     [data-theme="dark"] .pill-select { color: var(--charcoal); background: #2a2a25; }
     .pill-select:focus { outline: none; }
 
+    #btn-book { padding: 6px 10px; display: flex; align-items: center; background: none; border: none; }
+    #book-dropdown-menu { min-width: 150px; left: 0; transform: none; }
+    .book-dropdown-item {
+      display: block; width: 100%; text-align: left; background: none; border: none;
+      font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 600;
+      color: var(--charcoal); padding: 8px 14px; cursor: pointer; transition: background 0.1s;
+    }
+    .book-dropdown-item:hover { background: var(--highlight); }
+    .book-dropdown-item.current { color: var(--green-dark); font-weight: 700; }
+
     .pill-nav { display: flex; align-items: center; flex: none; }
     .pill-tools { display: flex; align-items: center; flex-shrink: 0; }
 
@@ -3182,10 +3192,11 @@
   <button class="pill-nav-btn" id="btn-prev-bot" onclick="goChapter(-1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/></svg></button>
 
   <div class="pill-location">
-    <div class="pill-select-wrap">
-      <select class="pill-select" id="sel-book"
-        onchange="onBookChange()"
-        onclick="openChapterGrid()"></select>
+    <div class="pill-select-wrap" style="position:relative;">
+      <button class="pill-select" id="btn-book" onclick="toggleBookDropdown(event)"><span id="book-label">Genesis</span></button>
+      <div class="pill-dropdown" id="book-dropdown-menu" onclick="event.stopPropagation()">
+        <div id="book-dropdown-list" style="max-height:230px;overflow-y:auto;padding:4px 0;"></div>
+      </div>
     </div>
   </div>
 
@@ -5366,16 +5377,19 @@ function setTestament(t) {
 }
 
 function populateBookSelect() {
-  const sel = document.getElementById('sel-book');
-  sel.innerHTML = '';
+  const list = document.getElementById('book-dropdown-list');
+  const label = document.getElementById('book-label');
+  if (!list) return;
   const useMobileAbbr = window.innerWidth <= 540;
+  list.innerHTML = '';
   BOOKS.filter(b => b.testament === currentTestament).forEach(book => {
-    const opt = document.createElement('option');
-    opt.value = book.name;
-    opt.textContent = useMobileAbbr ? (BOOK_ABBR[book.name] || book.name) : book.name;
-    if (book.name === currentBook.name) opt.selected = true;
-    sel.appendChild(opt);
+    const btn = document.createElement('button');
+    btn.className = 'book-dropdown-item' + (book.name === currentBook.name ? ' current' : '');
+    btn.textContent = useMobileAbbr ? (BOOK_ABBR[book.name] || book.name) : book.name;
+    btn.onclick = () => selectBookFromDropdown(book.name);
+    list.appendChild(btn);
   });
+  if (label) label.textContent = useMobileAbbr ? (BOOK_ABBR[currentBook.name] || currentBook.name) : currentBook.name;
 }
 
 function populateChapterSelect() {
@@ -5415,16 +5429,25 @@ function populateVerseSelect(count) {
   }
 }
 
-function onBookChange() {
-  const sel = document.getElementById('sel-book');
-  const name = sel.value;
-  if (!name) return;
+function toggleBookDropdown(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('book-dropdown-menu');
+  if (!menu) return;
+  const isOpen = menu.classList.contains('open');
+  document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'));
+  closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown(); closeDictionaryDropdown();
+  if (!isOpen) menu.classList.add('open');
+}
+
+function selectBookFromDropdown(name) {
   const book = BOOKS.find(b => b.name === name);
   if (!book) return;
   const sameBook = currentBook && currentBook.name === name;
   currentBook = book;
   if (!sameBook) currentChapter = 1;
   highlightVerse = null;
+  document.getElementById('book-dropdown-menu').classList.remove('open');
+  populateBookSelect();
   populateChapterSelect();
   populateVerseSelect(0);
   openChapterGrid();
@@ -5534,7 +5557,7 @@ function setTestamentSilent(t) {
 
 function syncDropdowns() {
   if (currentBook.testament !== currentTestament) setTestamentSilent(currentBook.testament);
-  document.getElementById('sel-book').value = currentBook.name;
+  populateBookSelect();
   populateChapterSelect();
   populateVerseSelect(0);
 }
