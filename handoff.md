@@ -260,7 +260,7 @@ Sessions are listed newest-first. Each entry captures what shipped; root-cause d
 
 ### Session 21 — 2026-06-07
 
-**PRs #81–82 · SW unchanged (v47)**
+**PRs #81–82, projects repo PR #3 · SW unchanged (v47)**
 
 #### Book nav — same-book chapter grid fix (PRs #81 → #82)
 
@@ -277,6 +277,12 @@ Root cause traced back to session 18 (PR #64): the `onmousedown`/`onblur` book-s
 - Added: `toggleBookDropdown(e)`, `selectBookFromDropdown(name)`
 
 No SW bump — no cached assets changed.
+
+#### Deploy workflow — HTTP 415 fix (brandonr2630/projects PR #3)
+
+The PR #81 deploy failed with `HTTP 415 Unsupported Media Type` from OpenResty when uploading `bible-reader.html`. Root cause: the reusable workflow used `save_file_content` for text files, which POSTs the file as a URL-encoded body — rejected once the file grew large enough to trip the WAF's payload-size limit.
+
+Fix: removed the binary/text upload split in `brandonr2630/projects/.github/workflows/deploy.yml`. All files now upload via `upload_files` (multipart/form-data) with `overwrite=1`, which has no payload-size restriction and works for both text and binary. The failed run was re-run after the fix and deployed successfully. Change applies to all repos that use the shared workflow.
 
 ---
 
