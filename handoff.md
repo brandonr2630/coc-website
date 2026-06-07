@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-06-06 · Session 20 · SW `coc-bible-v47`*
+*Last updated: 2026-06-07 · Session 21 · SW `coc-bible-v47`*
 
 ---
 
@@ -258,6 +258,28 @@ Sessions are listed newest-first. Each entry captures what shipped; root-cause d
 
 ---
 
+### Session 21 — 2026-06-07
+
+**PRs #81–82 · SW unchanged (v47)**
+
+#### Book nav — same-book chapter grid fix (PRs #81 → #82)
+
+Root cause traced back to session 18 (PR #64): the `onmousedown`/`onblur` book-select hack was removed and noted as a tradeoff — *"re-selecting the current book no longer reopens the chapter grid."* Now fixed properly.
+
+**PR #81** (intermediate): added `onclick="openChapterGrid()"` to the native `<select>`. Merged, then immediately superseded — caused the chapter grid to open behind the book dropdown before any book was selected.
+
+**PR #82** (final): replaced the native `<select id="sel-book">` with a custom `<button id="btn-book">` + `.pill-dropdown` panel (`#book-dropdown-list`). Clicking the button opens the book list; clicking any book item (same or different) calls `selectBookFromDropdown(name)` which closes the panel then opens the chapter grid. No native `change` event ambiguity. Follows the existing `.pill-dropdown` toggle pattern (closes on outside click via global document listener).
+
+**Functions changed:**
+- `populateBookSelect()` — now populates `#book-dropdown-list` with `.book-dropdown-item` buttons and updates `#book-label`
+- `syncDropdowns()` — calls `populateBookSelect()` instead of setting `sel-book.value`
+- `onBookChange()` — removed (replaced by `selectBookFromDropdown`)
+- Added: `toggleBookDropdown(e)`, `selectBookFromDropdown(name)`
+
+No SW bump — no cached assets changed.
+
+---
+
 ### Session 20 — 2026-06-01
 
 **PRs #70–73 · SW v43 → v46**
@@ -312,7 +334,7 @@ Replaced the bare 4-swatch row with a full picker panel. Mode toggle (Highlight 
 45 pre-declared compound underline classes (`ul-blue-wavy-thick`, etc.). `text-decoration-thickness` split to its own property (4-value shorthand not broadly supported).
 
 #### Firefox book select fix (PR #64 · v40)
-`onmousedown="this.value=''"` caused Firefox to fire `change` on the programmatic clear, consuming the event. Removed `onmousedown`/`onblur` entirely — `onchange` only. Tradeoff: re-selecting the current book no longer reopens the chapter grid.
+`onmousedown="this.value=''"` caused Firefox to fire `change` on the programmatic clear, consuming the event. Removed `onmousedown`/`onblur` entirely — `onchange` only. Tradeoff: re-selecting the current book no longer reopens the chapter grid. *(Tradeoff resolved in session 21 — PR #82.)*
 
 ---
 
