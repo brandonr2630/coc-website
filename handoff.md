@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-06-01 · Session 20 · SW `coc-bible-v46`*
+*Last updated: 2026-06-06 · Session 20 · SW `coc-bible-v47`*
 
 ---
 
@@ -12,7 +12,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → GreenGeeks cPanel auto-deploys |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v46`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v47`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `CPANEL_API_TOKEN`, `CPANEL_HOST` (`https://chi203.greengeeks.net:2083`), `CPANEL_USER` (`terranre`) |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** |
