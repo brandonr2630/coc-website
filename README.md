@@ -247,6 +247,21 @@ See **HANDOVER.md** for the full pending work list, including:
 
 ---
 
+## AI Feature Ideas
+
+Reference implementations from [Shubhamsaboo/awesome-llm-apps](https://github.com/Shubhamsaboo/awesome-llm-apps) that map to plausible next features for the site and Bible reader:
+
+| Idea | Reference example |
+|------|--------------------|
+| Offline-capable Q&A agent over local translations/commentaries/dictionaries (fits the existing service-worker caching model) | [`rag_tutorials/local_rag_agent`](https://github.com/Shubhamsaboo/awesome-llm-apps/tree/main/rag_tutorials/local_rag_agent) |
+| Cross-reference / commentary lookup with cited sources | [`rag_tutorials/knowledge_graph_rag_citations`](https://github.com/Shubhamsaboo/awesome-llm-apps/tree/main/rag_tutorials/knowledge_graph_rag_citations) |
+| Turn sermon notes into an audio podcast export | [`starter_ai_agents/ai_blog_to_podcast_agent`](https://github.com/Shubhamsaboo/awesome-llm-apps/tree/main/starter_ai_agents/ai_blog_to_podcast_agent) |
+| FAQ chatbot for service times / congregation info (once contact form backend exists) | [`advanced_llm_apps/thinkpath_chatbot_app`](https://github.com/Shubhamsaboo/awesome-llm-apps/tree/main/advanced_llm_apps/thinkpath_chatbot_app) |
+
+These are starting points, not dependencies — evaluate before adding to `bible-reader.html` or `index.html`.
+
+---
+
 ## Support & Questions
 
 For architecture questions, see **HANDOVER.md**. For deployment issues, check GitHub Actions logs or GreenGeeks cPanel Fileman.
