@@ -1,6 +1,8 @@
 # COC Website — Handoff
 
-*Last updated: 2026-06-07 · Session 21 · SW `coc-bible-v47`*
+*Last updated: 2026-10-18 · Session 22 · SW `coc-bible-v49`*
+
+> ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
 ---
 
@@ -11,10 +13,10 @@
 | Live URL | `https://toddsroadcoctt.org` |
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
-| Deploy | Push to `master` via PR → GitHub Actions → GreenGeeks cPanel auto-deploys |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v47`** |
+| Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v49`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
-| GreenGeeks secrets | `CPANEL_API_TOKEN`, `CPANEL_HOST` (`https://chi203.greengeeks.net:2083`), `CPANEL_USER` (`terranre`) |
+| GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** |
 
 > **SW bump rule:** always read the version from `origin/master`, never from the local file.
@@ -29,7 +31,7 @@
 ## Tech Stack
 
 - **Vanilla HTML / CSS / JS** — no build system, no bundler, no npm, no framework
-- **Two deployable files:** `index.html` (landing page) · `bible-reader.html` (~8 500 lines — entire app)
+- **Two deployable files:** `index.html` (landing page) · `bible-reader.html` (~8 700 lines, ~0.5 MB — entire app; lexicon data lives in separate JSON files)
 - **Service worker** (`service-worker.js`) — PWA offline, cache-first for app shell + JSON data, network-only for `bolls.life` and Google Fonts
 - **Supabase** (`@supabase/supabase-js@2`) — highlights persistence + user auth (anonymous + email/password + Google OAuth)
 - **External read-only APIs:** `bolls.life` (NKJV, never cached), `bible.helloao.org` (additional commentaries, cached in localStorage)
@@ -72,8 +74,11 @@ All JSON files live at repo root and are fetched on demand:
 | `smiths.json` | Smith's Bible Dictionary (1863) | — |
 | `hitchcock.json` | Hitchcock's Bible Names (1869) | ~2 600 entries |
 | `crossrefs.json` | Cross-references, all 66 books | — |
+| `strongs-data.json` | Strong's lexicon (H/G) — lazy-loaded by the Strong's tab | 2.7 MB |
+| `ubs-data.json` | UBS lexicon senses — lazy-loaded by the UBS tab | 3.6 MB |
+| `dodson-data.json` | Dodson NT Greek lexicon — lazy-loaded by the Dodson tab (G numbers only) | 0.6 MB |
 
-`fausset.json` — **pending.** Run `node build-fausset.mjs` from `coc-website/` (~20 min). Then add `fausset` to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, and the dictionary dropdown HTML.
+`fausset.json` — **pending.** `build-fausset.mjs` is **untracked and not on `master`** (it exists only in the local checkout, as does `build-hitchcock.mjs`); commit it first or run it from the local checkout. The `fausset.json` currently sitting untracked in the local checkout is **not a valid build** (5.6 KB, one entry) — delete it and re-run `node build-fausset.mjs` from `coc-website/` (~20 min; scrapes bible-history.com, 300 ms delay per request). Then add `fausset` to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, and the dictionary dropdown HTML.
 
 Additional commentaries (John Gill, Keil-Delitzsch, Tyndale) still fetched live from `bible.helloao.org` with a `Content-Type` guard.
 
@@ -167,7 +172,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 
 ### Pending — Bible Reader
 
-- [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready at repo root; run it, then wire into UI (add to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, dropdown HTML)
+- [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` is local-only/untracked (see Reference Data); the local `fausset.json` is a bad 1-entry stub. Commit the script, run it, then wire into UI (add to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, dropdown HTML)
 - [ ] **Multiple named bookmarks** — one position saved currently; add named localStorage bookmarks ("Sunday sermon", "Home study")
 - [ ] **Copy shareable link** — `#John.3.16` deep-links work but no copy button; add to selection toolbar
 - [ ] **Verse-level notes** — short personal note per verse in localStorage
@@ -197,7 +202,7 @@ From `seven1m/open-bibles` (all public domain, converter at `SCRIPTS/zefania-to-
 
 | Priority | Issue | Impact | Effort | Status |
 |----------|-------|--------|--------|--------|
-| 🔴 HIGH | `STRONGS_DATA` embedded in HTML bloats file | Slow first load on mobile | 3–4 h | Open |
+| ~~🔴 HIGH~~ | ~~`STRONGS_DATA`/`UBS_DATA`/`DODSON_DATA` embedded in HTML (6.8 MB)~~ | — | — | **Fixed session 22 (PR #87)** — see lazy-load notes |
 | 🟠 MEDIUM | `getElementById()` called 210+ times; no DOM caching | 20–30% slower interactions | 1–2 h | Open |
 | 🟠 MEDIUM | Event listeners never removed on navigation | Memory leak after 20+ navigations on mobile | 2 h | Open |
 | 🟠 MEDIUM | Interlinear loads full 30 MB JSON into memory | Can crash low-end phones | 3 h | Open |
@@ -255,6 +260,25 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 22 — 2026-10-18
+
+**PRs #86–88 · SW v47 → v49**
+
+Audit of this file against the repo, `origin/master`, Actions and Supabase:
+
+- **Deploy docs corrected.** The shared workflow was migrated from the Fileman API to SSH/rsync (`brandonr2630/projects`, commit `d94408e`, 2026-07-03). Secrets and Quick Reference updated. Last `coc-website` deploy (PR #85, 2026-09-02) succeeded in 18 s.
+- **PR #85** (2026-09-02) added an "AI Feature Ideas" section to `README.md` (reference ideas only, nothing built).
+- **Supabase project was paused** (`INACTIVE`); restored 2026-10-18 via MCP. Expect it to pause again after idle periods.
+- **Fausset build never completed** — script is untracked, local `fausset.json` is a stub.
+- **Lexicon data lazy-loaded (PR #87 · v48).** `STRONGS_DATA`, `UBS_DATA`, `DODSON_DATA` (6.8 MB, three lines at the bottom of `bible-reader.html`) moved to `strongs-data.json`, `ubs-data.json`, `dodson-data.json`. `bible-reader.html` dropped from 7.3 MB to ~0.5 MB. `loadLexicon(key)` fetches a file once; `ensureLexiconTab(tab, clean)` fills a tab only when it is shown (Dodson on an H number needs no fetch). A failed fetch shows an error in the tab and retries on the next tab switch. Data verified identical to the original objects. **Behaviour change:** Strong's/UBS/Dodson are no longer available offline until each has been used once online (the service worker caches them on first fetch).
+- **Live `manifest.json` was missing (404) → service worker never installed.** `cache.addAll(SHELL)` is all-or-nothing, so one 404 blocked install; the offline/PWA feature was not working on the live site. The rsync deploy only uploads files changed per push, so the file never came back on its own. Fixed with a manual full redeploy (Actions → Deploy to cPanel → Run workflow, 2026-10-18). **Runbook note:** if a file is missing live, re-run the workflow manually for a full deploy.
+- **Service worker hardened (PR #88 · v49).** Only `/bible-reader.html` is required at install (`REQUIRED`); the other shell assets are cached individually with `Promise.allSettled`, so one missing asset can no longer block the worker.
+- **Verified on the live site (Chrome):** worker activates and controls the page; `coc-bible-v49` holds the shell plus `strongs-data.json`, `ubs-data.json`, `dodson-data.json` and `kjvs.json` after use; with the network emulated offline the reader reloads and Strong's, UBS and Dodson render from cache. Caveat: CDP offline emulation did not cover the worker's own fetches, so this proves cache-first serving, not true airplane-mode behaviour — worth one real phone check.
+- **Full-deploy check:** every tracked deployable file at the repo root returns 200 live (`handoff.md` and `CLAUDE.md` are intentionally excluded from deploy). The repo tracks no subfolder files.
+- Known stale docs outside this file: `CLAUDE.md` "Deployment" still says Fileman API; `README.md` references a `HANDOVER.md` that does not exist (this file replaced it) and Fileman.
 
 ---
 
@@ -424,8 +448,8 @@ Foundation: floating pill nav → consolidated controls, multiple translations (
 ```
 coc-website/
 ├── index.html                    Landing page
-├── bible-reader.html             Bible study app (~8 500 lines — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v46
+├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
+├── service-worker.js             PWA cache — current version: coc-bible-v49
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
@@ -437,8 +461,9 @@ coc-website/
 │   ├── kjvs.json asvs.json          (Strong's embedded)
 │   ├── hebrew.json greek-nt.json    (Original languages)
 │   ├── adam-clarke.json matthew-henry.json jamieson-fausset-brown.json
-│   ├── eastons.json smiths.json hitchcock.json   (fausset.json pending)
-│   └── crossrefs.json
+│   ├── eastons.json smiths.json hitchcock.json   (fausset.json pending — local stub is invalid)
+│   ├── crossrefs.json
+│   └── strongs-data.json ubs-data.json dodson-data.json   (lazy-loaded lexicons)
 │
 └── Gitignored source directories:
     ├── BIBLE TRANSLATIONS/        Source XML files
@@ -462,13 +487,13 @@ coc-website/
 ### 2 — Automate the SW bump
 The bash one-liner in Quick Reference works but requires manual copy-paste every session. A 10-line shell script (`scripts/bump-sw.sh`) checked into the repo would make it a single command and prevent the "forgot to bump" error that has caused multiple extra PRs.
 
-### 3 — Add the Supabase schema to this file
+### 3 — Add the Supabase schema to this file *(done — see Highlights & Auth)*
 The `highlights` table schema is now documented above. Keep it updated whenever a migration runs — it saves a round-trip to the Supabase dashboard at the start of any session that touches the DB layer.
 
-### 4 — Publish the Google OAuth app
+### 4 — Publish the Google OAuth app *(still open as of 2026-10-18, unverified)*
 The app is still in testing mode. Publishing it (Google Cloud → OAuth consent screen → Audience → Publish) takes 5 minutes and removes the need to manually add each church member as a test user. No Google review is required for personal/internal apps using only basic scopes.
 
-### 5 — Session-start checklist in CLAUDE.md
+### 5 — Session-start checklist in CLAUDE.md *(done — CLAUDE.md now points here)*
 The project `CLAUDE.md` has basic architecture but doesn't point to this file. Adding a one-liner like `"See handoff.md for current feature status, known issues, and runbooks"` would orient a new Claude session immediately without needing the user to paste the handoff.
 
 ### 6 — Consider a `changelog:` git trailer
