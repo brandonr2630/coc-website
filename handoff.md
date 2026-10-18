@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Session 23 · SW `coc-bible-v57`*
+*Last updated: 2026-10-18 · Session 24 · SW `coc-bible-v58`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v57`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v58`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -78,6 +78,8 @@ All JSON files live at repo root and are fetched on demand:
 | `crossrefs.json` | Cross-references, all 66 books | — |
 | `plates.json` | Doré plate index for WEB+ (221 plates: id, title, book, ch, v, vEnd, file, w, h) | 39 KB |
 | `plates/*.webp` | Gustave Doré plates (1866), WebP, loaded lazily; every plate ≤ 190 KB (49 of them shrunk to 0.86–0.93 of the original 1400 px build so they fit) | 36.8 MB total, avg 171 KB |
+| `plates-schnorr.json` | Schnorr von Carolsfeld plate index for WEB+ (223 plates, same shape as `plates.json`) | 38 KB |
+| `plates/schnorr/*.webp` | *Die Bibel in Bildern* (1860) woodcuts: 196 lossless full-size (bilevel) + 27 lossy; all ≤ 190 KB | 18.4 MB total, avg 84 KB |
 | `strongs-data.json` | Strong's lexicon (H/G) — lazy-loaded by the Strong's tab | 2.7 MB |
 | `ubs-data.json` | UBS lexicon senses — lazy-loaded by the UBS tab | 3.6 MB |
 | `dodson-data.json` | Dodson NT Greek lexicon — lazy-loaded by the Dodson tab (G numbers only) | 0.6 MB |
@@ -269,6 +271,22 @@ Then in `bible-reader.html`:
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
 
 ---
+
+### Session 24 — 2026-10-18 · Second plate set for WEB+: Schnorr von Carolsfeld
+
+**SW v57 → v58** · branch `feature/schnorr-plates`
+
+WEB+ can now show **Julius Schnorr von Carolsfeld's *Die Bibel in Bildern* (1860)** instead of Doré. The choice is under **Settings → Plates (WEB+)**, is remembered (`localStorage` key `plateSet`), and redraws the open chapter immediately. Captions credit "Julius Schnorr von Carolsfeld, 1860". Licence: every file is marked public domain on Wikimedia Commons.
+
+- **Code.** `PLATE_SETS` in `bible-reader.html` maps a set to its JSON index (`plates.json` = Doré, `plates-schnorr.json` = Schnorr); `loadPlates(set)` caches one index per set; `setPlateSet()` persists and redraws. Adding a third artist = a new JSON + images + one entry in `PLATE_SETS` + one `<option>` in `#sel-plate-set`. The WEB+ info text and the menu label ("World English Bible +") no longer name only Doré.
+- **Coverage (223 plates).** Genesis–Deuteronomy scenes, Joshua–Esther, Job, 4 Psalms scenes, Isaiah–Daniel, the Gospels (64), Acts (11) and Revelation (5). No Leviticus, no epistles. 17 plates are left out because their text is not in the WEB: Wisdom (138), Judith (144-145), Tobit (146-147), Sirach (148-149), Maccabees (150-157), Susanna (158-159).
+- **Mapping.** Commons gives only English captions (no scripture references), so the verse map in `SCRIPTS/schnorr-plates-map.mjs` was written by hand and every reference validated against `web.json`. The 32 least certain plates were **looked at** (contact sheets) and corrected where the picture disagreed with the first guess (e.g. 015 → Genesis 6:1-4, 142 → Ezekiel 1:26-28, 185 → Matthew 9:27-30, 203 → Matthew 19:14-15, 219 → Mark 16:5-6). Two titles differ from Commons: 127 is shown as "Rebuilding the Walls of Jerusalem" (the picture shows builders with weapons and a trumpeter, placed at Nehemiah 4:17-18) and 210's typo is fixed. **11 plates are still flagged `check`: 022, 052, 054, 127, 134, 135, 136, 139, 185, 203, 238** — the four Psalms plates (134-137) are the weakest guesses (no caption names a psalm).
+- **Image format.** The Schnorr scans are strictly black and white (2 grey levels), so **lossless WebP at full size is smaller and crisper than lossy** (≈ 60-90 KB vs > 350 KB lossy). `build-schnorr-plates.mjs` uses lossless when the plate has ≤ 8 grey levels and is ≤ 190 KB, otherwise the shared lossy ladder (27 plates are real greyscale or colour scans). Total 18.4 MB. Tooling is local-only like Doré's: `SCRIPTS/schnorr-plates-map.mjs`, `build-schnorr-plates.mjs` (`--check`, `--only=`), originals cached in `SCRIPTS/schnorr-cache/`.
+- **Tested** (local server, real Chrome): all 223 files found on Commons and built, 0 over budget; Doré ⇄ Schnorr switch redraws with the right credit and persists across reload; Genesis 1 (6 plates after v5, 8, 13, 19, 23, 28), Genesis 22 (Sacrifice of Isaac after v12), Matthew 27, a chapter with none (Leviticus 1, Psalm 23); lightbox label and Esc; presentation-mode slides and arrow keys; dark theme filter; Settings panel layout; a missing `plates-schnorr.json` leaves the verses intact. **Not tested:** phone-width layout of the new Settings row, a screen reader, the live site, and the 11 flagged mappings against the printed book.
+- **Cost.** Total plate images are now ~55 MB (Doré 36.8 + Schnorr 18.4); each is cached by the service worker only after it is viewed.
+
+---
+
 
 ### Session 23 — 2026-10-18 · WEB+ Doré plates
 
@@ -491,7 +509,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v57
+├── service-worker.js             PWA cache — current version: coc-bible-v58
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
@@ -507,7 +525,8 @@ coc-website/
 │   ├── crossrefs.json
 │   └── strongs-data.json ubs-data.json dodson-data.json   (lazy-loaded lexicons)
 ├── plates.json                   WEB+ plate index
-└── plates/                       221 × <id>.webp Doré plates (WEB+ only)
+├── plates-schnorr.json           WEB+ plate index, Schnorr set
+└── plates/                       Doré: plates/<id>.webp (221) · Schnorr: plates/schnorr/<id>.webp (223) — WEB+ only
 │
 └── Gitignored source directories:
     ├── BIBLE TRANSLATIONS/        Source XML files
