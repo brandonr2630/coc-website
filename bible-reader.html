@@ -1267,8 +1267,8 @@
     }
     .dict-panel-tabrow::-webkit-scrollbar { display: none; }
     .dict-tab {
-      flex: 1; min-width: 0;
-      padding: 10px 12px;
+      flex: 1 0 auto;
+      padding: 10px 8px;
       border: none; border-bottom: 3px solid transparent;
       background: none; cursor: pointer;
       font-family: 'Nunito', sans-serif; font-size: 0.75rem; font-weight: 700;
@@ -3799,10 +3799,14 @@ document.addEventListener('click', e => {
     for (const [key, label] of Object.entries(DICT_SOURCE_NAMES)) {
       const btn = document.createElement('button');
       btn.className = 'dict-tab' + (key === currentDictionary ? ' active' : '');
-      btn.textContent = label;
+      btn.textContent = DICT_TAB_LABELS[key] || label;
+      btn.title = label;
       btn.addEventListener('click', () => switchDictTab(key));
       row.appendChild(btn);
     }
+    // If the tabs ever outgrow the panel the row scrolls; keep the active one visible.
+    const active = row.querySelector('.dict-tab.active');
+    if (active && active.scrollIntoView) active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   function switchDictTab(source) {
@@ -4083,6 +4087,8 @@ const LOCAL_COMMENTARIES = new Set(['adam-clarke', 'matthew-henry', 'jamieson-fa
   const LOCAL_DICTIONARIES = new Set(['eastons', 'smiths', 'hitchcock', 'fausset']);
   const DICT_CACHE          = {};
   const DICT_SOURCE_NAMES   = { eastons: "Easton's (1897)", smiths: "Smith's (1863)", hitchcock: "Hitchcock's Names (1869)", fausset: "Fausset's (1888)" };
+  // Short labels for the tab row (full names, with years, stay in DICT_SOURCE_NAMES and as tooltips)
+  const DICT_TAB_LABELS     = { eastons: "Easton's", smiths: "Smith's", hitchcock: "Hitchcock's", fausset: "Fausset's" };
   let currentDictionary = 'eastons';
   let dictMode          = false;
   let dictSearchTimer   = null;
