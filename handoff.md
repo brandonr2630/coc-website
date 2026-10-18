@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Session 24 · SW `coc-bible-v59`*
+*Last updated: 2026-10-18 · Sessions 22-24 · SW `coc-bible-v59`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -274,7 +274,7 @@ Sessions are listed newest-first. Each entry captures what shipped; root-cause d
 
 ### Session 24 — 2026-10-18 · Schnorr von Carolsfeld plates fill the gaps in Doré's WEB+ set
 
-**SW v57 → v58** · branch `feature/schnorr-plates`
+**PRs #99-102 · SW v55 → v59** (WEB+ Doré plates #99, Doré polish #100, Schnorr infill #101, Schnorr corrections #102 — all merged and live)
 
 WEB+ now shows **Doré's plates first and Julius Schnorr von Carolsfeld's woodcuts (*Die Bibel in Bildern*, 1860) only where Doré has no plate** — one combined set, no setting to choose. Every plate is captioned with its own artist ("Gustave Doré, 1866" or "Julius Schnorr von Carolsfeld, 1860"). Wikimedia Commons marks every Schnorr file public domain.
 
@@ -293,7 +293,7 @@ WEB+ now shows **Doré's plates first and Julius Schnorr von Carolsfeld's woodcu
 
 **SW v55 → v56** · branch `feature/web-plus-dore-plates`
 
-**Follow-up (SW v56 → v57, PR #100 — open and not yet merged when this was written):** plate `079` remapped, all plates now under budget, lightbox made accessible, menu label shortened, true-offline test done — see the last bullets. WEB+ itself shipped in PR #99 (live, SW v56).
+**Follow-up (SW v56 → v57, PR #100 — merged):** plate `079` remapped, all plates now under budget, lightbox made accessible, menu label shortened, true-offline test done — see the last bullets. WEB+ itself shipped in PR #99 (v56).
 
 New translation key `webplus` (label **WEB+**): World English Bible text (shares `web.json` through `TRANSLATION_SOURCE`, one object in memory) with Gustave Doré's 1866 plates inserted after the last verse of each plate's range. Plates are optional: the reader works if `plates.json` or an image is missing (failed images remove themselves; a failed `plates.json` just means no plates). WEB+ is excluded from Search and from the Parallel list. Every plate is captioned "Title · Ref · Gustave Doré, 1866". No AI-generated or re-rendered art — the images are the Wikimedia Commons scans, resized/re-encoded only.
 
@@ -308,15 +308,15 @@ New translation key `webplus` (label **WEB+**): World English Bible text (shares
 - **True offline test (v57).** Served from a local server, loaded in Chrome with the service worker controlling the page, viewed Genesis 1 and Matthew 27, then **stopped the server** (an uncached fetch failed with "Failed to fetch", i.e. the network was really gone, including for the worker). Reload still showed the reader in WEB+, the cached plates decoded, the lightbox worked, and a plate that had never been viewed was inserted, failed to load and removed itself with the verses intact and no JS errors. Not tested on a phone in airplane mode.
 - **Menu label.** The translation menu item now reads **World English Bible +** (was "WEB+ · World English Bible + Doré Plates"); the pill and share text still say WEB+.
 - **Where the plate tooling lives.** `SCRIPTS/` is gitignored, so it exists only in the local checkout (`C:\Users\brand\OneDrive\Documents\Projects\coc-website\SCRIPTS`) with **no backup**: `build-dore-plates.mjs` (encoder with the finer shrink ladder), `dore-plates-map.mjs` (corrected map), `dore-cache/` (~395 MB of originals, so rebuilds need no downloads), `dore-plates-handoff.md` (older instructions — superseded by this entry). Rebuild after a map change: `node SCRIPTS/dore-plates-map.mjs` regenerates `plates.json` **without** `file/w/h`; carry those over from the previous `plates.json` by id (or rerun `build-dore-plates.mjs --style=original`) and minify the JSON.
-- **Local checkout cleanup (owner).** The main checkout still carries the pre-merge uncommitted Doré edits (`bible-reader.html`, `service-worker.js`) and a loose `plates.json`. Discard them (`git checkout -- bible-reader.html service-worker.js`, delete `plates.json`) before pulling. Untracked `.diagram-design` and `build-hitchcock.mjs` are unrelated leftovers. Delete the local branches `feature/web-plus-dore-plates`, `fix/dore-plate-polish` and `backup/local-master-2026-10-18` once merged/no longer needed.
-- **Still open for WEB+.** Screen-reader test of the lightbox; a phone in airplane mode; eyeballing the 49 shrunk plates; a second plate set by another artist (Schnorr von Carolsfeld has full-Bible coverage and a similar woodcut style; Tissot is in colour but strongest in the Gospels) — the reader would need a plate-set setting and a `plates-<artist>.json` per set; licence and per-book coverage should be checked on Commons first.
+- **Local checkout and housekeeping (done 2026-10-18).** The main checkout was synced to `origin/master` and all merged local branches deleted (their names and commit hashes are in `C:\Users\brand\OneDrive\Documents\Projects\coc-website-backups\deleted-local-branches-2026-10-18.txt`; restore with `git branch <name> <sha>`). Untracked `.diagram-design` and `build-hitchcock.mjs` are unrelated leftovers. Scripts backup: `coc-website-backups\coc-website-SCRIPTS-final-2026-10-18.zip` (everything in `SCRIPTS/` except the image caches `dore-cache/`, `schnorr-cache/`, which rebuild from Commons).
+- **Still open for WEB+.** (1) A real screen-reader test (VoiceOver/TalkBack) and a real phone in airplane mode — only the accessibility tree and a stopped-server emulation were used. (2) The two Schnorr plates still flagged `check`: 052 (manna or water from the rock) and 139 (Isaiah vision). (3) Eyeballing the 49 shrunk Doré plates. (4) **Service-worker version bumps delete the old cache**, so cached `web.json`, plate indexes and plates are re-downloaded online after every deploy; a separate data cache would keep offline readers' content. (5) **Orphaned files on the server**: the deploy only uploads changed files and never deletes, so `plates/schnorr/051.webp`, `132.webp` and `176.webp` (dropped in #102) remain on GreenGeeks, unused (~0.2 MB) — remove via cPanel if you care. (6) A third artist set (Tissot, from the Brooklyn Museum / Jewish Museum) was suggested, not started: it would need a `plates-<artist>.json`, a map and build script like Schnorr's, and entries in `PLATE_SOURCES` and `SCRIPTS/schnorr-infill.mjs`-style duplicate rules.
 
 ---
 
 
 ### Session 22 — 2026-10-18
 
-**PRs #86–97 · SW v47 → v55**
+**PRs #86–97 · SW v47 → v55** (WEB+ plate work is in sessions 23-24 above)
 
 Audit of this file against the repo, `origin/master`, Actions and Supabase:
 
