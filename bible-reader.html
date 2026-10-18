@@ -3133,6 +3133,10 @@
     opacity: 1; transform: translateX(-50%) translateY(0);
   }
 
+  /* ── Privacy / terms links ── */
+  .auth-legal { font-size: 0.74rem; color: var(--muted, #888); text-align: center; margin: 14px 0 0; line-height: 1.5; }
+  .auth-legal a, .auth-legal-links a { color: inherit; text-decoration: underline; }
+
   /* ── Account section in Settings ── */
   .auth-status-row {
     font-size: 0.78rem; color: var(--muted, #888);
@@ -3368,6 +3372,7 @@
         <div class="pill-settings-row" style="flex-direction:column;gap:6px;" id="auth-settings-btns">
           <button class="pill-settings-item" style="width:100%" onclick="openAuthModal('signin')">Sign in / Sign up</button>
         </div>
+        <div class="auth-status-row auth-legal-links"><a href="privacy.html" target="_blank" rel="noopener">Privacy</a> &middot; <a href="terms.html" target="_blank" rel="noopener">Terms</a></div>
       </div>
     </div>
   </div>
@@ -3423,6 +3428,7 @@
     <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
     <h2 id="auth-modal-title">Sign in</h2>
     <div id="auth-modal-body"></div>
+    <p class="auth-legal">By signing in you agree to our <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>
   </div>
 </div>
 

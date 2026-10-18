@@ -101,7 +101,11 @@ function extractBody(html) {
 
 // Source pages that are broken beyond repair on bible-history.com. Hand-checked.
 //   leprosy: page text is truncated at "<p>&l" (nothing recoverable)
-const OVERRIDES = { bakbakkar: '<p>1 Chronicles 9:15.</p>' };
+//   leprosy: duplicate of LEPER on the source site, so it is a cross-reference we add
+const OVERRIDES = { bakbakkar: '<p>1 Chronicles 9:15.</p>', leprosy: '<p>(See LEPER.)</p>' };
+
+// Source entries whose whole body is the stray word "front" (abram, adoration): not real text, so skipped.
+const JUNK_BODY = /^<p>front\.?<\/p>$/i;
 
 console.log('Phase 1 — collecting entry URLs…');
 const allLinks = [];
@@ -133,7 +137,7 @@ async function worker() {
     const slug = path.replace(/^\/faussets\/[a-z]\//, '').replace(/\/$/, '');
     try {
       const body = OVERRIDES[slug] || extractBody(await getText(`${BASE}${path}`));
-      if (!body) { empty.push(slug); }
+      if (!body || JUNK_BODY.test(body)) { empty.push(slug); }
       else {
         let key = slugToKey(slug);
         if (out[key]) key = `${key}-${i}`; // never overwrite a different entry that normalises to the same key
