@@ -17,7 +17,7 @@
 | Service worker | `service-worker.js` line 7 · **current: `coc-bible-v52`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
-| Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** |
+| Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
 
 > **SW bump rule:** always read the version from `origin/master`, never from the local file.
 > ```bash
@@ -107,7 +107,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 - `hasRealUser` flag prevents the anonymous fallback from firing after a real sign-in
 - OAuth: **PKCE flow** — `createClient(..., { auth: { flowType: 'pkce' } })`. `redirectTo: window.location.origin + '/bible-reader.html'`. Google now shows `toddsroadcoctt.org` on the consent screen.
 - Google Cloud Console: add `https://toddsroadcoctt.org/bible-reader.html` to **Authorized redirect URIs** · Supabase dashboard: add same URL to **Redirect URLs** *(required for PKCE to work)*
-- Google app currently in **testing mode** — add users at Google Cloud → Audience → Test users. To open to all: Audience → Publish app.
+- Google app **published to production** (2026-10-18, owner action in Google Auth Platform → Audience). Anyone with a Google account can sign in; no test-user list to maintain. Branding uses `https://toddsroadcoctt.org/privacy.html` and `/terms.html` (see File Map). If the consent screen is ever edited to add sensitive scopes, Google will require verification — the app should keep to `openid`, email and profile.
 
 **In-memory cache:** `HIGHLIGHT_CACHE` — key `"Book:ch:v"` → `{color, style, ulStyle, ulWeight, tags[]}`. Updated synchronously on user action; Supabase persisted asynchronously.
 
@@ -213,7 +213,7 @@ From `seven1m/open-bibles` (all public domain, converter at `SCRIPTS/zefania-to-
 | 🟠 MEDIUM | No request cancellation on rapid chapter nav | Stale data can overwrite current view | 1–2 h | Open |
 | 🟡 LOW | NKJV word search disabled (bolls.life rate-limits at 429) | Users must switch translation to search | — | Won't fix short-term |
 | 🟡 LOW | Accessibility: missing ARIA labels, keyboard nav | Screen reader users underserved | 4 h | Open |
-| 🟡 LOW | Google OAuth app in "testing" mode | Must manually add each church member as a test user | 5 min, **owner action** (Google account) | Open — publish when ready |
+| ~~🟡 LOW~~ | ~~Google OAuth app in "testing" mode~~ | — | — | **Fixed 2026-10-18** — app published |
 
 ---
 
@@ -280,7 +280,8 @@ Audit of this file against the repo, `origin/master`, Actions and Supabase:
 - **Network-first service worker (PR #90 · v51).** Before this, `bible-reader.html` was cache-first, so a deploy needed two page loads to appear. Verified live by planting a stale page in the cache: a reload still showed the real page and refreshed the cache. Trade-off: online loads always ask the network first (4 s cap).
 - **Dictionary tab row fix (PR #91 · v52).** Four dictionaries overflowed the tab row (`min-width:0` + `nowrap` made labels overlap). Tabs now size to content with short labels (`DICT_TAB_LABELS`; full names stay as tooltips); at 320 px the row scrolls instead of overlapping. Verified live at 1280 and 375 px.
 - **Deploy docs fixed.** `CLAUDE.md` and `README.md` now describe SSH/rsync deploys and point to this file (previously Fileman API / a non-existent `HANDOVER.md`).
-- **Google OAuth publish** remains a manual owner step — see Recommendations #4.
+- **Privacy policy and terms pages (PR #93).** Public `privacy.html` and `terms.html`, linked from the home page footer, written to satisfy Google's branding requirements. Contact on both: `coc.toddsroad@gmail.com`. Plain-language drafts — a church leader should read them. Not yet linked from inside `bible-reader.html` (would need an SW bump).
+- **Google OAuth app published** (owner, 2026-10-18). Search Console domain verification (DNS TXT in GreenGeeks cPanel → Zone Editor, or a URL-prefix property) was in progress; status not confirmed here.
 - **Lexicon data lazy-loaded (PR #87 · v48).** `STRONGS_DATA`, `UBS_DATA`, `DODSON_DATA` (6.8 MB, three lines at the bottom of `bible-reader.html`) moved to `strongs-data.json`, `ubs-data.json`, `dodson-data.json`. `bible-reader.html` dropped from 7.3 MB to ~0.5 MB. `loadLexicon(key)` fetches a file once; `ensureLexiconTab(tab, clean)` fills a tab only when it is shown (Dodson on an H number needs no fetch). A failed fetch shows an error in the tab and retries on the next tab switch. Data verified identical to the original objects. **Behaviour change:** Strong's/UBS/Dodson are no longer available offline until each has been used once online (the service worker caches them on first fetch).
 - **Live `manifest.json` was missing (404) → service worker never installed.** `cache.addAll(SHELL)` is all-or-nothing, so one 404 blocked install; the offline/PWA feature was not working on the live site. The rsync deploy only uploads files changed per push, so the file never came back on its own. Fixed with a manual full redeploy (Actions → Deploy to cPanel → Run workflow, 2026-10-18). **Runbook note:** if a file is missing live, re-run the workflow manually for a full deploy.
 - **Service worker hardened (PR #88 · v49).** Only `/bible-reader.html` is required at install (`REQUIRED`); the other shell assets are cached individually with `Promise.allSettled`, so one missing asset can no longer block the worker.
@@ -456,6 +457,7 @@ Foundation: floating pill nav → consolidated controls, multiple translations (
 ```
 coc-website/
 ├── index.html                    Landing page
+├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
 ├── service-worker.js             PWA cache — current version: coc-bible-v52
 ├── manifest.json                 PWA manifest
@@ -498,8 +500,8 @@ The bash one-liner in Quick Reference works but requires manual copy-paste every
 ### 3 — Add the Supabase schema to this file *(done — see Highlights & Auth)*
 The `highlights` table schema is now documented above. Keep it updated whenever a migration runs — it saves a round-trip to the Supabase dashboard at the start of any session that touches the DB layer.
 
-### 4 — Publish the Google OAuth app *(owner action, still open as of 2026-10-18)*
-The app is still in testing mode. Publishing it (Google Cloud → OAuth consent screen → Audience → Publish) takes 5 minutes and removes the need to manually add each church member as a test user. No Google review is required for personal/internal apps using only basic scopes.
+### 4 — Publish the Google OAuth app *(done 2026-10-18)*
+Published by the owner on 2026-10-18 after adding privacy-policy and terms-of-service pages (PR #93) to the consent-screen branding. Nothing further needed unless scopes change.
 
 ### 5 — Session-start checklist in CLAUDE.md *(done — CLAUDE.md now points here)*
 The project `CLAUDE.md` has basic architecture but doesn't point to this file. Adding a one-liner like `"See handoff.md for current feature status, known issues, and runbooks"` would orient a new Claude session immediately without needing the user to paste the handoff.
