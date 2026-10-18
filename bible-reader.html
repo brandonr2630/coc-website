@@ -3436,15 +3436,6 @@
         </div>
       </div>
       <div class="pill-settings-section">
-        <span class="pill-settings-label">Plates (WEB+)</span>
-        <div class="pill-settings-row">
-          <select class="pill-font-select" id="sel-plate-set" onchange="setPlateSet(this.value)" aria-label="Illustrations shown in WEB+">
-            <option value="dore">Gustave Doré (1866)</option>
-            <option value="schnorr">Schnorr von Carolsfeld (1860)</option>
-          </select>
-        </div>
-      </div>
-      <div class="pill-settings-section">
         <div class="pill-settings-row">
           <button class="pill-settings-item reading-mode-btn" id="btn-reading-mode" onclick="toggleReadingMode()">⊞ Reading</button>
           <button class="pill-settings-item" id="btn-pres-mode" onclick="enterPresentationMode()">⛶ Present</button>
@@ -3750,7 +3741,7 @@ const TRANSLATION_INFO = {
   webplus: {
     full: 'World English Bible +',
     year: 2000,
-    body: `WEB+ is the World English Bible text — a public-domain revision of the American Standard Version resting on the Biblia Hebraica Stuttgartensia and the Byzantine Majority Text — set alongside classic Bible engravings — by Gustave Doré (1866) or Julius Schnorr von Carolsfeld (1860), as you choose under Settings → Plates. Each plate sits directly after the verses it illustrates; tap a plate to enlarge it, or enter Presentation Mode to see each one as a full-screen slide. The plates are public domain, drawn from Wikimedia Commons; plates for the Apocrypha are left out. Doré illustrates most of the Bible, with some New Testament plates taken from later printings of his work; Schnorr von Carolsfeld's woodcuts (Die Bibel in Bildern, 1860) follow the narrative books, the Gospels, Acts and Revelation. WEB+ is the home for features that go beyond the plain text; it is not offered in Parallel view or Search because its words are identical to the World English Bible.`
+    body: `WEB+ is the World English Bible text — a public-domain revision of the American Standard Version resting on the Biblia Hebraica Stuttgartensia and the Byzantine Majority Text — set alongside classic Bible engravings: the plates of Gustave Doré (1866), with woodcuts by Julius Schnorr von Carolsfeld (1860) filling the passages Doré did not illustrate. Each plate sits directly after the verses it illustrates; tap a plate to enlarge it, or enter Presentation Mode to see each one as a full-screen slide. The plates are public domain, drawn from Wikimedia Commons; plates for the Apocrypha are left out. Where Doré already has a plate for a passage Schnorr's is left out; some New Testament plates of Doré's come from later printings of his work. Each plate is captioned with its artist. WEB+ is the home for features that go beyond the plain text; it is not offered in Parallel view or Search because its words are identical to the World English Bible.`
   },
   web: {
     full: 'World English Bible',
@@ -6761,41 +6752,42 @@ function goToXref(bookName, chapter, verse) {
 // ── Doré plates (WEB+) ─────────────────────────────────────────────────────
 // plates.json is built by SCRIPTS/dore-plates-map.mjs + SCRIPTS/build-dore-plates.mjs.
 // Only plates that already have an image file are shown, so a half-built set is safe.
-// Plate sets: each is its own JSON index (+ images) built by SCRIPTS/. The reader remembers the choice.
-const PLATE_SETS = {
-  dore:    { file: 'plates.json',         label: 'Gustave Doré (1866)' },
-  schnorr: { file: 'plates-schnorr.json', label: 'Schnorr von Carolsfeld (1860)' },
-};
-let plateSet = (() => { const v = lsGet('plateSet'); return v && PLATE_SETS[v] ? v : 'dore'; })();
-(function () { const sel = document.getElementById('sel-plate-set'); if (sel) sel.value = plateSet; })();
-const PLATES_INDEX = {}, PLATES_LOADING = {};
-function loadPlates(set = plateSet) {
-  if (PLATES_INDEX[set]) return Promise.resolve(PLATES_INDEX[set]);
-  if (!PLATES_LOADING[set]) {
-    PLATES_LOADING[set] = fetch(PLATE_SETS[set].file)
-      .then(r => { if (!r.ok) throw new Error(PLATE_SETS[set].file + ' ' + r.status); return r.json(); })
-      .then(doc => {
-        const idx = { credit: doc.credit || PLATE_SETS[set].label, byChapter: {} };
+// Plates come from two sources that are merged into one index. Doré's plates.json is primary; Schnorr's
+// plates-schnorr.json only fills passages Doré did not illustrate (its duplicates carry skip:true, set by
+// SCRIPTS/schnorr-infill.mjs, and are ignored here). Each plate keeps its own credit. If one source is
+// missing the other still works.
+const PLATE_SOURCES = ['plates.json', 'plates-schnorr.json'];
+let PLATES_INDEX = null, PLATES_LOADING = null;
+function loadPlates() {
+  if (PLATES_INDEX) return Promise.resolve(PLATES_INDEX);
+  if (!PLATES_LOADING) {
+    PLATES_LOADING = Promise.all(PLATE_SOURCES.map(src =>
+      fetch(src)
+        .then(r => { if (!r.ok) throw new Error(src + ' ' + r.status); return r.json(); })
+        .catch(e => { console.warn('Plates unavailable (' + src + '):', e); return null; })
+    )).then(docs => {
+      const idx = { credit: 'Gustave Doré, 1866', byChapter: {} };
+      let any = false;
+      docs.forEach((doc, order) => {
+        if (!doc) return;
         for (const p of doc.plates || []) {
-          if (!p.file) continue;
-          const k = p.book + '|' + p.ch;
-          (idx.byChapter[k] = idx.byChapter[k] || []).push(p);
+          if (!p.file || p.skip) continue;
+          any = true;
+          const q = Object.assign({ credit: doc.credit || '', order }, p);
+          const k = q.book + '|' + q.ch;
+          (idx.byChapter[k] = idx.byChapter[k] || []).push(q);
         }
-        for (const k in idx.byChapter) idx.byChapter[k].sort((a, b) => a.vEnd - b.vEnd || a.v - b.v);
-        return (PLATES_INDEX[set] = idx);
-      })
-      .catch(e => { delete PLATES_LOADING[set]; console.warn('Plates unavailable (' + set + '):', e); return null; });
+      });
+      if (!any) { PLATES_LOADING = null; return null; }        // nothing loaded: try again next time
+      for (const k in idx.byChapter) idx.byChapter[k].sort((a, b) => a.vEnd - b.vEnd || a.v - b.v || a.order - b.order);
+      return (PLATES_INDEX = idx);
+    });
   }
-  return PLATES_LOADING[set];
-}
-function setPlateSet(set) {
-  if (!PLATE_SETS[set] || set === plateSet) return;
-  plateSet = set;
-  lsSet('plateSet', set);
-  if (PLATE_TRANSLATIONS.has(currentTranslation)) renderPassage();   // redraw the open chapter with the new set
+  return PLATES_LOADING;
 }
 function plateRef(p) { return p.book + ' ' + p.ch + ':' + p.v + (p.vEnd > p.v ? '\u2013' + p.vEnd : ''); }
 function buildPlateFigure(p, credit, pres) {
+  credit = p.credit || credit;                       // each plate carries its own artist credit
   const fig = document.createElement('figure');
   fig.className = pres ? 'pres-plate' : 'dore-plate';
   fig.dataset.plate = p.id;

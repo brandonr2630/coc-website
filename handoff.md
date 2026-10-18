@@ -78,8 +78,8 @@ All JSON files live at repo root and are fetched on demand:
 | `crossrefs.json` | Cross-references, all 66 books | — |
 | `plates.json` | Doré plate index for WEB+ (221 plates: id, title, book, ch, v, vEnd, file, w, h) | 39 KB |
 | `plates/*.webp` | Gustave Doré plates (1866), WebP, loaded lazily; every plate ≤ 190 KB (49 of them shrunk to 0.86–0.93 of the original 1400 px build so they fit) | 36.8 MB total, avg 171 KB |
-| `plates-schnorr.json` | Schnorr von Carolsfeld plate index for WEB+ (223 plates, same shape as `plates.json`) | 38 KB |
-| `plates/schnorr/*.webp` | *Die Bibel in Bildern* (1860) woodcuts: 196 lossless full-size (bilevel) + 27 lossy; all ≤ 190 KB | 18.4 MB total, avg 84 KB |
+| `plates-schnorr.json` | Schnorr von Carolsfeld plate index (223 entries; 117 are marked `skip:true` because Doré already illustrates the passage; 106 are shown) | 35 KB |
+| `plates/schnorr/*.webp` | *Die Bibel in Bildern* (1860) woodcuts shown as infill: 106 files (92 lossless full-size bilevel + 14 lossy), all ≤ 190 KB | 8.9 MB total |
 | `strongs-data.json` | Strong's lexicon (H/G) — lazy-loaded by the Strong's tab | 2.7 MB |
 | `ubs-data.json` | UBS lexicon senses — lazy-loaded by the UBS tab | 3.6 MB |
 | `dodson-data.json` | Dodson NT Greek lexicon — lazy-loaded by the Dodson tab (G numbers only) | 0.6 MB |
@@ -272,21 +272,21 @@ Sessions are listed newest-first. Each entry captures what shipped; root-cause d
 
 ---
 
-### Session 24 — 2026-10-18 · Second plate set for WEB+: Schnorr von Carolsfeld
+### Session 24 — 2026-10-18 · Schnorr von Carolsfeld plates fill the gaps in Doré's WEB+ set
 
 **SW v57 → v58** · branch `feature/schnorr-plates`
 
-WEB+ can now show **Julius Schnorr von Carolsfeld's *Die Bibel in Bildern* (1860)** instead of Doré. The choice is under **Settings → Plates (WEB+)**, is remembered (`localStorage` key `plateSet`), and redraws the open chapter immediately. Captions credit "Julius Schnorr von Carolsfeld, 1860". Licence: every file is marked public domain on Wikimedia Commons.
+WEB+ now shows **Doré's plates first and Julius Schnorr von Carolsfeld's woodcuts (*Die Bibel in Bildern*, 1860) only where Doré has no plate** — one combined set, no setting to choose. Every plate is captioned with its own artist ("Gustave Doré, 1866" or "Julius Schnorr von Carolsfeld, 1860"). Wikimedia Commons marks every Schnorr file public domain.
 
-- **Code.** `PLATE_SETS` in `bible-reader.html` maps a set to its JSON index (`plates.json` = Doré, `plates-schnorr.json` = Schnorr); `loadPlates(set)` caches one index per set; `setPlateSet()` persists and redraws. Adding a third artist = a new JSON + images + one entry in `PLATE_SETS` + one `<option>` in `#sel-plate-set`. The WEB+ info text and the menu label ("World English Bible +") no longer name only Doré.
-- **Coverage (223 plates).** Genesis–Deuteronomy scenes, Joshua–Esther, Job, 4 Psalms scenes, Isaiah–Daniel, the Gospels (64), Acts (11) and Revelation (5). No Leviticus, no epistles. 17 plates are left out because their text is not in the WEB: Wisdom (138), Judith (144-145), Tobit (146-147), Sirach (148-149), Maccabees (150-157), Susanna (158-159).
-- **Mapping.** Commons gives only English captions (no scripture references), so the verse map in `SCRIPTS/schnorr-plates-map.mjs` was written by hand and every reference validated against `web.json`. The 32 least certain plates were **looked at** (contact sheets) and corrected where the picture disagreed with the first guess (e.g. 015 → Genesis 6:1-4, 142 → Ezekiel 1:26-28, 185 → Matthew 9:27-30, 203 → Matthew 19:14-15, 219 → Mark 16:5-6). Two titles differ from Commons: 127 is shown as "Rebuilding the Walls of Jerusalem" (the picture shows builders with weapons and a trumpeter, placed at Nehemiah 4:17-18) and 210's typo is fixed. **11 plates are still flagged `check`: 022, 052, 054, 127, 134, 135, 136, 139, 185, 203, 238** — the four Psalms plates (134-137) are the weakest guesses (no caption names a psalm).
-- **Image format.** The Schnorr scans are strictly black and white (2 grey levels), so **lossless WebP at full size is smaller and crisper than lossy** (≈ 60-90 KB vs > 350 KB lossy). `build-schnorr-plates.mjs` uses lossless when the plate has ≤ 8 grey levels and is ≤ 190 KB, otherwise the shared lossy ladder (27 plates are real greyscale or colour scans). Total 18.4 MB. Tooling is local-only like Doré's: `SCRIPTS/schnorr-plates-map.mjs`, `build-schnorr-plates.mjs` (`--check`, `--only=`), originals cached in `SCRIPTS/schnorr-cache/`.
-- **Tested** (local server, real Chrome): all 223 files found on Commons and built, 0 over budget; Doré ⇄ Schnorr switch redraws with the right credit and persists across reload; Genesis 1 (6 plates after v5, 8, 13, 19, 23, 28), Genesis 22 (Sacrifice of Isaac after v12), Matthew 27, a chapter with none (Leviticus 1, Psalm 23); lightbox label and Esc; presentation-mode slides and arrow keys; dark theme filter; Settings panel layout; a missing `plates-schnorr.json` leaves the verses intact. **Not tested:** phone-width layout of the new Settings row, a screen reader, the live site, and the 11 flagged mappings against the printed book.
-- **Cost.** Total plate images are now ~55 MB (Doré 36.8 + Schnorr 18.4); each is cached by the service worker only after it is viewed.
+- **The rule** (`SCRIPTS/schnorr-infill.mjs`, owner's decision). A Schnorr plate is **skipped** if (1) a Doré plate in the same book and chapter overlaps its verses (93 plates), or (2) it shows the same scene as a Doré plate the verse maths cannot see — the next verses of the same story, or the same scene in a parallel account such as another Gospel or Chronicles (24 plates, listed by hand in `MANUAL` with the Doré plate they duplicate). **117 skipped, 106 shown**, giving **327 plates in total** (Doré 221 + Schnorr 106). The script writes `skip:true` and `dupOf` into `plates-schnorr.json`, deletes the skipped plates' images (they rebuild from `SCRIPTS/schnorr-cache/` if the rule changes), and `build-schnorr-plates.mjs` ignores them. Judgement calls to revisit: neighbouring-verse duplicates such as Boaz meets Ruth (085), David spares Saul (095), Solomon plans the Temple (110) are skipped, while distinct scenes next to a Doré plate (e.g. Job's Affliction 132, Shepherds Spread Good News 167, Wise Men 169) are kept.
+- **Code.** `loadPlates()` fetches `plates.json` and `plates-schnorr.json` together, drops `skip`/file-less entries, attaches each plate's credit, and merges them per chapter ordered by verse (Doré first on a tie). Either file can be missing: the other still shows, and with neither the verses render without plates. `buildPlateFigure` uses the plate's own credit. (An earlier version of this PR had a Settings selector between the two artists; the owner asked for a combined set, so it was removed along with the `plateSet` key.)
+- **Coverage of the infill.** Genesis 21, Exodus 9, Numbers 2, Deuteronomy 2, Joshua 4, Judges 3, 1 Samuel 7, 2 Samuel 7, 1 Kings 4, 2 Kings 3, Ezra/Nehemiah/Esther 1 each, Job 2, Psalms 4, Isaiah 1, Ezekiel 1, Luke 9, Matthew 6, John 8, Mark 1, Acts 6, Revelation 3. Notable gaps filled: the days of creation, scenes from Genesis 4-46 that Doré skips, Numbers/Deuteronomy, Samuel, four Psalms scenes, Job, the Nativity shepherds and Mary Magdalene at the tomb. Still nothing for Leviticus or the epistles. Schnorr's Apocrypha plates (Wisdom, Judith, Tobit, Sirach, Maccabees, Susanna — 17) are not in the WEB and were never mapped.
+- **Mapping.** Commons gives only English captions, so the Schnorr verse map (`SCRIPTS/schnorr-plates-map.mjs`) was written by hand and every reference validated against `web.json`; the 32 least certain plates were looked at (contact sheets) and 21 corrected. **9 of the shown plates are still flagged `check`: 022, 054, 127, 134, 135, 136, 139, 185, 238** (the four Psalms plates 134-136 and 139 Isaiah are the weakest guesses). Plate 127 is titled "Rebuilding the Walls of Jerusalem" (Commons says "Temple"; the picture shows builders with weapons and a trumpeter, placed at Nehemiah 4:17-18).
+- **Image format.** The Schnorr scans are strictly black and white (2 grey levels), so `build-schnorr-plates.mjs` stores them as **lossless WebP at full size** (≈ 60-90 KB, crisper and smaller than lossy); real greyscale/colour scans use the shared lossy ladder. Tooling is local-only like Doré's: `schnorr-plates-map.mjs` (then `schnorr-infill.mjs`), `build-schnorr-plates.mjs` (`--check`, `--only=`), originals in `SCRIPTS/schnorr-cache/`. **After editing the map run the map script, then `schnorr-infill.mjs`, then the build.**
+- **Tested** (local server, real Chrome): Genesis 1 (Doré 001 + five Schnorr), Genesis 22 (Doré only — Schnorr's Sacrifice of Isaac is skipped), Matthew 27 (7 Doré + Schnorr Death of Judas), Luke 2 (interleaved in verse order), Exodus 17, John 20, Psalm 51, Leviticus 1 (none); credits per plate in the page and in presentation mode; each source file missing in turn and both missing (verses intact, no errors) and recovery. **Not tested:** phone layout, a screen reader, the live site, and the flagged mappings against the printed book. Not every plate was looked at, only the flagged ones plus spot checks.
+- **Cost.** Plate images are now ≈ 46 MB (Doré 36.8 + Schnorr 8.9); the service worker caches a plate only after it is viewed.
 
 ---
-
 
 ### Session 23 — 2026-10-18 · WEB+ Doré plates
 
@@ -526,7 +526,7 @@ coc-website/
 │   └── strongs-data.json ubs-data.json dodson-data.json   (lazy-loaded lexicons)
 ├── plates.json                   WEB+ plate index
 ├── plates-schnorr.json           WEB+ plate index, Schnorr set
-└── plates/                       Doré: plates/<id>.webp (221) · Schnorr: plates/schnorr/<id>.webp (223) — WEB+ only
+└── plates/                       Doré: plates/<id>.webp (221) · Schnorr infill: plates/schnorr/<id>.webp (106) — WEB+ only
 │
 └── Gitignored source directories:
     ├── BIBLE TRANSLATIONS/        Source XML files
