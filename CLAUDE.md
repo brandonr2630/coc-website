@@ -8,7 +8,7 @@ Static HTML/CSS/JS church site. No build system or bundler — files deployed as
 
 - **`index.html`** — main site page
 - **`bible-reader.html`** (~8500 lines) — entire Bible reader app (inline CSS + JS)
-- **`service-worker.js`** — PWA offline, cache-first for app shell + JSON data, network-only for `bolls.life` and Google Fonts. Current `CACHE` name: `coc-bible-v47`. **Always read the current version from `origin/master`, never the local file** (another PR may have already bumped it):
+- **`service-worker.js`** — PWA offline; network-first for pages/`service-worker.js`, cache-first for JSON data; network-only for `bolls.life` and Google Fonts. Current `CACHE` name: `coc-bible-v52`. **Always read the current version from `origin/master`, never the local file** (another PR may have already bumped it):
   ```bash
   git fetch origin master
   current=$(git show origin/master:service-worker.js | grep -oP "coc-bible-v\K\d+")
@@ -29,7 +29,7 @@ Static HTML/CSS/JS church site. No build system or bundler — files deployed as
 
 ## Deployment
 
-Push to `master` auto-deploys via GitHub Actions → cPanel Fileman API (GreenGeeks). Deploy dir: `/home/terranre/public_html/toddsroadcoctt`. Manual redeploy: Actions → Deploy to cPanel → Run workflow.
+Push to `master` auto-deploys via GitHub Actions → reusable workflow in `brandonr2630/projects` → SSH/rsync to GreenGeeks (only files changed in the push are uploaded; `handoff.md`, `CLAUDE.md` and `.github/` are never deployed). Deploy dir: `/home/terranre/public_html/toddsroadcoctt`. Manual full redeploy (use if a file is missing live): Actions → Deploy to cPanel → Run workflow.
 
 ## Conventions
 
