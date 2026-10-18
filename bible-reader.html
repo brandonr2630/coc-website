@@ -3143,6 +3143,44 @@
     text-align: center; padding: 2px 0 4px;
   }
 
+  /* ── Accessibility: visible keyboard focus, respect reduced motion ── */
+  button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible,
+  textarea:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--green-dark, #5f9a2e);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* ── Print: just the passage ── */
+  @media print {
+    @page { margin: 18mm 16mm; }
+    nav, .reader-pill, .pill-nav, .pill-tools, .dropdown-backdrop, .rotate-prompt,
+    #hl-backdrop, #hl-picker, #auth-toast, #auth-modal-overlay, .floating-passage, .floating-passage-2,
+    .floating-passage-3, .selection-bar, .verse-ctx-menu, .share-modal-overlay, .xref-panel,
+    .search-panel, .strongs-panel, .dictionary-panel, .hl-panel, .grid-modal, .grid-modal-backdrop,
+    #hist-preview, .reading-mode-exit, .scroll-top-btn, .bible-header, .reader-nav .nav-btn-group,
+    .book-info-btn, .manuscript-info-btn, .trans-info-btn, #commentary-bar, .sel-btn {
+      display: none !important;
+    }
+    html, body, html[data-theme] body { background: #fff !important; color: #000 !important; }
+    .page-wrap { margin: 0 !important; padding: 0 !important; max-width: none !important; width: auto !important; }
+    .reading-card { box-shadow: none !important; border: 0 !important; background: none !important; padding: 0 !important; }
+    .reader-nav { justify-content: center !important; margin-bottom: 8pt !important; }
+    .verses-area { height: auto !important; max-height: none !important; overflow: visible !important; }
+    .verse-block, .parallel-verse-block { break-inside: avoid; }
+    .verse-text, .verse-block, .parallel-verse-block { color: #000 !important; }
+    .verses-area::after {
+      content: "Church of Christ, Todd's Road \00b7  toddsroadcoctt.org";
+      display: block; margin-top: 18pt; font-size: 9pt; color: #555;
+    }
+  }
   </style>
 </head>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js" integrity="sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK" crossorigin="anonymous"></script>
@@ -3333,7 +3371,7 @@
     <div class="pill-dropdown" id="settings-dropdown-menu" onclick="event.stopPropagation()">
       <div class="pill-settings-header">
         <span class="pill-settings-header-label">Settings</span>
-        <button class="pill-settings-close" onclick="togglePillDropdown(event,'settings-dropdown-menu')" title="Close">✕</button>
+        <button class="pill-settings-close" onclick="togglePillDropdown(event,'settings-dropdown-menu')" title="Close" aria-label="Close settings">✕</button>
       </div>
       <div class="pill-settings-section">
         <span class="pill-settings-label">Text Size</span>
@@ -3424,8 +3462,8 @@
 
 <!-- AUTH MODAL -->
 <div id="auth-modal-overlay">
-  <div id="auth-modal">
-    <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+  <div id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <button class="auth-modal-close" onclick="closeAuthModal()" aria-label="Close sign-in">✕</button>
     <h2 id="auth-modal-title">Sign in</h2>
     <div id="auth-modal-body"></div>
     <p class="auth-legal">By signing in you agree to our <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>
@@ -3542,20 +3580,20 @@
 
 <!-- CHAPTER GRID MODAL -->
 <div class="grid-modal-backdrop" id="chapter-grid-backdrop" onclick="closeChapterGrid()"></div>
-<div class="grid-modal" id="chapter-grid-modal">
+<div class="grid-modal" id="chapter-grid-modal" role="dialog" aria-modal="true" aria-label="Select chapter">
   <div class="grid-modal-head">
     <span class="grid-modal-title" id="chapter-grid-title">Select Chapter</span>
-    <button class="grid-modal-close" onclick="closeChapterGrid()">✕</button>
+    <button class="grid-modal-close" onclick="closeChapterGrid()" aria-label="Close chapter picker">✕</button>
   </div>
   <div class="grid-modal-body" id="chapter-grid-body"></div>
 </div>
 
 <!-- VERSE GRID MODAL -->
 <div class="grid-modal-backdrop" id="verse-grid-backdrop" onclick="closeVerseGrid()"></div>
-<div class="grid-modal" id="verse-grid-modal">
+<div class="grid-modal" id="verse-grid-modal" role="dialog" aria-modal="true" aria-label="Select verse">
   <div class="grid-modal-head">
     <span class="grid-modal-title" id="verse-grid-title">Select Verse</span>
-    <button class="grid-modal-close" onclick="closeVerseGrid()">✕</button>
+    <button class="grid-modal-close" onclick="closeVerseGrid()" aria-label="Close verse picker">✕</button>
   </div>
   <div class="grid-modal-body" id="verse-grid-body"></div>
 </div>
@@ -5654,19 +5692,19 @@ async function renderPassage() {
   // Parallel mode — hand off to parallel renderer
   if (parallelMode) {
     if (token !== renderToken) return;
-    return renderParallelPassage(area);
+    return renderParallelPassage(area, token);
   }
 
   // Commentary mode
   if (commentaryMode) {
     if (token !== renderToken) return;
-    return renderCommentaryPassage(area);
+    return renderCommentaryPassage(area, token);
   }
 
   // Interlinear mode
   if (interlinearMode) {
     if (token !== renderToken) return;
-    return renderInterlinearPassage(area);
+    return renderInterlinearPassage(area, token);
   }
 
   try {
@@ -5699,6 +5737,12 @@ async function renderPassage() {
       num.className = 'verse-num';
       num.textContent = v.verse;
       num.title = 'Click to select · Right-click to highlight';
+      num.tabIndex = 0;
+      num.setAttribute('role', 'button');
+      num.setAttribute('aria-label', 'Select verse ' + v.verse);
+      num.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleVerseSelection(v.verse); }
+      });
       num.addEventListener('click', e => {
         e.stopPropagation();
         toggleVerseSelection(v.verse);
@@ -5746,6 +5790,7 @@ async function renderPassage() {
     }
 
   } catch (err) {
+    if (token !== renderToken) return; // stale error from an earlier navigation
     const isLxxNt = currentTranslation === 'lxxe' && currentBook.testament === 'nt';
     const isOffline = !navigator.onLine;
     const msg = isLxxNt
@@ -6097,7 +6142,7 @@ async function loadCommentaryChapter(key, bookName, chapter) {
 }
 
 // ── Render commentary passage ─────────────────────────────────────────────────
-async function renderCommentaryPassage(area) {
+async function renderCommentaryPassage(area, token) {
   area.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Loading commentary…</p></div>';
   const info    = COMMENTARY_INFO[currentCommentary];
   const bookNum = BOOKS.findIndex(b => b.name === currentBook.name) + 1;
@@ -6107,6 +6152,7 @@ async function renderCommentaryPassage(area) {
       fetchChapter(currentBook, currentChapter, currentTranslation),
       loadCommentaryChapter(currentCommentary, currentBook.name, currentChapter),
     ]);
+    if (token !== undefined && token !== renderToken) return; // navigation moved on — drop this stale result
     syncFloatingBar();
     area.innerHTML = '';
 
@@ -6201,12 +6247,13 @@ async function renderCommentaryPassage(area) {
     else window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch (e) {
+    if (token !== undefined && token !== renderToken) return; // navigation moved on — drop this stale result
     area.innerHTML = `<div class="state-msg"><p>${e.message}</p></div>`;
     console.error(e);
   }
 }
 
-async function renderParallelPassage(area) {
+async function renderParallelPassage(area, token) {
   area.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Loading…</p></div>';
 
   try {
@@ -6215,6 +6262,7 @@ async function renderParallelPassage(area) {
       fetchChapter(currentBook, currentChapter, parallelTranslation)
     ]);
 
+    if (token !== undefined && token !== renderToken) return; // navigation moved on — drop this stale result
     syncFloatingBar();
     area.innerHTML = '';
 
@@ -6314,12 +6362,13 @@ async function renderParallelPassage(area) {
     else window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch(e) {
+    if (token !== undefined && token !== renderToken) return; // navigation moved on — drop this stale result
     area.innerHTML = '<div class="state-msg"><p>Could not load passage.</p></div>';
   }
 }
 
 
-async function renderInterlinearPassage(area) {
+async function renderInterlinearPassage(area, token) {
   area.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Loading interlinear…</p></div>';
 
   const lang    = currentBook.testament === 'nt' ? 'greek' : 'hebrew';
@@ -6335,6 +6384,7 @@ async function renderInterlinearPassage(area) {
 
   try {
     const verses = await fetchChapter(currentBook, currentChapter, currentTranslation);
+    if (token !== undefined && token !== renderToken) return; // navigation moved on — drop this stale result
     syncFloatingBar();
     area.innerHTML = '';
 
@@ -6413,6 +6463,7 @@ async function renderInterlinearPassage(area) {
     else window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch(e) {
+    if (token !== undefined && token !== renderToken) return; // navigation moved on — drop this stale result
     area.innerHTML = '<div class="state-msg"><p>Could not load interlinear data.</p></div>';
     console.error(e);
   }
@@ -7007,6 +7058,40 @@ document.addEventListener('keydown', e => {
   }
 }, true);
 
+// ── Accessibility: Escape closes the topmost overlay, dropdown triggers report state ──
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const open = (id, cls) => { const el = document.getElementById(id); return !!el && el.classList.contains(cls); };
+  if (open('share-modal-overlay', 'visible')) { closeShareModal(); return; }
+  if (open('auth-modal-overlay', 'open')) { closeAuthModal(); return; }
+  if (open('hl-picker', 'open')) { closeHlPicker(); return; }
+  const menus = document.querySelectorAll('.pill-dropdown.open, .parallel-dropdown-menu.open, .parallel-dropdown-menu.visible');
+  if (menus.length) {
+    document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'));
+    closeParallelDropdown(); closeCommentaryDropdown(); closeTranslationDropdown(); closeDictionaryDropdown();
+    return;
+  }
+  if (open('dictionary-panel', 'visible')) { closeDictionaryPanel(); return; }
+  if (open('xref-panel', 'visible')) { closeXrefPanel(); return; }
+  if (open('hl-panel', 'visible')) { closeHighlightsPanel(); return; }
+}, true);
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Give every dropdown trigger aria-haspopup and keep aria-expanded in step with its menu.
+  document.querySelectorAll('button[onclick*="Dropdown("]').forEach(btn => {
+    const oc = btn.getAttribute('onclick') || '';
+    const pill = /togglePillDropdown\(event,\s*'([^']+)'\)/.exec(oc);
+    const menu = pill
+      ? document.getElementById(pill[1])
+      : btn.parentElement && btn.parentElement.querySelector('.pill-dropdown, .parallel-dropdown-menu');
+    if (!menu) return;
+    btn.setAttribute('aria-haspopup', 'true');
+    const sync = () => btn.setAttribute('aria-expanded', String(menu.classList.contains('open') || menu.classList.contains('visible')));
+    sync();
+    new MutationObserver(sync).observe(menu, { attributes: true, attributeFilter: ['class'] });
+  });
+});
+
 async function performSearch() {
   const query      = document.getElementById('search-input').value.trim();
   const strongsRaw = document.getElementById('filter-strongs')?.value.trim() || '';
@@ -7475,8 +7560,8 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
 
 <!-- SHARE MODAL -->
 <div class="share-modal-overlay" id="share-modal-overlay" onclick="if(event.target===this)closeShareModal()">
-  <div class="share-modal">
-    <button class="share-modal-close" onclick="closeShareModal()">✕</button>
+  <div class="share-modal" role="dialog" aria-modal="true" aria-label="Share verse">
+    <button class="share-modal-close" onclick="closeShareModal()" aria-label="Close share dialog">✕</button>
     <div class="share-modal-title">Share verse</div>
     <div class="share-modal-ref" id="share-modal-ref"></div>
     <div class="share-modal-preview" id="share-modal-preview"></div>
@@ -7501,9 +7586,9 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
 </div>
 
 <!-- CROSS-REFERENCE PANEL -->
-<div class="xref-panel" id="xref-panel">
+<div class="xref-panel" id="xref-panel" role="dialog" aria-label="Cross-references">
   <div class="xref-panel-head">
-    <button class="xref-panel-close" onclick="closeXrefPanel()">✕</button>
+    <button class="xref-panel-close" onclick="closeXrefPanel()" aria-label="Close cross-references">✕</button>
     <div class="xref-panel-ref-row">
       <div class="xref-panel-ref" id="xref-panel-ref">Cross-references</div>
       <button class="xref-info-btn" id="xref-info-btn" onclick="toggleXrefInfo()" aria-label="About relevance scores">i
@@ -7524,10 +7609,10 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
 </div>
 
 <!-- SEARCH PANEL -->
-  <div class="search-panel" id="search-panel">
+  <div class="search-panel" id="search-panel" role="dialog" aria-label="Search the Bible">
     <div class="search-drag-handle" id="search-drag-handle"></div>
     <div class="search-panel-head">
-      <button class="search-panel-close" onclick="closeSearchPanel()">✕</button>
+      <button class="search-panel-close" onclick="closeSearchPanel()" aria-label="Close search">✕</button>
       <div class="search-panel-title">Search Scripture</div>
     </div>
     <div class="search-panel-controls">
@@ -7581,7 +7666,7 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
   <div class="notes-sessions-sidebar" id="notes-sessions-sidebar">
     <div class="notes-sidebar-head">
       <h3>Sessions</h3>
-      <button class="notes-sidebar-close" onclick="closeNotesSidebar()">✕</button>
+      <button class="notes-sidebar-close" onclick="closeNotesSidebar()" aria-label="Close notes list">✕</button>
     </div>
     <div class="notes-sidebar-list" id="notes-sidebar-list">
       <!-- Sessions rendered here -->
@@ -7662,22 +7747,22 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
   <!-- TOAST -->
   <div class="notes-toast" id="notes-toast"></div>
 
-  <div class="strongs-panel" id="strongs-panel">
+  <div class="strongs-panel" id="strongs-panel" role="dialog" aria-label="Word study">
     <div class="strongs-panel-head">
-      <button class="strongs-panel-close" id="strongs-close" onclick="closeStrongsPanel()">✕</button>
+      <button class="strongs-panel-close" id="strongs-close" onclick="closeStrongsPanel()" aria-label="Close word study">✕</button>
       <div class="strongs-tabs" id="strongs-tabs-row"></div>
     </div>
     <div class="strongs-panel-body" id="strongs-body"></div>
   </div>
 
-  <div class="dictionary-panel" id="dictionary-panel">
+  <div class="dictionary-panel" id="dictionary-panel" role="dialog" aria-label="Bible dictionary">
     <div class="dict-drag-handle" id="dict-drag-handle"></div>
     <div class="dict-panel-head">
       <div class="dict-panel-tabrow" id="dict-tab-row"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 12px 0">
         <button class="dict-nav-back" id="dict-nav-back" onclick="dictNavBack()" style="display:none"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
         <div style="flex:1"></div>
-        <button class="dict-panel-close" onclick="closeDictionaryPanel()">&#10005;</button>
+        <button class="dict-panel-close" onclick="closeDictionaryPanel()" aria-label="Close dictionary">&#10005;</button>
       </div>
       <div class="dict-search-wrap">
         <input class="dict-search-input" id="dict-search-input" type="text" placeholder="Search dictionary&#8230;" oninput="debounceDictSearch(this.value)" autocomplete="off" autocorrect="off" spellcheck="false">
@@ -7688,12 +7773,12 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
   </div>
 
   <!-- My Highlights Panel -->
-  <div class="hl-panel" id="hl-panel">
+  <div class="hl-panel" id="hl-panel" role="dialog" aria-label="My highlights">
     <div class="hl-drag-handle" id="hl-drag-handle"></div>
     <div class="hl-panel-head">
       <div class="hl-panel-titlerow">
         <span class="hl-panel-title">My Highlights</span>
-        <button class="hl-panel-close" onclick="closeHighlightsPanel()">&#10005;</button>
+        <button class="hl-panel-close" onclick="closeHighlightsPanel()" aria-label="Close highlights">&#10005;</button>
       </div>
       <div id="hl-anon-nudge" class="hl-anon-nudge" style="display:none">
         <a onclick="openAuthModal('signin')">Sign in</a> to sync your highlights across devices.
