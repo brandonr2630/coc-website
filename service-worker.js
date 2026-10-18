@@ -4,7 +4,7 @@
 //   Local JSONs → cached on first fetch (cache-on-demand)
 //   External APIs (bolls.life, fonts) → network only
 
-const CACHE = 'coc-bible-v50';
+const CACHE = 'coc-bible-v51';
 
 // The page itself must cache or install fails; the rest are best-effort so one
 // missing asset (e.g. a 404 after a partial deploy) cannot block the worker.
@@ -44,6 +44,33 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Pages and the worker script itself: network-first so a deploy shows up on the next load
+// instead of the one after. Falls back to cache when offline or the network is slow.
+const NETWORK_FIRST_TIMEOUT_MS = 4000;
+
+function isNetworkFirst(request, url) {
+  return request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/service-worker.js';
+}
+
+function networkFirst(request) {
+  const fromNetwork = fetch(request).then(response => {
+    if (response.ok && request.method === 'GET') {
+      const clone = response.clone();
+      caches.open(CACHE).then(cache => cache.put(request, clone));
+    }
+    return response;
+  });
+  fromNetwork.catch(() => {}); // a late failure after the timeout has already won is not an error
+  const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), NETWORK_FIRST_TIMEOUT_MS));
+  return Promise.race([fromNetwork, timeout]).catch(() =>
+    caches.match(request).then(cached => {
+      if (cached) return cached;
+      if (request.mode === 'navigate') return caches.match('/bible-reader.html');
+      return fromNetwork; // nothing cached: wait for the network after all
+    })
+  );
+}
+
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
@@ -51,7 +78,12 @@ self.addEventListener('fetch', event => {
   // Pass external API calls straight through
   if (NETWORK_ONLY.test(url.href)) return;
 
-  // Cache-first for everything else (app shell + JSON files)
+  if (isNetworkFirst(request, url)) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // Cache-first for everything else (JSON data, icons)
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
