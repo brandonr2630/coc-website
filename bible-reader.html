@@ -536,6 +536,37 @@
     [data-theme="sepia"] #hist-preview { background: var(--white); }
     #hist-preview.visible { opacity: 1; }
 
+    /* ── DORÉ PLATES (WEB+) ── */
+    .dore-plate { margin: 1.5rem auto 1.7rem; max-width: 760px; text-align: center; }
+    .dore-plate img {
+      display: block; width: 100%; height: auto; border-radius: 4px; cursor: zoom-in;
+      border: 1px solid var(--line); background: var(--white);
+    }
+    [data-theme="dark"] .dore-plate img, [data-theme="dark"] .pres-plate img { filter: brightness(0.9); }
+    .dore-plate figcaption, .pres-plate figcaption {
+      font-family: 'Nunito', sans-serif; font-size: 0.72rem; letter-spacing: 0.04em;
+      color: var(--charcoal-light); margin-top: 0.55rem; line-height: 1.5;
+    }
+    .dore-plate figcaption span + span::before, .pres-plate figcaption span + span::before { content: ' \00b7  '; }
+    .dp-title { font-weight: 700; color: var(--charcoal); }
+    .dore-lightbox {
+      position: fixed; inset: 0; z-index: 10000; background: rgba(10,10,8,0.94);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 16px; cursor: zoom-out;
+    }
+    .dore-lightbox img { max-width: 100%; max-height: calc(100vh - 80px); object-fit: contain; }
+    .dore-lightbox-cap { font-family: 'Nunito', sans-serif; font-size: 0.8rem; color: #e8e4dc; margin-top: 12px; text-align: center; }
+    /* Presentation mode: each plate is its own full-width slide */
+    .pres-plate {
+      width: 100vw; margin: 2.5rem 0 2.5rem calc(50% - 50vw); padding: 24px 24px 20px;
+      min-height: calc(100vh - 80px); box-sizing: border-box;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #0d0d0b; text-align: center;
+    }
+    .pres-plate img { max-width: 100%; max-height: 80vh; width: auto; height: auto; object-fit: contain; }
+    .pres-plate figcaption { color: #bdb7ab; font-size: 0.9rem; }
+    .pres-plate .dp-title { color: #f0ebe0; }
+
     /* ── VERSES ── */
     .verses-area {
       padding: 16px 20px;
@@ -3261,6 +3292,7 @@
         <button class="parallel-dropdown-item" onclick="selectTranslation('kjvs','King James Version + Strong\'s')">King James Version + Strong's</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('asvs','American Standard + Strong\'s')">American Standard + Strong's</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('web','World English Bible')">World English Bible</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('webplus','WEB+ (World English Bible + Doré Plates)')">WEB+ · World English Bible + Doré Plates</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('lsv','Literal Standard Version')">Literal Standard Version</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('ylt','Young\'s Literal Translation')">Young's Literal Translation</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('lxxe','English Septuagint (1851)')">English Septuagint (1851)</button>
@@ -3276,6 +3308,7 @@
       <option value="kjvs">King James Version + Strong's</option>
       <option value="asvs">American Standard + Strong's</option>
       <option value="web">World English Bible</option>
+      <option value="webplus">World English Bible + Doré Plates</option>
       <option value="lsv">Literal Standard Version</option>
       <option value="ylt">Young's Literal Translation</option>
       <option value="lxxe">English Septuagint (1851)</option>
@@ -3630,6 +3663,7 @@ const BOOKS = [
 
 const TRANSLATIONS = {
   web:   'World English Bible',
+  webplus: 'World English Bible + Doré Plates',
   kjv:   'King James Version',
   asv:   'American Standard Version',
   ylt:   "Young's Literal Translation",
@@ -3661,6 +3695,7 @@ const BOOK_ABBR = {
 };
 const TRANSLATION_ABBR = {
   web:   'WEB',
+  webplus: 'WEB+',
   kjv:   'KJV',
   asv:   'ASV',
   ylt:   'YLT',
@@ -3696,6 +3731,11 @@ const TRANSLATION_INFO = {
     full: "American Standard Version + Strong's",
     year: 1901,
     body: `The ASV emerged from a transatlantic collaboration of scholars who believed the KJV stood in need of revision in light of advances in textual criticism. For the New Testament it broke decisively with the Textus Receptus, adopting the Westcott-Hort critical text — grounded in the Alexandrian manuscripts, preeminently Codex Sinaiticus and Codex Vaticanus — representing what its compilers judged to be a purer and more ancient witness to the original text. The result is a translation of rigorous formal equivalence, particularly notable for its consistent rendering of the divine name. Augmented with Strong's numerical tagging: where the ASV's more exacting translation departs from the KJV, the tagging allows the reader to trace those choices back to the Greek or Hebrew with full lexical context.`
+  },
+  webplus: {
+    full: 'World English Bible + Doré Plates',
+    year: 2000,
+    body: `WEB+ is the World English Bible text — a public-domain revision of the American Standard Version resting on the Biblia Hebraica Stuttgartensia and the Byzantine Majority Text — set alongside the engravings of Gustave Doré (1866). Each plate sits directly after the verses it illustrates; tap a plate to enlarge it, or enter Presentation Mode to see each one as a full-screen slide. The plates are Doré's Old Testament and New Testament illustrations, public domain, drawn from Wikimedia Commons; plates for the Apocrypha are left out. Some New Testament plates come from later printings of Doré's work. WEB+ is the home for features that go beyond the plain text; it is not offered in Parallel view or Search because its words are identical to the World English Bible.`
   },
   web: {
     full: 'World English Bible',
@@ -4170,6 +4210,7 @@ const TRANSLATION_MANUSCRIPTS = {
   kjvs:  { ot: 'masoretic',     nt: 'textus-receptus' },
   asvs:  { ot: 'masoretic',     nt: 'westcott-hort'   },
   web:   { ot: 'bhs',           nt: 'byzantine'       },
+  webplus: { ot: 'bhs',         nt: 'byzantine'       },
   lsv:   { ot: 'bhs',           nt: 'byzantine'       },
   ylt:   { ot: 'masoretic',     nt: 'textus-receptus' },
   lxxe:  { ot: 'septuagint',    nt: null              },
@@ -4641,7 +4682,14 @@ function stripHtml(html) {
 
 // ── LOCAL translations (served from /bible/<key>.json) ──
 // NKJV is intentionally excluded — it remains API-sourced via bolls.life (copyright)
-const LOCAL_TRANSLATIONS = new Set(['web','kjv','asv','ylt','rvr09','lsv','lxxe','darby','kjvs','asvs']);
+const LOCAL_TRANSLATIONS = new Set(['web','webplus','kjv','asv','ylt','rvr09','lsv','lxxe','darby','kjvs','asvs']);
+
+// A translation whose text comes from another translation's file. WEB+ shares web.json for now;
+// give it its own file later by deleting its entry here (and adding webplus.json).
+const TRANSLATION_SOURCE = { webplus: 'web' };
+const sourceOf = t => TRANSLATION_SOURCE[t] || t;
+// Translations that show the Doré plates (plates.json)
+const PLATE_TRANSLATIONS = new Set(['webplus']);
 
 // In-memory cache — each translation JSON is loaded once per session
 const BIBLE_CACHE = {};
@@ -4649,9 +4697,13 @@ const BIBLE_CACHE = {};
 async function fetchLocalChapter(book, chapter, translation) {
   // Load the full translation file if not already cached
   if (!BIBLE_CACHE[translation]) {
-    const res = await fetch(`${translation}.json`);
-    if (!res.ok) throw new Error(`Local file not found: ${translation}.json`);
-    BIBLE_CACHE[translation] = await res.json();
+    const src = sourceOf(translation);
+    if (!BIBLE_CACHE[src]) {
+      const res = await fetch(`${src}.json`);
+      if (!res.ok) throw new Error(`Local file not found: ${src}.json`);
+      BIBLE_CACHE[src] = await res.json();
+    }
+    BIBLE_CACHE[translation] = BIBLE_CACHE[src];   // same object, no second copy in memory
   }
 
   const bookNum = getBollsBookNum(book);
@@ -5781,6 +5833,10 @@ async function renderPassage() {
       div.appendChild(txt);
       area.appendChild(div);
     });
+    if (PLATE_TRANSLATIONS.has(currentTranslation)) {
+      await insertPlates(area, currentBook.name, currentChapter, false);
+      if (token !== renderToken) return;
+    }
     applyHighlightsToPage();
 
     if (highlightVerse) {
@@ -6685,6 +6741,82 @@ function goToXref(bookName, chapter, verse) {
 }
 
 
+// ── Doré plates (WEB+) ─────────────────────────────────────────────────────
+// plates.json is built by SCRIPTS/dore-plates-map.mjs + SCRIPTS/build-dore-plates.mjs.
+// Only plates that already have an image file are shown, so a half-built set is safe.
+let PLATES_INDEX = null, PLATES_LOADING = null;
+function loadPlates() {
+  if (PLATES_INDEX) return Promise.resolve(PLATES_INDEX);
+  if (!PLATES_LOADING) {
+    PLATES_LOADING = fetch('plates.json')
+      .then(r => { if (!r.ok) throw new Error('plates.json ' + r.status); return r.json(); })
+      .then(doc => {
+        const idx = { credit: doc.credit || 'Gustave Doré, 1866', byChapter: {} };
+        for (const p of doc.plates || []) {
+          if (!p.file) continue;
+          const k = p.book + '|' + p.ch;
+          (idx.byChapter[k] = idx.byChapter[k] || []).push(p);
+        }
+        for (const k in idx.byChapter) idx.byChapter[k].sort((a, b) => a.vEnd - b.vEnd || a.v - b.v);
+        return (PLATES_INDEX = idx);
+      })
+      .catch(e => { PLATES_LOADING = null; console.warn('Doré plates unavailable:', e); return null; });
+  }
+  return PLATES_LOADING;
+}
+function plateRef(p) { return p.book + ' ' + p.ch + ':' + p.v + (p.vEnd > p.v ? '\u2013' + p.vEnd : ''); }
+function buildPlateFigure(p, credit, pres) {
+  const fig = document.createElement('figure');
+  fig.className = pres ? 'pres-plate' : 'dore-plate';
+  fig.dataset.plate = p.id;
+  const img = document.createElement('img');
+  img.src = p.file;
+  img.alt = p.title + ' \u2014 ' + plateRef(p);
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  if (p.w && p.h) { img.width = p.w; img.height = p.h; }
+  img.addEventListener('error', () => fig.remove());          // offline and not cached: drop quietly
+  if (!pres) img.addEventListener('click', () => openPlateLightbox(p, credit));
+  const cap = document.createElement('figcaption');
+  [['dp-title', p.title], ['dp-ref', plateRef(p)], ['dp-credit', credit]].forEach(([cls, text]) => {
+    const sp = document.createElement('span'); sp.className = cls; sp.textContent = text; cap.appendChild(sp);
+  });
+  fig.append(img, cap);
+  return fig;
+}
+// Put each plate after the last verse of the range it illustrates.
+async function insertPlates(container, bookName, chapter, pres) {
+  const idx = await loadPlates();
+  const list = idx && idx.byChapter[bookName + '|' + chapter];
+  if (!list) return;
+  const blocks = container.querySelectorAll(pres ? '.pres-verse-block' : '.verse-block');
+  if (!blocks.length) return;
+  const prefix = pres ? 'pv' : 'v';
+  for (const p of list) {
+    let ref = container.querySelector('#' + prefix + p.vEnd) || blocks[blocks.length - 1];
+    while (ref.nextElementSibling && ref.nextElementSibling.dataset && ref.nextElementSibling.dataset.plate) ref = ref.nextElementSibling;
+    ref.after(buildPlateFigure(p, idx.credit, pres));
+  }
+}
+function plateLightboxKey(e) { if (e.key === 'Escape') closePlateLightbox(); }
+function closePlateLightbox() {
+  const b = document.getElementById('dore-lightbox');
+  if (b) b.remove();
+  document.removeEventListener('keydown', plateLightboxKey);
+}
+function openPlateLightbox(p, credit) {
+  closePlateLightbox();
+  const box = document.createElement('div');
+  box.className = 'dore-lightbox'; box.id = 'dore-lightbox';
+  const img = document.createElement('img'); img.src = p.file; img.alt = p.title;
+  const cap = document.createElement('div'); cap.className = 'dore-lightbox-cap';
+  cap.textContent = p.title + ' \u00b7 ' + plateRef(p) + ' \u00b7 ' + credit;
+  box.append(img, cap);
+  box.addEventListener('click', closePlateLightbox);
+  document.body.appendChild(box);
+  document.addEventListener('keydown', plateLightboxKey);
+}
+
 let presFontSize = 2.2;
 
 function enterPresentationMode() {
@@ -6748,6 +6880,9 @@ async function renderPresVerses() {
       versesEl.appendChild(block);
     });
 
+    if (PLATE_TRANSLATIONS.has(currentTranslation)) {
+      await insertPlates(versesEl, currentBook.name, currentChapter, true);
+    }
     if (highlightVerse) {
       const el = document.getElementById('pv' + highlightVerse);
       if (el) el.scrollIntoView({ block: 'center' });
@@ -6799,7 +6934,7 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 
-const SEARCH_TRANSLATIONS = Object.keys(TRANSLATIONS).filter(t => t !== 'nkjv');
+const SEARCH_TRANSLATIONS = Object.keys(TRANSLATIONS).filter(t => t !== 'nkjv' && !TRANSLATION_SOURCE[t]);
 
 // ── Search pagination state ───────────────────────────────────────────────────
 const SEARCH_PAGE_SIZE   = 25;
@@ -7170,9 +7305,13 @@ async function performSearch() {
   if (!BIBLE_CACHE[t]) {
     try {
       body.innerHTML = `<div class="search-loading"><div class="spinner"></div><p>Loading ${TRANSLATIONS[t]}…</p></div>`;
-      const res = await fetch(`${t}.json`);
-      if (!res.ok) throw new Error('not found');
-      BIBLE_CACHE[t] = await res.json();
+      const src = sourceOf(t);
+      if (!BIBLE_CACHE[src]) {
+        const res = await fetch(`${src}.json`);
+        if (!res.ok) throw new Error('not found');
+        BIBLE_CACHE[src] = await res.json();
+      }
+      BIBLE_CACHE[t] = BIBLE_CACHE[src];
     } catch(e) {
       body.innerHTML = `<div class="search-no-results">Could not load translation data.</div>`;
       return;

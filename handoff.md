@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Session 22 · SW `coc-bible-v55`*
+*Last updated: 2026-10-18 · Session 23 · SW `coc-bible-v56`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v55`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v56`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -48,6 +48,7 @@
 | `kjv` | King James Version | `kjv.json` | SW + localStorage |
 | `asv` | American Standard Version | `asv.json` | SW + localStorage |
 | `web` | World English Bible | `web.json` | SW + localStorage |
+| `webplus` | WEB+ (World English Bible + Doré plates) | `web.json` via `TRANSLATION_SOURCE` + `plates.json` + `plates/*.webp` | SW (plates cached as viewed) |
 | `ylt` | Young's Literal Translation | `ylt.json` | SW + localStorage |
 | `lsv` | Literal Standard Version | `lsv.json` | SW + localStorage |
 | `lxxe` | English Septuagint (1851) | `lxxe.json` | SW + localStorage |
@@ -75,6 +76,8 @@ All JSON files live at repo root and are fetched on demand:
 | `smiths.json` | Smith's Bible Dictionary (1863) | — |
 | `hitchcock.json` | Hitchcock's Bible Names (1869) | ~2 600 entries |
 | `crossrefs.json` | Cross-references, all 66 books | — |
+| `plates.json` | Doré plate index for WEB+ (221 plates: id, title, book, ch, v, vEnd, file, w, h) | 39 KB |
+| `plates/*.webp` | Gustave Doré plates (1866), 1400 px max edge, WebP, loaded lazily | 38.6 MB total, avg 176 KB |
 | `strongs-data.json` | Strong's lexicon (H/G) — lazy-loaded by the Strong's tab | 2.7 MB |
 | `ubs-data.json` | UBS lexicon senses — lazy-loaded by the UBS tab | 3.6 MB |
 | `dodson-data.json` | Dodson NT Greek lexicon — lazy-loaded by the Dodson tab (G numbers only) | 0.6 MB |
@@ -266,6 +269,22 @@ Then in `bible-reader.html`:
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
 
 ---
+
+### Session 23 — 2026-10-18 · WEB+ Doré plates
+
+**SW v55 → v56** · branch `feature/web-plus-dore-plates`
+
+New translation key `webplus` (label **WEB+**): World English Bible text (shares `web.json` through `TRANSLATION_SOURCE`, one object in memory) with Gustave Doré's 1866 plates inserted after the last verse of each plate's range. Plates are optional: the reader works if `plates.json` or an image is missing (failed images remove themselves; a failed `plates.json` just means no plates). WEB+ is excluded from Search and from the Parallel list. Every plate is captioned "Title · Ref · Gustave Doré, 1866". No AI-generated or re-rendered art — the images are the Wikimedia Commons scans, resized/re-encoded only.
+
+- **Plate data.** 221 plates (140 OT, 81 NT; the Apocrypha ids 110-113, 125, 133-135, 141-152 are deliberately excluded) mapped in `SCRIPTS/dore-plates-map.mjs` and validated against `web.json`. Build with `npm install sharp --no-save`, then `node SCRIPTS/build-dore-plates.mjs --check | --sample | --style=original`. Originals are cached in `SCRIPTS/dore-cache/` (270 MB, not committed; `SCRIPTS/` is gitignored and lives only in the local checkout). Owner chose the **original** style from the sample sheet (sepia and an approximate watercolor exist in the script).
+- **Result.** 221 of 221 matched on Commons; 38.6 MB total, mean 176 KB, largest 260 KB (`080`). **53 plates exceed the 190 KB target** — each is at the quality floor (q45); they range up to 260 KB and are kept as is.
+- **Flagged mappings reviewed.** All 23 `?` rows were checked against the verse text: 20 confirmed, 2 corrected, `045` An Angel Appears to the Israelites → Judges 2:1-4 (was Joshua 5:13-15), `067` Jabesh-gilead virgins → Judges 21:12-14 (was 21:21-23, the Shiloh abduction). **`079` David Attacks the Ammonites (2 Samuel 10:13-14) is still flagged** — it could instead be the capture of Rabbah (12:26-31).
+- **Bug found and fixed on the way (pre-existing on master).** In presentation mode the global arrow-key handler and the presentation handler both ran, so one ArrowRight advanced **two** chapters. The global handler now returns early in presentation mode.
+- **Tested** (local server, real Chrome): Genesis 1 (plate after v3), Matthew 27 (7 plates, correct order), Psalm 23 (no plates), Judges 2/21 (corrected plates), lightbox (click and Esc), light/dark/sepia, presentation mode (plate slide, arrows 5→6→5, Esc), 375 px width (no overflow), lazy loading, missing image and missing `plates.json`, and a cached-plate reload with the network emulated offline. **Not verified:** true airplane-mode behaviour (CDP offline emulation does not cover the service worker's own fetches), screen-reader use of the lightbox (it has no dialog role yet), and the live site (not deployed).
+- **Cost to know about.** The plate files add 38.6 MB to the repo and to the deployed site; the service worker caches a plate only after it has been viewed.
+
+---
+
 
 ### Session 22 — 2026-10-18
 
@@ -463,7 +482,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v55
+├── service-worker.js             PWA cache — current version: coc-bible-v56
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
@@ -478,6 +497,8 @@ coc-website/
 │   ├── eastons.json smiths.json hitchcock.json fausset.json
 │   ├── crossrefs.json
 │   └── strongs-data.json ubs-data.json dodson-data.json   (lazy-loaded lexicons)
+├── plates.json                   WEB+ plate index
+└── plates/                       221 × <id>.webp Doré plates (WEB+ only)
 │
 └── Gitignored source directories:
     ├── BIBLE TRANSLATIONS/        Source XML files
