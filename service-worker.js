@@ -4,10 +4,13 @@
 //   Local JSONs → cached on first fetch (cache-on-demand)
 //   External APIs (bolls.life, fonts) → network only
 
-const CACHE = 'coc-bible-v47';
+const CACHE = 'coc-bible-v49';
+
+// The page itself must cache or install fails; the rest are best-effort so one
+// missing asset (e.g. a 404 after a partial deploy) cannot block the worker.
+const REQUIRED = ['/bible-reader.html'];
 
 const SHELL = [
-  '/bible-reader.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
@@ -23,7 +26,10 @@ const NETWORK_ONLY = /bolls\.life|fonts\.googleapis\.com|fonts\.gstatic\.com/;
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE)
-      .then(cache => cache.addAll(SHELL))
+      .then(cache => Promise.all([
+        cache.addAll(REQUIRED),
+        Promise.allSettled(SHELL.map(url => cache.add(url))),
+      ]))
       .then(() => self.skipWaiting())
   );
 });
