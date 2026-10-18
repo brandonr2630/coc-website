@@ -1,6 +1,8 @@
 # COC Website — Handoff
 
-*Last updated: 2026-06-07 · Session 21 · SW `coc-bible-v47`*
+*Last updated: 2026-10-18 · Session 22 (docs audit, no code) · SW `coc-bible-v47`*
+
+> ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
 ---
 
@@ -11,10 +13,10 @@
 | Live URL | `https://toddsroadcoctt.org` |
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
-| Deploy | Push to `master` via PR → GitHub Actions → GreenGeeks cPanel auto-deploys |
+| Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
 | Service worker | `service-worker.js` line 7 · **current: `coc-bible-v47`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
-| GreenGeeks secrets | `CPANEL_API_TOKEN`, `CPANEL_HOST` (`https://chi203.greengeeks.net:2083`), `CPANEL_USER` (`terranre`) |
+| GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** |
 
 > **SW bump rule:** always read the version from `origin/master`, never from the local file.
@@ -73,7 +75,7 @@ All JSON files live at repo root and are fetched on demand:
 | `hitchcock.json` | Hitchcock's Bible Names (1869) | ~2 600 entries |
 | `crossrefs.json` | Cross-references, all 66 books | — |
 
-`fausset.json` — **pending.** Run `node build-fausset.mjs` from `coc-website/` (~20 min). Then add `fausset` to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, and the dictionary dropdown HTML.
+`fausset.json` — **pending.** `build-fausset.mjs` is **untracked and not on `master`** (it exists only in the local checkout, as does `build-hitchcock.mjs`); commit it first or run it from the local checkout. The `fausset.json` currently sitting untracked in the local checkout is **not a valid build** (5.6 KB, one entry) — delete it and re-run `node build-fausset.mjs` from `coc-website/` (~20 min; scrapes bible-history.com, 300 ms delay per request). Then add `fausset` to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, and the dictionary dropdown HTML.
 
 Additional commentaries (John Gill, Keil-Delitzsch, Tyndale) still fetched live from `bible.helloao.org` with a `Content-Type` guard.
 
@@ -167,7 +169,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 
 ### Pending — Bible Reader
 
-- [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` ready at repo root; run it, then wire into UI (add to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, dropdown HTML)
+- [ ] **Fausset's Bible Dictionary** — `build-fausset.mjs` is local-only/untracked (see Reference Data); the local `fausset.json` is a bad 1-entry stub. Commit the script, run it, then wire into UI (add to `LOCAL_DICTIONARIES`, `DICT_SOURCE_NAMES`, dropdown HTML)
 - [ ] **Multiple named bookmarks** — one position saved currently; add named localStorage bookmarks ("Sunday sermon", "Home study")
 - [ ] **Copy shareable link** — `#John.3.16` deep-links work but no copy button; add to selection toolbar
 - [ ] **Verse-level notes** — short personal note per verse in localStorage
@@ -255,6 +257,20 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 22 — 2026-10-18
+
+**Docs only · no code, no SW bump (v47)**
+
+Audit of this file against the repo, `origin/master`, Actions and Supabase:
+
+- **Deploy docs corrected.** The shared workflow was migrated from the Fileman API to SSH/rsync (`brandonr2630/projects`, commit `d94408e`, 2026-07-03). Secrets and Quick Reference updated. Last `coc-website` deploy (PR #85, 2026-09-02) succeeded in 18 s.
+- **PR #85** (2026-09-02) added an "AI Feature Ideas" section to `README.md` (reference ideas only, nothing built).
+- **Supabase project was paused** (`INACTIVE`); restored 2026-10-18 via MCP. Expect it to pause again after idle periods.
+- **Fausset build never completed** — script is untracked, local `fausset.json` is a stub.
+- Known stale docs outside this file: `CLAUDE.md` "Deployment" still says Fileman API; `README.md` references a `HANDOVER.md` that does not exist (this file replaced it) and Fileman.
 
 ---
 
@@ -425,7 +441,7 @@ Foundation: floating pill nav → consolidated controls, multiple translations (
 coc-website/
 ├── index.html                    Landing page
 ├── bible-reader.html             Bible study app (~8 500 lines — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v46
+├── service-worker.js             PWA cache — current version: coc-bible-v47
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
@@ -437,7 +453,7 @@ coc-website/
 │   ├── kjvs.json asvs.json          (Strong's embedded)
 │   ├── hebrew.json greek-nt.json    (Original languages)
 │   ├── adam-clarke.json matthew-henry.json jamieson-fausset-brown.json
-│   ├── eastons.json smiths.json hitchcock.json   (fausset.json pending)
+│   ├── eastons.json smiths.json hitchcock.json   (fausset.json pending — local stub is invalid)
 │   └── crossrefs.json
 │
 └── Gitignored source directories:
@@ -462,13 +478,13 @@ coc-website/
 ### 2 — Automate the SW bump
 The bash one-liner in Quick Reference works but requires manual copy-paste every session. A 10-line shell script (`scripts/bump-sw.sh`) checked into the repo would make it a single command and prevent the "forgot to bump" error that has caused multiple extra PRs.
 
-### 3 — Add the Supabase schema to this file
+### 3 — Add the Supabase schema to this file *(done — see Highlights & Auth)*
 The `highlights` table schema is now documented above. Keep it updated whenever a migration runs — it saves a round-trip to the Supabase dashboard at the start of any session that touches the DB layer.
 
-### 4 — Publish the Google OAuth app
+### 4 — Publish the Google OAuth app *(still open as of 2026-10-18, unverified)*
 The app is still in testing mode. Publishing it (Google Cloud → OAuth consent screen → Audience → Publish) takes 5 minutes and removes the need to manually add each church member as a test user. No Google review is required for personal/internal apps using only basic scopes.
 
-### 5 — Session-start checklist in CLAUDE.md
+### 5 — Session-start checklist in CLAUDE.md *(done — CLAUDE.md now points here)*
 The project `CLAUDE.md` has basic architecture but doesn't point to this file. Adding a one-liner like `"See handoff.md for current feature status, known issues, and runbooks"` would orient a new Claude session immediately without needing the user to paste the handoff.
 
 ### 6 — Consider a `changelog:` git trailer
