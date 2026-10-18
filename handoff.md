@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Session 23 · SW `coc-bible-v56`*
+*Last updated: 2026-10-18 · Session 23 · SW `coc-bible-v57`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v56`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v57`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -77,7 +77,7 @@ All JSON files live at repo root and are fetched on demand:
 | `hitchcock.json` | Hitchcock's Bible Names (1869) | ~2 600 entries |
 | `crossrefs.json` | Cross-references, all 66 books | — |
 | `plates.json` | Doré plate index for WEB+ (221 plates: id, title, book, ch, v, vEnd, file, w, h) | 39 KB |
-| `plates/*.webp` | Gustave Doré plates (1866), 1400 px max edge, WebP, loaded lazily | 38.6 MB total, avg 176 KB |
+| `plates/*.webp` | Gustave Doré plates (1866), WebP, loaded lazily; every plate ≤ 190 KB (49 of them shrunk to 0.86–0.93 of the original 1400 px build so they fit) | 36.8 MB total, avg 171 KB |
 | `strongs-data.json` | Strong's lexicon (H/G) — lazy-loaded by the Strong's tab | 2.7 MB |
 | `ubs-data.json` | UBS lexicon senses — lazy-loaded by the UBS tab | 3.6 MB |
 | `dodson-data.json` | Dodson NT Greek lexicon — lazy-loaded by the Dodson tab (G numbers only) | 0.6 MB |
@@ -274,14 +274,23 @@ Sessions are listed newest-first. Each entry captures what shipped; root-cause d
 
 **SW v55 → v56** · branch `feature/web-plus-dore-plates`
 
+**Follow-up (SW v56 → v57, PR #100 — open and not yet merged when this was written):** plate `079` remapped, all plates now under budget, lightbox made accessible, menu label shortened, true-offline test done — see the last bullets. WEB+ itself shipped in PR #99 (live, SW v56).
+
 New translation key `webplus` (label **WEB+**): World English Bible text (shares `web.json` through `TRANSLATION_SOURCE`, one object in memory) with Gustave Doré's 1866 plates inserted after the last verse of each plate's range. Plates are optional: the reader works if `plates.json` or an image is missing (failed images remove themselves; a failed `plates.json` just means no plates). WEB+ is excluded from Search and from the Parallel list. Every plate is captioned "Title · Ref · Gustave Doré, 1866". No AI-generated or re-rendered art — the images are the Wikimedia Commons scans, resized/re-encoded only.
 
 - **Plate data.** 221 plates (140 OT, 81 NT; the Apocrypha ids 110-113, 125, 133-135, 141-152 are deliberately excluded) mapped in `SCRIPTS/dore-plates-map.mjs` and validated against `web.json`. Build with `npm install sharp --no-save`, then `node SCRIPTS/build-dore-plates.mjs --check | --sample | --style=original`. Originals are cached in `SCRIPTS/dore-cache/` (270 MB, not committed; `SCRIPTS/` is gitignored and lives only in the local checkout). Owner chose the **original** style from the sample sheet (sepia and an approximate watercolor exist in the script).
-- **Result.** 221 of 221 matched on Commons; 38.6 MB total, mean 176 KB, largest 260 KB (`080`). **53 plates exceed the 190 KB target** — each is at the quality floor (q45); they range up to 260 KB and are kept as is.
-- **Flagged mappings reviewed.** All 23 `?` rows were checked against the verse text: 20 confirmed, 2 corrected, `045` An Angel Appears to the Israelites → Judges 2:1-4 (was Joshua 5:13-15), `067` Jabesh-gilead virgins → Judges 21:12-14 (was 21:21-23, the Shiloh abduction). **`079` David Attacks the Ammonites (2 Samuel 10:13-14) is still flagged** — it could instead be the capture of Rabbah (12:26-31).
+- **Result.** 221 of 221 matched on Commons. First build: 38.6 MB, 53 plates over the 190 KB target (fixed in v57, see "Budget fix" below; current totals are in the Reference Data table).
+- **Flagged mappings reviewed.** All 23 `?` rows were checked against the verse text: 20 confirmed, 2 corrected (`045` → Judges 2:1-4, `067` → Judges 21:12-14). The last one, **`079` David Attacks the Ammonites, is now 2 Samuel 12:26-31** (capture of Rabbah): Commons' own description of the file reads "(2Sam. 12:26-31)" and the engraving shows the king's chariot over the prisoners. 0 rows are flagged now. Tip: the Commons file description of each Doré plate carries its scripture reference — use it to cross-check any mapping.
 - **Bug found and fixed on the way (pre-existing on master).** In presentation mode the global arrow-key handler and the presentation handler both ran, so one ArrowRight advanced **two** chapters. The global handler now returns early in presentation mode.
 - **Tested** (local server, real Chrome): Genesis 1 (plate after v3), Matthew 27 (7 plates, correct order), Psalm 23 (no plates), Judges 2/21 (corrected plates), lightbox (click and Esc), light/dark/sepia, presentation mode (plate slide, arrows 5→6→5, Esc), 375 px width (no overflow), lazy loading, missing image and missing `plates.json`, and a cached-plate reload with the network emulated offline. **Not verified:** true airplane-mode behaviour (CDP offline emulation does not cover the service worker's own fetches), screen-reader use of the lightbox (it has no dialog role yet), and the live site (not deployed).
-- **Cost to know about.** The plate files add 38.6 MB to the repo and to the deployed site; the service worker caches a plate only after it has been viewed.
+- **Cost to know about.** The plate files add 36.8 MB to the repo and to the deployed site; the service worker caches a plate only after it has been viewed.
+- **Budget fix (v57).** The 53 plates that stayed over 190 KB had already been scaled to 0.7 and were stuck at the quality floor (q45). The encoder now shrinks in finer steps (`SCALES` in `SCRIPTS/build-dore-plates.mjs`: 1, .85, .7, .65, .6, .55, .5) before it gives up, so they land at q≈50-60 instead: 45 plates at 0.93 of their previous size (e.g. 788×980 → 731×910) and 4 at 0.86 (672×840). Result: **0 plates over budget**, 221 plates, 36.8 MB, largest 190 KB. Rebuilt from the cached originals only.
+- **Lightbox accessibility (v57).** `role="dialog"`, `aria-modal`, a label with title · reference · credit, a visible labelled close button that takes focus on open, Tab kept inside the dialog, Esc and close button both return focus to the plate that opened it; plates in the page are keyboard-operable (`tabindex=0`, `role=button`, Enter/Space). Checked by inspecting attributes and focus in Chrome; **not tested with an actual screen reader.**
+- **True offline test (v57).** Served from a local server, loaded in Chrome with the service worker controlling the page, viewed Genesis 1 and Matthew 27, then **stopped the server** (an uncached fetch failed with "Failed to fetch", i.e. the network was really gone, including for the worker). Reload still showed the reader in WEB+, the cached plates decoded, the lightbox worked, and a plate that had never been viewed was inserted, failed to load and removed itself with the verses intact and no JS errors. Not tested on a phone in airplane mode.
+- **Menu label.** The translation menu item now reads **World English Bible +** (was "WEB+ · World English Bible + Doré Plates"); the pill and share text still say WEB+.
+- **Where the plate tooling lives.** `SCRIPTS/` is gitignored, so it exists only in the local checkout (`C:\Users\brand\OneDrive\Documents\Projects\coc-website\SCRIPTS`) with **no backup**: `build-dore-plates.mjs` (encoder with the finer shrink ladder), `dore-plates-map.mjs` (corrected map), `dore-cache/` (~395 MB of originals, so rebuilds need no downloads), `dore-plates-handoff.md` (older instructions — superseded by this entry). Rebuild after a map change: `node SCRIPTS/dore-plates-map.mjs` regenerates `plates.json` **without** `file/w/h`; carry those over from the previous `plates.json` by id (or rerun `build-dore-plates.mjs --style=original`) and minify the JSON.
+- **Local checkout cleanup (owner).** The main checkout still carries the pre-merge uncommitted Doré edits (`bible-reader.html`, `service-worker.js`) and a loose `plates.json`. Discard them (`git checkout -- bible-reader.html service-worker.js`, delete `plates.json`) before pulling. Untracked `.diagram-design` and `build-hitchcock.mjs` are unrelated leftovers. Delete the local branches `feature/web-plus-dore-plates`, `fix/dore-plate-polish` and `backup/local-master-2026-10-18` once merged/no longer needed.
+- **Still open for WEB+.** Screen-reader test of the lightbox; a phone in airplane mode; eyeballing the 49 shrunk plates; a second plate set by another artist (Schnorr von Carolsfeld has full-Bible coverage and a similar woodcut style; Tissot is in colour but strongest in the Gospels) — the reader would need a plate-set setting and a `plates-<artist>.json` per set; licence and per-book coverage should be checked on Commons first.
 
 ---
 
@@ -482,7 +491,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v56
+├── service-worker.js             PWA cache — current version: coc-bible-v57
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons

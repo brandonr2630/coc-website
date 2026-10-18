@@ -555,6 +555,12 @@
       padding: 16px; cursor: zoom-out;
     }
     .dore-lightbox img { max-width: 100%; max-height: calc(100vh - 80px); object-fit: contain; }
+    .dore-lightbox-close {
+      position: absolute; top: 12px; right: 14px; width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.35); background: rgba(0,0,0,0.5); color: #fff;
+      font-size: 1.2rem; line-height: 1; cursor: pointer;
+    }
+    .dore-lightbox-close:hover { background: rgba(0,0,0,0.75); }
     .dore-lightbox-cap { font-family: 'Nunito', sans-serif; font-size: 0.8rem; color: #e8e4dc; margin-top: 12px; text-align: center; }
     /* Presentation mode: each plate is its own full-width slide */
     .pres-plate {
@@ -3292,7 +3298,7 @@
         <button class="parallel-dropdown-item" onclick="selectTranslation('kjvs','King James Version + Strong\'s')">King James Version + Strong's</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('asvs','American Standard + Strong\'s')">American Standard + Strong's</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('web','World English Bible')">World English Bible</button>
-        <button class="parallel-dropdown-item" onclick="selectTranslation('webplus','WEB+ (World English Bible + Doré Plates)')">WEB+ · World English Bible + Doré Plates</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('webplus','World English Bible +')">World English Bible +</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('lsv','Literal Standard Version')">Literal Standard Version</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('ylt','Young\'s Literal Translation')">Young's Literal Translation</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('lxxe','English Septuagint (1851)')">English Septuagint (1851)</button>
@@ -3308,7 +3314,7 @@
       <option value="kjvs">King James Version + Strong's</option>
       <option value="asvs">American Standard + Strong's</option>
       <option value="web">World English Bible</option>
-      <option value="webplus">World English Bible + Doré Plates</option>
+      <option value="webplus">World English Bible +</option>
       <option value="lsv">Literal Standard Version</option>
       <option value="ylt">Young's Literal Translation</option>
       <option value="lxxe">English Septuagint (1851)</option>
@@ -6778,7 +6784,15 @@ function buildPlateFigure(p, credit, pres) {
   img.decoding = 'async';
   if (p.w && p.h) { img.width = p.w; img.height = p.h; }
   img.addEventListener('error', () => fig.remove());          // offline and not cached: drop quietly
-  if (!pres) img.addEventListener('click', () => openPlateLightbox(p, credit));
+  if (!pres) {
+    img.addEventListener('click', () => openPlateLightbox(p, credit));
+    img.tabIndex = 0;
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', 'Enlarge plate: ' + p.title + ', ' + plateRef(p));
+    img.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPlateLightbox(p, credit); }
+    });
+  }
   const cap = document.createElement('figcaption');
   [['dp-title', p.title], ['dp-ref', plateRef(p)], ['dp-credit', credit]].forEach(([cls, text]) => {
     const sp = document.createElement('span'); sp.className = cls; sp.textContent = text; cap.appendChild(sp);
@@ -6800,22 +6814,38 @@ async function insertPlates(container, bookName, chapter, pres) {
     ref.after(buildPlateFigure(p, idx.credit, pres));
   }
 }
-function plateLightboxKey(e) { if (e.key === 'Escape') closePlateLightbox(); }
+let plateLightboxOpener = null;
+function plateLightboxKey(e) {
+  if (e.key === 'Escape') { e.preventDefault(); closePlateLightbox(); }
+  // The close button is the only control inside the dialog: keep Tab from leaving it
+  else if (e.key === 'Tab') { e.preventDefault(); const c = document.querySelector('#dore-lightbox .dore-lightbox-close'); if (c) c.focus(); }
+}
 function closePlateLightbox() {
   const b = document.getElementById('dore-lightbox');
   if (b) b.remove();
   document.removeEventListener('keydown', plateLightboxKey);
+  if (plateLightboxOpener && document.contains(plateLightboxOpener)) plateLightboxOpener.focus();
+  plateLightboxOpener = null;
 }
 function openPlateLightbox(p, credit) {
   closePlateLightbox();
+  plateLightboxOpener = document.activeElement;
   const box = document.createElement('div');
   box.className = 'dore-lightbox'; box.id = 'dore-lightbox';
-  const img = document.createElement('img'); img.src = p.file; img.alt = p.title;
-  const cap = document.createElement('div'); cap.className = 'dore-lightbox-cap';
-  cap.textContent = p.title + ' \u00b7 ' + plateRef(p) + ' \u00b7 ' + credit;
-  box.append(img, cap);
+  const caption = p.title + ' · ' + plateRef(p) + ' · ' + credit;
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-modal', 'true');
+  box.setAttribute('aria-label', caption);
+  const close = document.createElement('button');
+  close.className = 'dore-lightbox-close'; close.type = 'button';
+  close.setAttribute('aria-label', 'Close enlarged plate');
+  close.textContent = '✕';
+  const img = document.createElement('img'); img.src = p.file; img.alt = p.title + ' — ' + plateRef(p);
+  const cap = document.createElement('div'); cap.className = 'dore-lightbox-cap'; cap.textContent = caption;
+  box.append(close, img, cap);
   box.addEventListener('click', closePlateLightbox);
   document.body.appendChild(box);
+  close.focus();
   document.addEventListener('keydown', plateLightboxKey);
 }
 
