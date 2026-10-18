@@ -3145,7 +3145,7 @@
 
   </style>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js" integrity="sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK" crossorigin="anonymous"></script>
 <body>
 
 <!-- ROTATE PROMPT -->
@@ -5064,8 +5064,7 @@ function hlRenderPickerTags() {
   const tags = (key && HIGHLIGHT_CACHE[key]?.tags) || [];
   container.innerHTML = tags.map(t => {
     const safe = t.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const esc  = t.replace(/'/g, "\\'");
-    return `<span class="hl-picker-tag">${safe}<button class="hl-picker-tag-rm" onclick="hlRemovePickerTag('${esc}')">×</button></span>`;
+    return `<span class="hl-picker-tag">${safe}<button class="hl-picker-tag-rm" data-tag="${safe}" onclick="hlRemovePickerTag(this.dataset.tag)">×</button></span>`;
   }).join('');
 }
 
@@ -5256,10 +5255,15 @@ function showHighlightPickerForSelection(e) {
 // ── Init ──
 initAuth();
 
+// Safe localStorage wrappers: storage can throw (private mode, blocked site data, quota).
+function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+function lsSet(key, value) { try { localStorage.setItem(key, value); return true; } catch (e) { return false; } }
+function lsRemove(key) { try { localStorage.removeItem(key); } catch (e) {} }
+
 // ── localStorage (Feature 4) ──
 function savePosition() {
   try {
-    localStorage.setItem('biblePos', JSON.stringify({
+    lsSet('biblePos', JSON.stringify({
       book: currentBook.name, chapter: currentChapter, testament: currentBook.testament,
       translation: currentTranslation
     }));
@@ -5267,7 +5271,7 @@ function savePosition() {
 }
 function restorePosition() {
   try {
-    const saved = JSON.parse(localStorage.getItem('biblePos'));
+    const saved = JSON.parse(lsGet('biblePos'));
     if (saved && saved.book) {
       const book = BOOKS.find(b => b.name === saved.book);
       if (book) {
@@ -7727,10 +7731,10 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
 
   function notesInit() {
     try {
-      const all = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+      const all = JSON.parse(lsGet(NOTES_KEY) || '[]');
       const open = all.find(s => !s.closed);
       notesSession = open || notesNewObj();
-      if (!open) { all.unshift(notesSession); localStorage.setItem(NOTES_KEY, JSON.stringify(all)); }
+      if (!open) { all.unshift(notesSession); lsSet(NOTES_KEY, JSON.stringify(all)); }
     } catch(e) { notesSession = notesNewObj(); }
   }
 
@@ -7767,7 +7771,7 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
     if (!handle) return;
 
     // Load saved width
-    const savedWidth = localStorage.getItem(NOTES_WIDTH_KEY);
+    const savedWidth = lsGet(NOTES_WIDTH_KEY);
     if (savedWidth) {
       setNotesPanelWidth(parseInt(savedWidth));
     }
@@ -7798,7 +7802,7 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
 
   function setNotesPanelWidth(width) {
     // no-op — notes panel is full-screen; remove any stale saved width
-    localStorage.removeItem(NOTES_WIDTH_KEY);
+    lsRemove(NOTES_WIDTH_KEY);
   }
 
   function stopNotesResize() {
@@ -8067,7 +8071,7 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
 
   function renderNotesSidebar() {
     const list = document.getElementById('notes-sidebar-list');
-    const allSessions = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+    const allSessions = JSON.parse(lsGet(NOTES_KEY) || '[]');
 
     if (!allSessions.length) {
       list.innerHTML = '<div class="notes-empty">No sessions yet</div>';
@@ -8114,7 +8118,7 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
   }
 
   function loadNotesSession(sessionId) {
-    const allSessions = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+    const allSessions = JSON.parse(lsGet(NOTES_KEY) || '[]');
     const found = allSessions.find(s => s.id === sessionId);
 
     if (found) {
@@ -8139,13 +8143,13 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
   function deleteNotesSession(sessionId) {
     if (!confirm('Delete this session? This cannot be undone.')) return;
 
-    const allSessions = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+    const allSessions = JSON.parse(lsGet(NOTES_KEY) || '[]');
     const index = allSessions.findIndex(s => s.id === sessionId);
 
     if (index >= 0) {
       const deletedTitle = allSessions[index].title || '(Untitled)';
       allSessions.splice(index, 1);
-      localStorage.setItem(NOTES_KEY, JSON.stringify(allSessions));
+      lsSet(NOTES_KEY, JSON.stringify(allSessions));
 
       // If deleted session was active, load another one
       if (notesSession.id === sessionId) {
@@ -8154,7 +8158,7 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
         } else {
           notesSession = notesNewObj();
           allSessions.unshift(notesSession);
-          localStorage.setItem(NOTES_KEY, JSON.stringify(allSessions));
+          lsSet(NOTES_KEY, JSON.stringify(allSessions));
         }
         renderNotesPanel();
       }
@@ -8172,10 +8176,10 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
 
   function notesSave() {
     try {
-      const all = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+      const all = JSON.parse(lsGet(NOTES_KEY) || '[]');
       const i = all.findIndex(s => s.id === notesSession.id);
       if (i >= 0) all[i] = notesSession; else all.unshift(notesSession);
-      localStorage.setItem(NOTES_KEY, JSON.stringify(all));
+      lsSet(NOTES_KEY, JSON.stringify(all));
     } catch(e) {}
   }
 
@@ -8492,11 +8496,11 @@ function shareCtxCopy() {
     document.documentElement.style.setProperty('--reading-font', family);
     const sel = document.getElementById('sel-reading-font');
     if (sel) sel.value = key;
-    try { localStorage.setItem('bibleFont', key); } catch(e) {}
+    try { lsSet('bibleFont', key); } catch(e) {}
   }
   (function() {
     try {
-      const saved = localStorage.getItem('bibleFont');
+      const saved = lsGet('bibleFont');
       if (saved && FONT_MAP[saved]) applyReadingFont(saved);
     } catch(e) {}
   })();
@@ -8535,13 +8539,13 @@ function shareCtxCopy() {
   function toggleDarkMode() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    try { localStorage.setItem('bibleTheme', document.documentElement.getAttribute('data-theme')); } catch(e) {}
+    try { lsSet('bibleTheme', document.documentElement.getAttribute('data-theme')); } catch(e) {}
     syncThemeBtns();
   }
   function toggleSepiaMode() {
     const isSepia = document.documentElement.getAttribute('data-theme') === 'sepia';
     document.documentElement.setAttribute('data-theme', isSepia ? 'light' : 'sepia');
-    try { localStorage.setItem('bibleTheme', document.documentElement.getAttribute('data-theme')); } catch(e) {}
+    try { lsSet('bibleTheme', document.documentElement.getAttribute('data-theme')); } catch(e) {}
     syncThemeBtns();
   }
   function syncThemeBtns() {
@@ -8627,8 +8631,7 @@ function shareCtxCopy() {
         const allChip = `<button class="hl-tag-filter-chip${hlPanelFilterTag === '' ? ' active' : ''}" onclick="hlSetTagFilter('')">All tags</button>`;
         const chips = allTags.map(t => {
           const safe = hlEsc(t);
-          const esc  = t.replace(/'/g, "\\'");
-          return `<button class="hl-tag-filter-chip${hlPanelFilterTag === t ? ' active' : ''}" onclick="hlSetTagFilter('${esc}')">${safe}</button>`;
+          return `<button class="hl-tag-filter-chip${hlPanelFilterTag === t ? ' active' : ''}" data-tag="${safe}" onclick="hlSetTagFilter(this.dataset.tag)">${safe}</button>`;
         }).join('');
         tagRow.innerHTML = allChip + chips;
       }
