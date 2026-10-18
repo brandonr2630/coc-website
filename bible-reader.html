@@ -3643,6 +3643,17 @@
 </button>
 
 <script>
+// ── DOM Cache ──
+const DOM = {
+  cache: {},
+  get(id) {
+    if (!this.cache[id]) {
+      this.cache[id] = document.getElementById(id);
+    }
+    return this.cache[id];
+  }
+};
+
 // ── Book Data ──
 const OT = [
   ["Genesis",50],["Exodus",40],["Leviticus",27],["Numbers",36],["Deuteronomy",34],
@@ -3920,7 +3931,7 @@ document.addEventListener('click', e => {
     dictMode = true;
     document.getElementById('dictionary-panel').classList.add('visible');
     document.body.classList.add('dict-open');
-    document.getElementById('btn-dictionary').classList.add('active');
+    DOM.get('btn-dictionary').classList.add('active');
     document.getElementById('dict-search-input').value = '';
     document.getElementById('dict-search-clear').style.display = 'none';
     document.getElementById('dict-nav-back').style.display = 'none';
@@ -3933,7 +3944,7 @@ document.addEventListener('click', e => {
     dictMode = false;
     document.getElementById('dictionary-panel').classList.remove('visible');
     document.body.classList.remove('dict-open');
-    document.getElementById('btn-dictionary').classList.remove('active');
+    DOM.get('btn-dictionary').classList.remove('active');
   }
 
   function closeDictionaryDropdown() {
@@ -4305,12 +4316,19 @@ async function renderInterlinearColumn(colEl, bookNum, chapter, lang, edition) {
 
   const isHeb = lang === 'hebrew';
 
-  Object.entries(chData)
-    .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-    .forEach(([vs, rawWords]) => {
+  //Stability Fix: Use a generator/chunked approach to avoid blocking the main thread
+  const entries = Object.entries(chData).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+  const chunkSize = 10;
+  let index = 0;
+
+  async function processChunk() {
+    const end = Math.min(index + chunkSize, entries.length);
+    for (; index < end; index++) {
+      const [vs, rawWords] = entries[index];
       const words = filterByEdition(rawWords, edition);
       const block = document.createElement('div');
       block.className = 'interlinear-verse-block';
+      block.dataset.verse = vs;
 
       const num = document.createElement('span');
       num.className = 'interlinear-verse-num';
@@ -4325,6 +4343,7 @@ async function renderInterlinearColumn(colEl, bookNum, chapter, lang, edition) {
         const wEl = document.createElement('div');
         wEl.className = 'interlinear-word';
         if (word.s) wEl.dataset.strongs = word.s;
+        wEl.dataset.verse = vs;
 
         // Original language text
         const orig = document.createElement('span');
@@ -4354,20 +4373,20 @@ async function renderInterlinearColumn(colEl, bookNum, chapter, lang, edition) {
           wEl.appendChild(tip);
         }
 
-        // Click → Strong's panel
-        if (word.s) {
-          wEl.addEventListener('click', e => {
-            e.stopPropagation();
-            showStrongsPanel(word.s, wEl);
-          });
-        }
-
         wordsEl.appendChild(wEl);
       });
 
       block.appendChild(wordsEl);
       colEl.appendChild(block);
-    });
+    }
+
+    if (index < entries.length) {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      return processChunk();
+    }
+  }
+
+  await processChunk();
 }
 
 // ── Update parallel dropdown based on current testament ───────────────────────
@@ -4846,7 +4865,7 @@ document.addEventListener('click', e => {
 
 // ── Translation Change ──
 function onTranslationChange() {
-  currentTranslation = document.getElementById('sel-translation').value;
+  currentTranslation = DOM.get('sel-translation').value;
   updateTranslationInfo(currentTranslation);
   updateManuscriptBar(currentTranslation, currentBook.testament);
   syncFloatingBar();
@@ -4882,7 +4901,7 @@ document.addEventListener('keydown', e => {
 // ── Swipe to change chapter (mobile) ──
 (function () {
   let startX = 0, startY = 0;
-  const area = document.getElementById('verses-area');
+  const area = DOM.get('verses-area');
   area.addEventListener('touchstart', e => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
@@ -4986,21 +5005,21 @@ async function signOut() {
 
 // ── Auth Modal ──
 function openAuthModal(view) {
-  document.getElementById('auth-modal-overlay').classList.add('open');
+  DOM.get('auth-modal-overlay').classList.add('open');
   renderAuthView(view);
 }
 
 function closeAuthModal() {
-  document.getElementById('auth-modal-overlay').classList.remove('open');
+  DOM.get('auth-modal-overlay').classList.remove('open');
 }
 
-document.getElementById('auth-modal-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('auth-modal-overlay')) closeAuthModal();
+DOM.get('auth-modal-overlay').addEventListener('click', e => {
+  if (e.target === DOM.get('auth-modal-overlay')) closeAuthModal();
 });
 
 function renderAuthView(view) {
-  const title = document.getElementById('auth-modal-title');
-  const body  = document.getElementById('auth-modal-body');
+  const title = DOM.get('auth-modal-title');
+  const body  = DOM.get('auth-modal-body');
 
   if (view === 'signin') {
     title.textContent = 'Sign in';
@@ -5532,8 +5551,8 @@ function setTestament(t) {
 }
 
 function populateBookSelect() {
-  const list = document.getElementById('book-dropdown-list');
-  const label = document.getElementById('book-label');
+  const list = DOM.get('book-dropdown-list');
+  const label = DOM.get('book-label');
   if (!list) return;
   const useMobileAbbr = window.innerWidth <= 540;
   list.innerHTML = '';
@@ -5548,7 +5567,7 @@ function populateBookSelect() {
 }
 
 function populateChapterSelect() {
-  const sel = document.getElementById('sel-chapter');
+  const sel = DOM.get('sel-chapter');
   if (!sel) return;
   sel.innerHTML = '';
   for (let i = 1; i <= currentBook.chapters; i++) {
@@ -5561,7 +5580,7 @@ function populateChapterSelect() {
 }
 
 function populateVerseSelect(count) {
-  const sel = document.getElementById('sel-verse');
+  const sel = DOM.get('sel-verse');
   if (!sel) { currentVerseCount = count; if (pendingVerseGrid && count > 0) { pendingVerseGrid = false; openVerseGrid(); } return; }
   sel.innerHTML = '';
   const placeholder = document.createElement('option');
@@ -5586,7 +5605,7 @@ function populateVerseSelect(count) {
 
 function toggleBookDropdown(e) {
   e.stopPropagation();
-  const menu = document.getElementById('book-dropdown-menu');
+  const menu = DOM.get('book-dropdown-menu');
   if (!menu) return;
   const isOpen = menu.classList.contains('open');
   document.querySelectorAll('.pill-dropdown').forEach(m => m.classList.remove('open'));
@@ -5601,7 +5620,7 @@ function selectBookFromDropdown(name) {
   currentBook = book;
   if (!sameBook) currentChapter = 1;
   highlightVerse = null;
-  document.getElementById('book-dropdown-menu').classList.remove('open');
+  DOM.get('book-dropdown-menu').classList.remove('open');
   populateBookSelect();
   populateChapterSelect();
   populateVerseSelect(0);
@@ -5613,8 +5632,8 @@ function selectBookFromDropdown(name) {
 let pendingVerseGrid = false;
 
 function openChapterGrid() {
-  const title = document.getElementById('chapter-grid-title');
-  const body  = document.getElementById('chapter-grid-body');
+  const title = DOM.get('chapter-grid-title');
+  const body  = DOM.get('chapter-grid-body');
   title.textContent = currentBook.name;
   body.innerHTML = '';
   for (let i = 1; i <= currentBook.chapters; i++) {
@@ -5624,13 +5643,13 @@ function openChapterGrid() {
     btn.onclick = () => selectChapterFromGrid(i);
     body.appendChild(btn);
   }
-  document.getElementById('chapter-grid-backdrop').classList.add('open');
-  document.getElementById('chapter-grid-modal').classList.add('open');
+  DOM.get('chapter-grid-backdrop').classList.add('open');
+  DOM.get('chapter-grid-modal').classList.add('open');
 }
 
 function closeChapterGrid() {
-  document.getElementById('chapter-grid-backdrop').classList.remove('open');
-  document.getElementById('chapter-grid-modal').classList.remove('open');
+  DOM.get('chapter-grid-backdrop').classList.remove('open');
+  DOM.get('chapter-grid-modal').classList.remove('open');
 }
 
 function selectChapterFromGrid(num) {
@@ -5644,8 +5663,8 @@ function selectChapterFromGrid(num) {
 }
 
 function openVerseGrid() {
-  const title = document.getElementById('verse-grid-title');
-  const body  = document.getElementById('verse-grid-body');
+  const title = DOM.get('verse-grid-title');
+  const body  = DOM.get('verse-grid-body');
   title.textContent = currentBook.name + ' ' + currentChapter;
   body.innerHTML = '';
   for (let i = 1; i <= currentVerseCount; i++) {
@@ -5655,13 +5674,13 @@ function openVerseGrid() {
     btn.onclick = () => selectVerseFromGrid(i);
     body.appendChild(btn);
   }
-  document.getElementById('verse-grid-backdrop').classList.add('open');
-  document.getElementById('verse-grid-modal').classList.add('open');
+  DOM.get('verse-grid-backdrop').classList.add('open');
+  DOM.get('verse-grid-modal').classList.add('open');
 }
 
 function closeVerseGrid() {
-  document.getElementById('verse-grid-backdrop').classList.remove('open');
-  document.getElementById('verse-grid-modal').classList.remove('open');
+  DOM.get('verse-grid-backdrop').classList.remove('open');
+  DOM.get('verse-grid-modal').classList.remove('open');
   pendingVerseGrid = false;
 }
 
@@ -5730,7 +5749,7 @@ let renderToken = 0;
 
 async function renderPassage() {
   const token = ++renderToken;
-  const area = document.getElementById('verses-area');
+  const area = DOM.get('verses-area');
   area.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Loading scripture…</p></div>';
 
   const ref = currentBook.name + ' ' + currentChapter;
@@ -5800,16 +5819,7 @@ async function renderPassage() {
       num.tabIndex = 0;
       num.setAttribute('role', 'button');
       num.setAttribute('aria-label', 'Select verse ' + v.verse);
-      num.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); toggleVerseSelection(v.verse); }
-      });
-      num.addEventListener('click', e => {
-        e.stopPropagation();
-        toggleVerseSelection(v.verse);
-      });
-      num.addEventListener('contextmenu', e => {
-        e.preventDefault(); e.stopPropagation(); showHighlightPicker(e, v.verse);
-      });
+      num.dataset.verse = v.verse;
 
       let txt;
       if (STRONGS_TRANSLATIONS.has(currentTranslation) && v.rawHtml) {
@@ -5824,7 +5834,7 @@ async function renderPassage() {
             w.className = 'strongs-word';
             w.textContent = token.text;
             w.dataset.strongs = token.strongs;
-            w.addEventListener('click', e => { e.stopPropagation(); showStrongsPanel(token.strongs, w); });
+            w.dataset.verse = v.verse;
             txt.appendChild(w);
           } else {
             txt.appendChild(document.createTextNode(token.text));
@@ -5913,7 +5923,7 @@ function toggleTranslationDropdown(e) {
 function selectTranslation(value, label) {
   closeTranslationDropdown();
   // Update hidden select and label button
-  const sel = document.getElementById('sel-translation');
+  const sel = DOM.get('sel-translation');
   if (sel) sel.value = value;
   const btn = document.getElementById('btn-translation-text');
   if (btn) btn.textContent = TRANSLATION_ABBR[value] || value.toUpperCase();
@@ -5980,13 +5990,13 @@ function openParallelWith(translation) {
   if (commentaryMode) {
     commentaryMode = false;
     document.body.classList.remove('commentary-mode');
-    document.getElementById('btn-commentary').classList.remove('active');
+    DOM.get('btn-commentary').classList.remove('active');
     document.getElementById('commentary-bar').style.display = 'none';
   }
   parallelTranslation = translation;
   parallelMode = true;
   document.body.classList.add('parallel-mode');
-  document.getElementById('btn-parallel').classList.add('active');
+  DOM.get('btn-parallel').classList.add('active');
   // Mark selected item
   document.querySelectorAll('.parallel-dropdown-item').forEach(el => {
     el.classList.toggle('selected', el.getAttribute('onclick') === `openParallelWith('${translation}')`);
@@ -6001,7 +6011,7 @@ function toggleParallelMode() {
     // Close
     parallelMode = false;
     document.body.classList.remove('parallel-mode');
-    document.getElementById('btn-parallel').classList.remove('active');
+    DOM.get('btn-parallel').classList.remove('active');
     document.querySelectorAll('.parallel-dropdown-item').forEach(el => el.classList.remove('selected'));
     syncFloatingBar();
     renderPassage();
@@ -6026,12 +6036,12 @@ function toggleInterlinearMode() {
   if (parallelMode) {
     parallelMode = false;
     document.body.classList.remove('parallel-mode');
-    document.getElementById('btn-parallel').classList.remove('active');
+    DOM.get('btn-parallel').classList.remove('active');
   }
   if (commentaryMode) {
     commentaryMode = false;
     document.body.classList.remove('commentary-mode');
-    document.getElementById('btn-commentary').classList.remove('active');
+    DOM.get('btn-commentary').classList.remove('active');
     document.getElementById('commentary-bar').style.display = 'none';
   }
   interlinearMode = !interlinearMode;
@@ -6072,13 +6082,13 @@ function toggleCommentaryDropdown(e) {
 function openCommentaryWith(key) {
   closeCommentaryDropdown();
   // Close other modes
-  if (parallelMode)    { parallelMode    = false; document.body.classList.remove('parallel-mode');    document.getElementById('btn-parallel').classList.remove('active'); document.querySelectorAll('.parallel-dropdown-item').forEach(el => el.classList.remove('selected')); }
+  if (parallelMode)    { parallelMode    = false; document.body.classList.remove('parallel-mode');    DOM.get('btn-parallel').classList.remove('active'); document.querySelectorAll('.parallel-dropdown-item').forEach(el => el.classList.remove('selected')); }
   if (interlinearMode) { interlinearMode = false; document.body.classList.remove('interlinear-mode'); document.getElementById('btn-interlinear').classList.remove('active'); }
 
   currentCommentary = key;
   commentaryMode    = true;
   document.body.classList.add('commentary-mode');
-  document.getElementById('btn-commentary').classList.add('active');
+  DOM.get('btn-commentary').classList.add('active');
 
   // Mark selected
   document.querySelectorAll('#commentary-dropdown-menu .parallel-dropdown-item').forEach(el => {
@@ -6386,7 +6396,7 @@ async function renderParallelPassage(area, token) {
             w.className = 'strongs-word';
             w.textContent = token.text;
             w.dataset.strongs = token.strongs;
-            w.addEventListener('click', e => { e.stopPropagation(); showStrongsPanel(token.strongs, w); });
+            w.dataset.verse = v.verse;
             txtA.appendChild(w);
           } else {
             txtA.appendChild(document.createTextNode(token.text));
@@ -6468,13 +6478,7 @@ async function renderInterlinearPassage(area, token) {
       num.className = 'parallel-verse-num';
       num.textContent = v.verse;
       num.style.cursor = 'pointer';
-      num.addEventListener('click', e => {
-        e.stopPropagation();
-        toggleVerseSelection(v.verse);
-      });
-      num.addEventListener('contextmenu', e => {
-        e.preventDefault(); e.stopPropagation(); showVerseCtxMenu(e, v.verse);
-      });
+      num.dataset.verse = v.verse;
       let txt;
       if (STRONGS_TRANSLATIONS.has(currentTranslation) && v.rawHtml) {
         txt = document.createElement('span');
@@ -6487,7 +6491,7 @@ async function renderInterlinearPassage(area, token) {
             w.className = 'strongs-word';
             w.textContent = token.text;
             w.dataset.strongs = token.strongs;
-            w.addEventListener('click', e => { e.stopPropagation(); showStrongsPanel(token.strongs, w); });
+            w.dataset.verse = v.verse;
             txt.appendChild(w);
           } else {
             txt.appendChild(document.createTextNode(token.text));
@@ -6521,7 +6525,8 @@ async function renderInterlinearPassage(area, token) {
     area.appendChild(colA);
     area.appendChild(colB);
 
-    await renderInterlinearColumn(colB, bookNum, currentChapter, lang, edition);
+    // Stability Fix: Chunked rendering to prevent browser hang on large interlinear datasets
+    await renderInterlinearColumnChunked(colB, bookNum, currentChapter, lang, edition);
 
     if (highlightVerse) setTimeout(() => scrollToVerse(highlightVerse), 80);
     else window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -7501,7 +7506,7 @@ function goToSearchResult(bookName, chapter, verse, translation) {
 
   if (translation !== currentTranslation) {
     currentTranslation = translation;
-    document.getElementById('sel-translation').value = translation;
+    DOM.get('sel-translation').value = translation;
     document.getElementById('translation-label').textContent = TRANSLATIONS[translation];
   }
 
@@ -7518,7 +7523,7 @@ parseHash();
 if (!window.location.hash) restorePosition();
 
 // Sync translation dropdown
-document.getElementById('sel-translation').value = currentTranslation;
+DOM.get('sel-translation').value = currentTranslation;
 updateTranslationInfo(currentTranslation);
 // Sync custom dropdown button label and selected item
 const _transBtn = document.getElementById('btn-translation-text');
