@@ -3268,7 +3268,7 @@
 
   <!-- History back / Prev chapter / Book / Next chapter / History fwd -->
   <button class="pill-nav-btn pill-hist-btn" id="btn-hist-back-bot" onclick="historyBack()" title="No history" onmouseenter="showHistPreview('btn-hist-back-bot')" onmouseleave="hideHistPreview()" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/><polyline points="9 3 4 12 9 21"/></svg></button>
-  <button class="pill-nav-btn" id="btn-prev-bot" onclick="goChapter(-1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/></svg></button>
+  <button class="pill-nav-btn" id="btn-prev-bot" aria-label="Previous chapter" onclick="goChapter(-1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/></svg></button>
 
   <div class="pill-location">
     <div class="pill-select-wrap" style="position:relative;">
@@ -3279,7 +3279,7 @@
     </div>
   </div>
 
-  <button class="pill-nav-btn" id="btn-next-bot" onclick="goChapter(1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/></svg></button>
+  <button class="pill-nav-btn" id="btn-next-bot" aria-label="Next chapter" onclick="goChapter(1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/></svg></button>
   <button class="pill-nav-btn pill-hist-btn" id="btn-hist-fwd-bot" onclick="historyForward()" title="No forward history" onmouseenter="showHistPreview('btn-hist-fwd-bot')" onmouseleave="hideHistPreview()" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/><polyline points="15 3 20 12 15 21"/></svg></button>
 </div><!-- /.pill-nav -->
 
@@ -3538,7 +3538,7 @@
     <div class="reader-nav" id="top-nav">
       <div class="nav-btn-group">
         <button class="nav-hist-btn" id="btn-hist-back-top" onclick="historyBack()" title="No history" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/><polyline points="9 3 4 12 9 21"/></svg></button>
-        <button class="nav-arrow-btn" id="btn-prev-top" onclick="goChapter(-1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/></svg></button>
+        <button class="nav-arrow-btn" id="btn-prev-top" aria-label="Previous chapter" onclick="goChapter(-1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="14 3 9 12 14 21"/></svg></button>
       </div>
       <div class="passage-ref-wrap">
         <button class="book-info-btn" id="book-info-btn" onclick="toggleBookInfo()" aria-label="About this book">i
@@ -3561,7 +3561,7 @@
         <span class="reader-nav-center" id="passage-ref-top">Genesis 1</span>
       </div>
       <div class="nav-btn-group">
-        <button class="nav-arrow-btn" id="btn-next-top" onclick="goChapter(1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/></svg></button>
+        <button class="nav-arrow-btn" id="btn-next-top" aria-label="Next chapter" onclick="goChapter(1)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/></svg></button>
         <button class="nav-hist-btn" id="btn-hist-fwd-top" onclick="historyForward()" title="No forward history" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="10 3 15 12 10 21"/><polyline points="15 3 20 12 15 21"/></svg></button>
       </div>
     </div>
