@@ -3669,7 +3669,7 @@ const BOOKS = [
 
 const TRANSLATIONS = {
   web:   'World English Bible',
-  webplus: 'World English Bible + Doré Plates',
+  webplus: 'World English Bible +',
   kjv:   'King James Version',
   asv:   'American Standard Version',
   ylt:   "Young's Literal Translation",
@@ -3739,9 +3739,9 @@ const TRANSLATION_INFO = {
     body: `The ASV emerged from a transatlantic collaboration of scholars who believed the KJV stood in need of revision in light of advances in textual criticism. For the New Testament it broke decisively with the Textus Receptus, adopting the Westcott-Hort critical text — grounded in the Alexandrian manuscripts, preeminently Codex Sinaiticus and Codex Vaticanus — representing what its compilers judged to be a purer and more ancient witness to the original text. The result is a translation of rigorous formal equivalence, particularly notable for its consistent rendering of the divine name. Augmented with Strong's numerical tagging: where the ASV's more exacting translation departs from the KJV, the tagging allows the reader to trace those choices back to the Greek or Hebrew with full lexical context.`
   },
   webplus: {
-    full: 'World English Bible + Doré Plates',
+    full: 'World English Bible +',
     year: 2000,
-    body: `WEB+ is the World English Bible text — a public-domain revision of the American Standard Version resting on the Biblia Hebraica Stuttgartensia and the Byzantine Majority Text — set alongside the engravings of Gustave Doré (1866). Each plate sits directly after the verses it illustrates; tap a plate to enlarge it, or enter Presentation Mode to see each one as a full-screen slide. The plates are Doré's Old Testament and New Testament illustrations, public domain, drawn from Wikimedia Commons; plates for the Apocrypha are left out. Some New Testament plates come from later printings of Doré's work. WEB+ is the home for features that go beyond the plain text; it is not offered in Parallel view or Search because its words are identical to the World English Bible.`
+    body: `WEB+ is the World English Bible text — a public-domain revision of the American Standard Version resting on the Biblia Hebraica Stuttgartensia and the Byzantine Majority Text — set alongside classic Bible engravings: the plates of Gustave Doré (1866), with woodcuts by Julius Schnorr von Carolsfeld (1860) filling the passages Doré did not illustrate. Each plate sits directly after the verses it illustrates; tap a plate to enlarge it, or enter Presentation Mode to see each one as a full-screen slide. The plates are public domain, drawn from Wikimedia Commons; plates for the Apocrypha are left out. Where Doré already has a plate for a passage Schnorr's is left out; some New Testament plates of Doré's come from later printings of his work. Each plate is captioned with its artist. WEB+ is the home for features that go beyond the plain text; it is not offered in Parallel view or Search because its words are identical to the World English Bible.`
   },
   web: {
     full: 'World English Bible',
@@ -6752,28 +6752,42 @@ function goToXref(bookName, chapter, verse) {
 // ── Doré plates (WEB+) ─────────────────────────────────────────────────────
 // plates.json is built by SCRIPTS/dore-plates-map.mjs + SCRIPTS/build-dore-plates.mjs.
 // Only plates that already have an image file are shown, so a half-built set is safe.
+// Plates come from two sources that are merged into one index. Doré's plates.json is primary; Schnorr's
+// plates-schnorr.json only fills passages Doré did not illustrate (its duplicates carry skip:true, set by
+// SCRIPTS/schnorr-infill.mjs, and are ignored here). Each plate keeps its own credit. If one source is
+// missing the other still works.
+const PLATE_SOURCES = ['plates.json', 'plates-schnorr.json'];
 let PLATES_INDEX = null, PLATES_LOADING = null;
 function loadPlates() {
   if (PLATES_INDEX) return Promise.resolve(PLATES_INDEX);
   if (!PLATES_LOADING) {
-    PLATES_LOADING = fetch('plates.json')
-      .then(r => { if (!r.ok) throw new Error('plates.json ' + r.status); return r.json(); })
-      .then(doc => {
-        const idx = { credit: doc.credit || 'Gustave Doré, 1866', byChapter: {} };
+    PLATES_LOADING = Promise.all(PLATE_SOURCES.map(src =>
+      fetch(src)
+        .then(r => { if (!r.ok) throw new Error(src + ' ' + r.status); return r.json(); })
+        .catch(e => { console.warn('Plates unavailable (' + src + '):', e); return null; })
+    )).then(docs => {
+      const idx = { credit: 'Gustave Doré, 1866', byChapter: {} };
+      let any = false;
+      docs.forEach((doc, order) => {
+        if (!doc) return;
         for (const p of doc.plates || []) {
-          if (!p.file) continue;
-          const k = p.book + '|' + p.ch;
-          (idx.byChapter[k] = idx.byChapter[k] || []).push(p);
+          if (!p.file || p.skip) continue;
+          any = true;
+          const q = Object.assign({ credit: doc.credit || '', order }, p);
+          const k = q.book + '|' + q.ch;
+          (idx.byChapter[k] = idx.byChapter[k] || []).push(q);
         }
-        for (const k in idx.byChapter) idx.byChapter[k].sort((a, b) => a.vEnd - b.vEnd || a.v - b.v);
-        return (PLATES_INDEX = idx);
-      })
-      .catch(e => { PLATES_LOADING = null; console.warn('Doré plates unavailable:', e); return null; });
+      });
+      if (!any) { PLATES_LOADING = null; return null; }        // nothing loaded: try again next time
+      for (const k in idx.byChapter) idx.byChapter[k].sort((a, b) => a.vEnd - b.vEnd || a.v - b.v || a.order - b.order);
+      return (PLATES_INDEX = idx);
+    });
   }
   return PLATES_LOADING;
 }
 function plateRef(p) { return p.book + ' ' + p.ch + ':' + p.v + (p.vEnd > p.v ? '\u2013' + p.vEnd : ''); }
 function buildPlateFigure(p, credit, pres) {
+  credit = p.credit || credit;                       // each plate carries its own artist credit
   const fig = document.createElement('figure');
   fig.className = pres ? 'pres-plate' : 'dore-plate';
   fig.dataset.plate = p.id;
