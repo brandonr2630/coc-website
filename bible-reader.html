@@ -4861,6 +4861,8 @@ function toggleReadingMode() {
 
 // ── Keyboard Shortcuts (Feature 3) ──
 document.addEventListener('keydown', e => {
+  // Presentation mode has its own arrow-key handler; running both advanced two chapters per press.
+  if (document.body.classList.contains('pres-mode')) return;
   const tag = document.activeElement.tagName;
   if (tag === 'SELECT' || tag === 'INPUT') return;
   if (e.key === 'ArrowLeft') goChapter(-1);
