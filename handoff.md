@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Session 22 · SW `coc-bible-v52`*
+*Last updated: 2026-10-18 · Session 22 · SW `coc-bible-v55`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v52`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v55`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -176,12 +176,12 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 
 ### Pending — Bible Reader
 
-- [x] ~~**Fausset's Bible Dictionary**~~ — shipped session 22 (#89). Remaining: add `LEPROSY` by hand (see Reference Data)
+- [x] ~~**Fausset's Bible Dictionary**~~ — shipped session 22 (#89, gaps closed in #95: `LEPROSY` is now a `(See LEPER.)` cross-reference; `ABRAM`/`ADORATION` dropped as corrupt at source)
 - [ ] **Multiple named bookmarks** — one position saved currently; add named localStorage bookmarks ("Sunday sermon", "Home study")
-- [ ] **Copy shareable link** — `#John.3.16` deep-links work but no copy button; add to selection toolbar
+- [x] ~~**Copy shareable link**~~ — not needed: Share (selection bar → Share) already copies text + deep link, and uses the native share sheet on phones
 - [ ] **Verse-level notes** — short personal note per verse in localStorage
 - [ ] **Reading plans** — 365-day / NT-in-90 / custom; daily progress tracker in localStorage
-- [ ] **Print stylesheet** — `@media print` to hide nav/controls and output passage only
+- [x] ~~**Print stylesheet**~~ — shipped (#97). Applied rules checked in the browser; a real print preview / PDF has not been checked
 - [ ] **Search streaming** — full JSON load on first search stalls on slow devices; chunked `setTimeout` yield
 
 ### Pending — Homepage (`index.html`)
@@ -210,9 +210,9 @@ From `seven1m/open-bibles` (all public domain, converter at `SCRIPTS/zefania-to-
 | 🟠 MEDIUM | `getElementById()` called 210+ times; no DOM caching | 20–30% slower interactions | 1–2 h | Open |
 | 🟠 MEDIUM | Event listeners never removed on navigation | Memory leak after 20+ navigations on mobile | 2 h | Open |
 | 🟠 MEDIUM | Interlinear loads full 30 MB JSON into memory | Can crash low-end phones | 3 h | Open |
-| 🟠 MEDIUM | No request cancellation on rapid chapter nav | Stale data can overwrite current view | 1–2 h | Open |
+| ~~🟠 MEDIUM~~ | ~~No request cancellation on rapid chapter nav~~ | — | — | **Fixed (#97)** — parallel/commentary/interlinear renderers and the main error path now honour `renderToken` |
 | 🟡 LOW | NKJV word search disabled (bolls.life rate-limits at 429) | Users must switch translation to search | — | Won't fix short-term |
-| 🟡 LOW | Accessibility: missing ARIA labels, keyboard nav | Screen reader users underserved | 4 h | Open |
+| 🟡 LOW | Accessibility: dialog roles, labelled close buttons, `aria-expanded` on dropdowns, Escape handling, keyboard-operable verse numbers, focus ring, reduced motion done (#97). **Still open:** focus trapping/return in dialogs, screen-reader testing, ARIA on search results and highlight rows | Screen-reader users partly served | 2–3 h | Partly fixed |
 | ~~🟡 LOW~~ | ~~Google OAuth app in "testing" mode~~ | — | — | **Fixed 2026-10-18** — app published |
 
 ---
@@ -269,7 +269,7 @@ Sessions are listed newest-first. Each entry captures what shipped; root-cause d
 
 ### Session 22 — 2026-10-18
 
-**PRs #86–91 · SW v47 → v52**
+**PRs #86–97 · SW v47 → v55**
 
 Audit of this file against the repo, `origin/master`, Actions and Supabase:
 
@@ -281,7 +281,11 @@ Audit of this file against the repo, `origin/master`, Actions and Supabase:
 - **Dictionary tab row fix (PR #91 · v52).** Four dictionaries overflowed the tab row (`min-width:0` + `nowrap` made labels overlap). Tabs now size to content with short labels (`DICT_TAB_LABELS`; full names stay as tooltips); at 320 px the row scrolls instead of overlapping. Verified live at 1280 and 375 px.
 - **Deploy docs fixed.** `CLAUDE.md` and `README.md` now describe SSH/rsync deploys and point to this file (previously Fileman API / a non-existent `HANDOVER.md`).
 - **Privacy policy and terms pages (PR #93).** Public `privacy.html` and `terms.html`, linked from the home page footer, written to satisfy Google's branding requirements. Contact on both: `coc.toddsroad@gmail.com`. Plain-language drafts — a church leader should read them. Not yet linked from inside `bible-reader.html` (would need an SW bump).
-- **Google OAuth app published** (owner, 2026-10-18). Search Console domain verification (DNS TXT in GreenGeeks cPanel → Zone Editor, or a URL-prefix property) was in progress; status not confirmed here.
+- **Google OAuth app published** (owner, 2026-10-18).
+- **Search Console domain verification completed** by the owner, and Google sign-in confirmed working after publishing.
+- **Fausset gaps and legal links (PR #95 · v53).** `LEPROSY` added as `(See LEPER.)` (the source page duplicated LEPER and was broken); `ABRAM` and `ADORATION` removed (source body was the word "front"). 25 entries end mid-list with `;` because the source text is truncated — not recoverable from this source. Privacy/Terms links added under Settings → Account and beneath the sign-in modal.
+- **Escaping, storage, supply chain (PR #96 · v54).** Tag remove/filter buttons use `data-tag` instead of inline-JS string splicing; `lsGet/lsSet/lsRemove` wrap all `localStorage` use (except the head theme script and Supabase's own session storage); `supabase-js` pinned to `2.118.0` with an SRI hash (byte-identical to what `@2` served). To upgrade: pick a new exact version, recompute `openssl dgst -sha384 -binary supabase.js | openssl base64 -A`, update `integrity`.
+- **Stale responses, accessibility, print (PR #97 · v55).** See Known Issues for what remains. Verified on the live site on first load after deploy (network-first service worker): 8 dropdown triggers report `aria-expanded`, Escape closes sign-in/dictionary/dropdowns, print rules present.
 - **Lexicon data lazy-loaded (PR #87 · v48).** `STRONGS_DATA`, `UBS_DATA`, `DODSON_DATA` (6.8 MB, three lines at the bottom of `bible-reader.html`) moved to `strongs-data.json`, `ubs-data.json`, `dodson-data.json`. `bible-reader.html` dropped from 7.3 MB to ~0.5 MB. `loadLexicon(key)` fetches a file once; `ensureLexiconTab(tab, clean)` fills a tab only when it is shown (Dodson on an H number needs no fetch). A failed fetch shows an error in the tab and retries on the next tab switch. Data verified identical to the original objects. **Behaviour change:** Strong's/UBS/Dodson are no longer available offline until each has been used once online (the service worker caches them on first fetch).
 - **Live `manifest.json` was missing (404) → service worker never installed.** `cache.addAll(SHELL)` is all-or-nothing, so one 404 blocked install; the offline/PWA feature was not working on the live site. The rsync deploy only uploads files changed per push, so the file never came back on its own. Fixed with a manual full redeploy (Actions → Deploy to cPanel → Run workflow, 2026-10-18). **Runbook note:** if a file is missing live, re-run the workflow manually for a full deploy.
 - **Service worker hardened (PR #88 · v49).** Only `/bible-reader.html` is required at install (`REQUIRED`); the other shell assets are cached individually with `Promise.allSettled`, so one missing asset can no longer block the worker.
@@ -459,7 +463,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v52
+├── service-worker.js             PWA cache — current version: coc-bible-v55
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
