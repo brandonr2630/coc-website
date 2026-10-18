@@ -36,7 +36,7 @@ Two independent HTML files, both deployed as static assets:
 - KJV + Strong's, ASV + Strong's
 - Hebrew OT, Greek NT
 - Cross-references (all 66 books)
-- Easton's Bible Dictionary, Smith's Bible Dictionary
+- Easton's, Smith's, Hitchcock's and Fausset's Bible Dictionaries
 
 **Copyrighted (external APIs only, never cached locally):**
 - NKJV — fetched from `bolls.life/get-chapter` on demand
@@ -49,11 +49,11 @@ Two independent HTML files, both deployed as static assets:
 ```
 coc-website/
 ├── index.html                  Church landing page
-├── bible-reader.html           Bible study app (main file, ~5000 lines)
-├── service-worker.js           PWA cache v12 — bump on every bible-reader.html change
+├── bible-reader.html           Bible study app (main file, ~8700 lines)
+├── service-worker.js           PWA cache — bump `CACHE` on every bible-reader.html change
 ├── manifest.json               PWA manifest (mobile add-to-home-screen)
 ├── README.md                   This file
-├── HANDOVER.md                 Full technical docs — architecture, pending work, workflows
+├── handoff.md                  Running log: architecture, feature status, known issues, runbooks
 ├── .gitignore                  Ignores source/working directories
 │
 ├── Translation & Reference Data (deployed):
@@ -92,7 +92,7 @@ coc-website/
 - **Strong's Concordance** — tap any word in KJV+Strong's or ASV+Strong's versions
 - **Cross-references** — click reference link to jump; full panel with all xrefs for a verse
 - **Commentaries** — 3 commentaries (Adam Clarke, Matthew Henry, JFB) via API, cached locally
-- **Bible Dictionaries** — Easton's and Smith's for terms and places
+- **Bible Dictionaries** — Easton's, Smith's, Hitchcock's and Fausset's for terms and places
 - **Search** — full-text search (bolls.life API for NKJV, local JSON scan for others)
 
 ### Personal Study
@@ -124,7 +124,7 @@ coc-website/
 
 Every push to `master` triggers GitHub Actions:
 1. Checkout code
-2. Upload via cPanel Fileman API to `/home/terranre/public_html/toddsroadcoctt/`
+2. Upload changed files over SSH/rsync (reusable workflow in `brandonr2630/projects`) to `/home/terranre/public_html/toddsroadcoctt/`
 3. Only changed files are uploaded (incremental)
 
 ### Manual Redeploy
@@ -146,8 +146,9 @@ Failing to bump the version means returning visitors will receive stale cached H
 
 | Secret | Value |
 |--------|-------|
-| `CPANEL_API_TOKEN` | API token (ask team admin) |
-| `CPANEL_HOST` | `https://chi203.greengeeks.net:2083` |
+| `SSH_PRIVATE_KEY` | Private key for the deploy user (ask team admin) |
+| `SSH_HOST` | GreenGeeks SSH host |
+| `SSH_PORT` | SSH port |
 | `CPANEL_USER` | `terranre` |
 
 ---
@@ -226,7 +227,7 @@ git push origin master
 
 ## Known Limitations & TODOs
 
-See **HANDOVER.md** for the full pending work list, including:
+See **handoff.md** for the full pending work list, including:
 - Multiple named bookmarks
 - Shareable links (URL hash deep-linking already works; needs copy button)
 - Verse-level personal notes
@@ -264,4 +265,4 @@ These are starting points, not dependencies — evaluate before adding to `bible
 
 ## Support & Questions
 
-For architecture questions, see **HANDOVER.md**. For deployment issues, check GitHub Actions logs or GreenGeeks cPanel Fileman.
+For architecture questions, see **handoff.md**. For deployment issues, check the GitHub Actions logs.
