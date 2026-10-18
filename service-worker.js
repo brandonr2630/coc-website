@@ -4,7 +4,7 @@
 //   Local JSONs → cached on first fetch (cache-on-demand)
 //   External APIs (bolls.life, fonts) → network only
 
-const CACHE = 'coc-bible-v56';
+const CACHE = 'coc-bible-v57';
 
 // The page itself must cache or install fails; the rest are best-effort so one
 // missing asset (e.g. a 404 after a partial deploy) cannot block the worker.
