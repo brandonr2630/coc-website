@@ -1560,6 +1560,9 @@
       flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
       padding: 12px 14px 10px; border-bottom: 1px solid var(--line);
     }
+    .atlas-head-btns { display: flex; align-items: center; gap: 2px; }
+    .atlas-panel.atlas-wide { width: min(1000px, 72vw); }
+    body.atlas-open.atlas-wide .page-wrap { margin-right: 0; }
     .atlas-map { flex: 1; min-height: 0; position: relative; }
     .atlas-msg {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -1571,6 +1574,7 @@
         top: auto; height: 62vh; box-shadow: 0 -4px 24px rgba(0,0,0,0.13);
       }
       body.atlas-open .page-wrap { margin-right: 0; }
+      .atlas-panel.atlas-wide { width: 100%; height: 92vh; }
     }
 
     /* Fixed header — never scrolls */
@@ -5783,6 +5787,7 @@ async function renderPassage() {
   savePosition();
   historyPush();
   syncHistoryBtns();
+  if (typeof atlasSync === 'function') atlasSync();
 
   // Parallel mode — hand off to parallel renderer
   if (parallelMode) {
@@ -8026,7 +8031,10 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
   <div class="atlas-panel" id="atlas-panel" role="dialog" aria-label="Atlas of the Bible lands">
     <div class="atlas-panel-head">
       <span class="hl-panel-title">Atlas</span>
-      <button class="hl-panel-close" onclick="closeAtlasPanel()" aria-label="Close atlas">&#10005;</button>
+      <span class="atlas-head-btns">
+        <button class="hl-panel-close" id="atlas-wide-btn" onclick="toggleAtlasWide()" aria-label="Enlarge atlas" aria-pressed="false" title="Enlarge">&#10530;</button>
+        <button class="hl-panel-close" onclick="closeAtlasPanel()" aria-label="Close atlas">&#10005;</button>
+      </span>
     </div>
     <div class="atlas-map" id="atlas-map"></div>
   </div>
@@ -8940,7 +8948,7 @@ function shareCtxCopy() {
     document.getElementById('atlas-panel').classList.add('visible');
     document.body.classList.add('atlas-open');
     const host = document.getElementById('atlas-map');
-    if (atlasInst) { atlasInst._resize(); return; }
+    if (atlasInst) { atlasInst._resize(); if (atlasDirty) atlasSync(); return; }
     host.innerHTML = '<div class="atlas-msg" id="atlas-msg">Loading map…</div>';
     try {
       await loadAtlasScript();
@@ -8949,6 +8957,9 @@ function shareCtxCopy() {
       atlasInst.theme(atlasThemeName());
       new MutationObserver(() => atlasInst && atlasInst.theme(atlasThemeName()))
         .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      atlasPlaces = new Atlas.PlacesLayer('places', { src: 'atlas-places.json' });
+      await atlasInst.addLayer(atlasPlaces);
+      atlasSync();
     } catch (e) {
       host.innerHTML = '<div class="atlas-msg">The map could not be loaded. Check your connection and try again.</div>';
     }
@@ -8957,6 +8968,36 @@ function shareCtxCopy() {
   function closeAtlasPanel() {
     document.getElementById('atlas-panel').classList.remove('visible');
     document.body.classList.remove('atlas-open');
+  }
+
+  // Enlarge: a bigger map fits places that are far apart (Esther 1 spans Ethiopia to India)
+  function toggleAtlasWide() {
+    const on = document.getElementById('atlas-panel').classList.toggle('atlas-wide');
+    document.body.classList.toggle('atlas-wide', on);
+    const b = document.getElementById('atlas-wide-btn');
+    b.setAttribute('aria-pressed', String(on));
+    b.setAttribute('aria-label', on ? 'Shrink atlas' : 'Enlarge atlas');
+    b.title = on ? 'Shrink' : 'Enlarge';
+    if (atlasInst) { atlasInst._resize(); atlasDirty = true; atlasSync(); }
+  }
+
+  // The atlas shows the places named in the chapter being read. renderPassage() calls atlasSync()
+  // on every navigation; while the panel is closed the change is remembered (atlasDirty) and applied
+  // when it opens. OSIS codes match atlas-places.json and follow the canonical order of BOOKS.
+  const OSIS_BOOKS = ['Gen','Exod','Lev','Num','Deut','Josh','Judg','Ruth','1Sam','2Sam','1Kgs','2Kgs','1Chr','2Chr','Ezra','Neh','Esth','Job','Ps','Prov','Eccl','Song','Isa','Jer','Lam','Ezek','Dan','Hos','Joel','Amos','Obad','Jonah','Mic','Nah','Hab','Zeph','Hag','Zech','Mal','Matt','Mark','Luke','John','Acts','Rom','1Cor','2Cor','Gal','Eph','Phil','Col','1Thess','2Thess','1Tim','2Tim','Titus','Phlm','Heb','Jas','1Pet','2Pet','1John','2John','3John','Jude','Rev'];
+  let atlasPlaces = null;
+  let atlasDirty = true;
+
+  function atlasSync() {
+    const panel = document.getElementById('atlas-panel');
+    if (!atlasInst || !atlasPlaces || !panel || !panel.classList.contains('visible')) { atlasDirty = true; return; }
+    atlasDirty = false;
+    const i = BOOKS.indexOf(currentBook);
+    if (i < 0) return;
+    const ref = currentBook.name + ' ' + currentChapter;
+    const title = panel.querySelector('.hl-panel-title');
+    if (title) title.textContent = 'Atlas · ' + ref;
+    atlasPlaces.showChapter(OSIS_BOOKS[i] + '.' + currentChapter, { ref });
   }
 
   function hlFilterChanged() {
