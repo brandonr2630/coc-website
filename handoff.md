@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Sessions 22-24 · SW `coc-bible-v59`*
+*Last updated: 2026-10-18 · Sessions 22-24, 26 · SW `coc-bible-v60`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v59`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v60`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -80,6 +80,9 @@ All JSON files live at repo root and are fetched on demand:
 | `plates/*.webp` | Gustave Doré plates (1866), WebP, loaded lazily; every plate ≤ 190 KB (49 of them shrunk to 0.86–0.93 of the original 1400 px build so they fit) | 36.8 MB total, avg 171 KB |
 | `plates-schnorr.json` | Schnorr von Carolsfeld plate index (223 entries; 119 are marked `skip:true` because Doré already illustrates the passage; 104 are shown) | 35 KB |
 | `plates/schnorr/*.webp` | *Die Bibel in Bildern* (1860) woodcuts shown as infill: 104 files, mostly lossless full-size bilevel, the rest lossy; all ≤ 190 KB | 8.7 MB total |
+| `atlas.js` | Layered offline map module for the Atlas panel (see Session 26) — loaded on first open, network-first in the worker | 33 KB |
+| `atlas-basemap.json` | Atlas basemap: coast, lakes, rivers for 8-62°E / 10-46°N (Natural Earth 10m, public domain) | 300 KB |
+| `atlas-relief.webp` · `atlas-relief-levant.webp` | Atlas terrain shading: whole region at 40 px/deg, plus a 240 px/deg Levant/Sinai/Nile patch (Natural Earth shaded relief; AWS Terrain Tiles/SRTM) | 128 KB · 191 KB |
 | `strongs-data.json` | Strong's lexicon (H/G) — lazy-loaded by the Strong's tab | 2.7 MB |
 | `ubs-data.json` | UBS lexicon senses — lazy-loaded by the UBS tab | 3.6 MB |
 | `dodson-data.json` | Dodson NT Greek lexicon — lazy-loaded by the Dodson tab (G numbers only) | 0.6 MB |
@@ -178,6 +181,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 | Highlight tags (multi-tag, filter in panel) | 20 | #70–73 |
 | My Highlights panel (filter by book, colour, tag) | 19–20 | #68, #70, #73 |
 | Google OAuth (PKCE, shows toddsroadcoctt.org) | 17, 20 | #56–57, #72 |
+| Atlas panel: offline basemap + layer framework (no places yet) | 26 | — |
 
 ### Pending — Bible Reader
 
@@ -187,6 +191,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 - [ ] **Verse-level notes** — short personal note per verse in localStorage
 - [ ] **Reading plans** — 365-day / NT-in-90 / custom; daily progress tracker in localStorage
 - [x] ~~**Print stylesheet**~~ — shipped (#97). Applied rules checked in the browser; a real print preview / PDF has not been checked
+- [ ] **Atlas places layer** — the panel shows the basemap only. Next: build `atlas.json` from `openbibleinfo/Bible-Geocoding-Data` (`ancient.jsonl`, CC BY 4.0, credit OpenBible.info) and add a `PointLayer`; then chapter filtering via `layer.setFilter`, journeys (`PathLayer`), regions (`PolygonLayer`)
 - [ ] **Search streaming** — full JSON load on first search stalls on slow devices; chunked `setTimeout` yield
 
 ### Pending — Homepage (`index.html`)
@@ -269,6 +274,22 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 26 — 2026-10-18 · Atlas panel (offline basemap)
+
+**SW v59 → v60** · branch `feature/atlas-panel`
+
+Study → **🗺 Atlas** opens a right-hand panel (bottom sheet ≤860 px) with an offline map of the Bible lands. Basemap only: no place pins yet (decision: places come later from the Geocoding dataset).
+
+- **`atlas.js`** — vanilla module, `window.Atlas`, loaded on first open (`loadAtlasScript()` in `bible-reader.html`). Everything on the map is a `Atlas.Layer`; the Atlas owns pan/zoom/pinch/keys, the layer stack, one shared label placer (highest priority first, tries right/left/above/below, drops what does not fit), selection and a layer-toggle panel. Layers choose `space: 'world'` (scales with the map: coast, relief, rivers, regions, routes) or `'screen'` (constant size: pins, text). Contract: `mount(atlas)`, `update(ctx)`, `labels(ctx)`, `hit(ctx,sx,sy)`, `unmount()`. Built in: `LandLayer`, `ReliefLayer`, `WaterLayer`, `NamesLayer`, `PointLayer`, `PathLayer`, `PolygonLayer` (items inline or lazily from `src`; `setFilter(fn)`). Header comment in the file is the reference; runtime `atlas.addLayer/removeLayer/setVisible/fitBounds/flyTo/theme/layerControl/on('select')`.
+- **Data.** `atlas-basemap.json` (300 KB), `atlas-relief.webp` (128 KB), `atlas-relief-levant.webp` (191 KB) are built locally by `SCRIPTS/build-atlas-basemap.mjs`, `build-atlas-relief.py`, `build-atlas-relief-levant.py` from Natural Earth 10m (public domain) and AWS Terrain Tiles z9 (SRTM and others). Source caches live in `SCRIPTS/atlas-cache/` (~250 MB, gitignored). Mercator throughout, so the relief images line up with no reprojection. `SCRIPTS/atlas-demo.html` is a sample-data demo (hand-typed pins, route and regions, not the real dataset).
+- **Reader wiring.** Panel + Study row + `openAtlasPanel()/closeAtlasPanel()`; opening My Highlights closes the Atlas and vice versa; Escape closes it; print hides it; the map follows the reader theme (dark → dark, light and sepia → light). Failure to load shows a message in the panel.
+- **Service worker.** v60; `/atlas.js` is network-first like the pages, the data files are cached on first use (cache-first), so the atlas works offline after one visit.
+- **Credits** (corner of the map): Natural Earth · SRTM/AWS Terrain Tiles. When the places layer ships it must also credit OpenBible.info (CC BY 4.0).
+- **Tested** (local server, real Chrome pane): open from Study menu, desktop 1280 px and phone-width bottom sheet, light/dark/sepia theme sync, Escape, exclusivity with My Highlights, 'cover' minimum zoom, select/filter/add/remove layers in the demo. **Not tested:** real phone, screen reader, true offline (airplane mode), the live site. Layer pins are not keyboard-focusable yet (map pans/zooms by arrows and +/-).
+- **Known limits.** Relief is blurrier than 240 px/deg outside the Levant patch (40 px/deg). Names layer has six labels only; no ancient region names until the regions layer exists.
 
 ---
 
@@ -510,7 +531,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v59
+├── service-worker.js             PWA cache — current version: coc-bible-v60
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
