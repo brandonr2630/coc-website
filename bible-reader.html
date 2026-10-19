@@ -609,6 +609,19 @@
       border-radius: 2px;
       transition: background 0.15s, color 0.15s;
     }
+    /* ── ROOT FAMILY HIGHLIGHT ── */
+    .strongs-word.root-family-highlight {
+      background: rgba(125, 194, 67, 0.3);
+      border-bottom: 2px solid var(--green);
+      border-radius: 2px;
+    }
+    [data-theme="dark"] .strongs-word.root-family-highlight {
+      background: rgba(125, 194, 67, 0.25);
+    }
+    [data-theme="sepia"] .strongs-word.root-family-highlight {
+      background: rgba(125, 194, 67, 0.2);
+    }
+
     .verse-num:hover { background: var(--green); color: #fff; }
     .verse-text {
       font-family: var(--reading-font);
@@ -4405,9 +4418,10 @@ const bdbtCache = {};
 // ── Lexicon data (lazy-loaded JSON; was embedded in this file) ──
 // Fetched on first use of the matching Strong's tab, then cached by the
 // service worker. A failed fetch clears its promise so the next tap retries.
-const LEXICON_FILES = { strongs: '/strongs-data.json', ubs: '/ubs-data.json', dodson: '/dodson-data.json' };
+const LEXICON_FILES = { strongs: '/strongs-data.json', ubs: '/ubs-data.json', dodson: '/dodson-data.json', lemmas: '/strongs-lemmas.json' };
 const LEXICON_RENDERERS = { strongs: renderStrongsEntry, ubs: renderUBSEntry, dodson: renderDodsonEntry };
 const LEXICON_PROMISES = {};
+let ROOT_LEMMA_CACHE = null;
 
 function loadLexicon(key) {
   if (!LEXICON_PROMISES[key]) {
@@ -4551,6 +4565,30 @@ async function showStrongsPanel(num, wordEl) {
   wordEl.classList.add('active');
 
   const clean = normaliseStrongs(num);
+  
+  // --- Root Lemma Family Highlighting ---
+  try {
+    if (!ROOT_LEMMA_CACHE) {
+      ROOT_LEMMA_CACHE = await loadLexicon('lemmas');
+    }
+    const lemmaData = ROOT_LEMMA_CACHE[clean];
+    if (lemmaData) {
+      const rootId = lemmaData.root;
+      const family = lemmaData.family || [];
+      document.querySelectorAll('.strongs-word').forEach(w => {
+        const sId = w.dataset.strongs;
+        if (sId && family.includes(sId)) {
+          w.classList.add('root-family-highlight');
+        } else {
+          w.classList.remove('root-family-highlight');
+        }
+      });
+    }
+  } catch (e) {
+    console.error('Root Lemma highlight failed:', e);
+  }
+  // ---------------------------------------
+
   const panel = document.getElementById('strongs-panel');
   const tabsRow = document.getElementById('strongs-tabs-row');
   const body = document.getElementById('strongs-body');
