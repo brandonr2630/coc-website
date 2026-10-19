@@ -3421,16 +3421,16 @@
         <button class="pill-study-arrow" onclick="toggleInterlinearMode()" title="Open Interlinear"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
       </div>
       <div class="pill-study-row">
+        <span class="pill-study-main" id="btn-atlas" onclick="openAtlasPanel()">🗺 Atlas</span>
+        <button class="pill-study-arrow" onclick="openAtlasPanel()" title="Open Atlas"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
+      </div>
+      <div class="pill-study-row">
         <span class="pill-study-main" id="btn-notes">📝 Notes</span>
         <button class="pill-study-arrow" onclick="toggleNotesPanel()" title="Open Notes"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
       </div>
       <div class="pill-study-row">
         <span class="pill-study-main" id="btn-my-highlights">🔖 My Highlights</span>
         <button class="pill-study-arrow" onclick="openHighlightsPanel()" title="Open My Highlights"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
-      </div>
-      <div class="pill-study-row">
-        <span class="pill-study-main" id="btn-atlas" onclick="openAtlasPanel()">🗺 Atlas</span>
-        <button class="pill-study-arrow" onclick="openAtlasPanel()" title="Open Atlas"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
       </div>
     </div>
   </div>
@@ -8919,13 +8919,12 @@ function shareCtxCopy() {
   function loadAtlasScript() {
     if (window.Atlas) return Promise.resolve();
     if (!atlasScriptPromise) {
-      atlasScriptPromise = new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = '/atlas.js';
-        s.onload = resolve;
-        s.onerror = () => { atlasScriptPromise = null; s.remove(); reject(new Error('atlas.js failed to load')); };
-        document.head.appendChild(s);
-      });
+      // Revalidate on every open: the host sends max-age of about 15 days, so a plain <script src>
+      // would keep serving the previous atlas.js from the HTTP cache after a deploy.
+      atlasScriptPromise = fetch('/atlas.js', { cache: 'no-cache' })
+        .then(r => { if (!r.ok) throw new Error('atlas.js ' + r.status); return r.text(); })
+        .then(code => { const s = document.createElement('script'); s.textContent = code; document.head.appendChild(s); s.remove(); })
+        .catch(e => { atlasScriptPromise = null; throw e; });
     }
     return atlasScriptPromise;
   }
