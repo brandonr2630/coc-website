@@ -125,17 +125,18 @@
   // ---------------------------------------------------------------- basemap layers
   const BASEMAP_URL = 'atlas-basemap.json';
   const DEFAULT_RELIEF = [
-    { href: 'atlas-relief.webp', x: 8, y: -51.9258, w: 54, h: 41.8746 },         // whole region, 40 px/deg
+    { href: 'atlas-relief.webp', x: -10, y: -54.8588, w: 90, h: 46.8327 },       // whole region (Spain to India), 40 px/deg
     { href: 'atlas-relief-levant.webp', x: 31.0, y: -37.1609, w: 7.5, h: 7.5210 } // Levant detail, 240 px/deg
   ];
-  const landPath = m => m._landD || (m._landD = m.land.map(r => pathOf(r, 1)).join(''));
+  // land rings plus inland-sea holes (Caspian), drawn with fill-rule / clip-rule evenodd
+const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r => pathOf(r, 1)).join(''));
 
   class LandLayer extends Layer {
     constructor(o) { super('base.land', Object.assign({ name: 'Land', group: 'base', order: 0, toggle: false }, o)); }
     async mount(atlas) {
       const m = await atlas.load(atlas.url(BASEMAP_URL));
       atlas.bounds = m.bbox;
-      svgEl('path', { class: 'a-land', d: landPath(m) }, this.g);
+      svgEl('path', { class: 'a-land', d: landPath(m), 'fill-rule': 'evenodd' }, this.g);
       svgEl('path', { class: 'a-coast', d: landPath(m) }, this.g);
     }
   }
@@ -147,7 +148,7 @@
     async mount(atlas) {
       const m = await atlas.load(atlas.url(BASEMAP_URL));
       const id = atlas.uid + '-landclip';
-      svgEl('path', { d: landPath(m) }, svgEl('clipPath', { id }, svgEl('defs', null, this.g)));
+      svgEl('path', { d: landPath(m), 'clip-rule': 'evenodd' }, svgEl('clipPath', { id }, svgEl('defs', null, this.g)));
       // blend on the group so stacked images (world + detail) don't multiply twice
       const grp = svgEl('g', { class: 'a-relief', 'clip-path': 'url(#' + id + ')' }, this.g);
       this.images.forEach(i => svgEl('image', { href: atlas.url(i.href), x: i.x, y: i.y, width: i.w, height: i.h, preserveAspectRatio: 'none' }, grp));
@@ -161,7 +162,8 @@
       svgEl('path', { class: 'a-river', d: m.rivers.map(r => pathOf(r.l)).join('') }, this.g);
     }
   }
-  const SEA_NAMES = [['Mediterranean Sea', 19, 34.5], ['Red Sea', 37.8, 21.5], ['Persian Gulf', 51.8, 27.2], ['Black Sea', 34, 43.2], ['Caspian Sea', 50.8, 41.3], ['Arabian Desert', 42, 25]];
+  const SEA_NAMES = [['Mediterranean Sea', 19, 34.5], ['Red Sea', 37.8, 21.5], ['Persian Gulf', 51.8, 27.2], ['Black Sea', 34, 43.2], ['Caspian Sea', 50.8, 41.3], ['Arabian Desert', 42, 25],
+    ['Arabian Sea', 64.5, 16], ['Aegean Sea', 25, 38.6], ['Adriatic Sea', 15.3, 43.2]];
   class NamesLayer extends Layer {
     constructor(o = {}) {
       super('base.names', Object.assign({ name: 'Sea & region names', group: 'base', order: 30, space: 'screen' }, o));
@@ -330,7 +332,7 @@
       this.screen = svgEl('g', null, this.svgS);
       this.labelG = svgEl('g', null, this.svgS);
       this.layers = []; this._cache = new Map(); this._pool = [];
-      this.bounds = [8, 10, 62, 46]; this.W = this.H = 0; this.view = null; this._raf = 0; this._anim = 0;
+      this.bounds = [-10, 8, 80, 48]; this.W = this.H = 0; this.view = null; this._raf = 0; this._anim = 0;
       this.ctx = {
         atlas: this, W: 0, H: 0, view: null,
         toScreen: (x, y) => [(x - this.view.cx) * this.view.s + this.W / 2, (y - this.view.cy) * this.view.s + this.H / 2],
@@ -386,7 +388,10 @@
     _clamp(v) {
       const b = this.bounds, x0 = projX(b[0]), x1 = projX(b[2]), y0 = projY(b[3]), y1 = projY(b[1]);
       v.s = Math.max(this._minScale(), Math.min(v.s, this.opts.maxZoom));
-      v.cx = Math.max(x0, Math.min(v.cx, x1)); v.cy = Math.max(y0, Math.min(v.cy, y1));
+      // keep the whole viewport inside the map: the centre may only go as far as half a screen from each edge
+      // (min zoom is 'cover', so these ranges are never empty)
+      const hw = this.W / 2 / v.s, hh = this.H / 2 / v.s;
+      v.cx = Math.max(x0 + hw, Math.min(v.cx, x1 - hw)); v.cy = Math.max(y0 + hh, Math.min(v.cy, y1 - hh));
       return v;
     }
     home() { const h = this.opts.home; this.setView({ cx: projX(h.lon), cy: projY(h.lat), s: this._fitScale(h.span, h.span * 0.8) }); }
