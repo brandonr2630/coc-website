@@ -388,7 +388,10 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
     _clamp(v) {
       const b = this.bounds, x0 = projX(b[0]), x1 = projX(b[2]), y0 = projY(b[3]), y1 = projY(b[1]);
       v.s = Math.max(this._minScale(), Math.min(v.s, this.opts.maxZoom));
-      v.cx = Math.max(x0, Math.min(v.cx, x1)); v.cy = Math.max(y0, Math.min(v.cy, y1));
+      // keep the whole viewport inside the map: the centre may only go as far as half a screen from each edge
+      // (min zoom is 'cover', so these ranges are never empty)
+      const hw = this.W / 2 / v.s, hh = this.H / 2 / v.s;
+      v.cx = Math.max(x0 + hw, Math.min(v.cx, x1 - hw)); v.cy = Math.max(y0 + hh, Math.min(v.cy, y1 - hh));
       return v;
     }
     home() { const h = this.opts.home; this.setView({ cx: projX(h.lon), cy: projY(h.lat), s: this._fitScale(h.span, h.span * 0.8) }); }
