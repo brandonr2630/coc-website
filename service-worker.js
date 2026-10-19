@@ -4,7 +4,7 @@
 //   Local JSONs → cached on first fetch (cache-on-demand)
 //   External APIs (bolls.life, fonts) → network only
 
-const CACHE = 'coc-bible-v59';
+const CACHE = 'coc-bible-v60';
 
 // The page itself must cache or install fails; the rest are best-effort so one
 // missing asset (e.g. a 404 after a partial deploy) cannot block the worker.
@@ -44,12 +44,12 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Pages and the worker script itself: network-first so a deploy shows up on the next load
+// Pages, the worker script and atlas.js: network-first so a deploy shows up on the next load
 // instead of the one after. Falls back to cache when offline or the network is slow.
 const NETWORK_FIRST_TIMEOUT_MS = 4000;
 
 function isNetworkFirst(request, url) {
-  return request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/service-worker.js';
+  return request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/service-worker.js' || url.pathname === '/atlas.js';
 }
 
 function networkFirst(request) {

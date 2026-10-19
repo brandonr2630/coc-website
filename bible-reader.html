@@ -1542,6 +1542,37 @@
       }
     }
 
+    /* ── Atlas Panel ── */
+    .atlas-panel {
+      display: none;
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 593;
+      width: 440px;
+      background: var(--white);
+      border-left: 2px solid var(--green);
+      box-shadow: -4px 0 24px rgba(0,0,0,0.10);
+      font-family: 'Nunito', sans-serif;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .atlas-panel.visible { display: flex; }
+    body.atlas-open .page-wrap { margin-right: 440px; }
+    .atlas-panel-head {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px 10px; border-bottom: 1px solid var(--line);
+    }
+    .atlas-map { flex: 1; min-height: 0; position: relative; }
+    .atlas-msg {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      padding: 24px; text-align: center; font-size: 0.85rem; color: var(--charcoal-light); line-height: 1.6;
+    }
+    @media (max-width: 860px) {
+      .atlas-panel {
+        width: 100%; border-left: none; border-top: 2px solid var(--green);
+        top: auto; height: 62vh; box-shadow: 0 -4px 24px rgba(0,0,0,0.13);
+      }
+      body.atlas-open .page-wrap { margin-right: 0; }
+    }
+
     /* Fixed header — never scrolls */
     .strongs-panel-head {
       flex-shrink: 0;
@@ -3201,7 +3232,7 @@
     nav, .reader-pill, .pill-nav, .pill-tools, .dropdown-backdrop, .rotate-prompt,
     #hl-backdrop, #hl-picker, #auth-toast, #auth-modal-overlay, .floating-passage, .floating-passage-2,
     .floating-passage-3, .selection-bar, .verse-ctx-menu, .share-modal-overlay, .xref-panel,
-    .search-panel, .strongs-panel, .dictionary-panel, .hl-panel, .grid-modal, .grid-modal-backdrop,
+    .search-panel, .strongs-panel, .dictionary-panel, .hl-panel, .atlas-panel, .grid-modal, .grid-modal-backdrop,
     #hist-preview, .reading-mode-exit, .scroll-top-btn, .bible-header, .reader-nav .nav-btn-group,
     .book-info-btn, .manuscript-info-btn, .trans-info-btn, #commentary-bar, .sel-btn {
       display: none !important;
@@ -3396,6 +3427,10 @@
       <div class="pill-study-row">
         <span class="pill-study-main" id="btn-my-highlights">🔖 My Highlights</span>
         <button class="pill-study-arrow" onclick="openHighlightsPanel()" title="Open My Highlights"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
+      </div>
+      <div class="pill-study-row">
+        <span class="pill-study-main" id="btn-atlas" onclick="openAtlasPanel()">🗺 Atlas</span>
+        <button class="pill-study-arrow" onclick="openAtlasPanel()" title="Open Atlas"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;pointer-events:none;"><polyline points="9 6 15 12 9 18"/></svg></button>
       </div>
     </div>
   </div>
@@ -7254,6 +7289,7 @@ document.addEventListener('keydown', e => {
   }
   if (open('dictionary-panel', 'visible')) { closeDictionaryPanel(); return; }
   if (open('xref-panel', 'visible')) { closeXrefPanel(); return; }
+  if (open('atlas-panel', 'visible')) { closeAtlasPanel(); return; }
   if (open('hl-panel', 'visible')) { closeHighlightsPanel(); return; }
 }, true);
 
@@ -7984,6 +8020,15 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
       <div class="hl-tag-filter-row" id="hl-tag-filter-row" style="display:none"></div>
     </div>
     <div class="hl-panel-body" id="hl-panel-body"></div>
+  </div>
+
+  <!-- Atlas Panel (atlas.js is loaded on first open) -->
+  <div class="atlas-panel" id="atlas-panel" role="dialog" aria-label="Atlas of the Bible lands">
+    <div class="atlas-panel-head">
+      <span class="hl-panel-title">Atlas</span>
+      <button class="hl-panel-close" onclick="closeAtlasPanel()" aria-label="Close atlas">&#10005;</button>
+    </div>
+    <div class="atlas-map" id="atlas-map"></div>
   </div>
 
 
@@ -8849,6 +8894,7 @@ function shareCtxCopy() {
   function openHighlightsPanel() {
     const dd = document.getElementById('study-dropdown-menu');
     if (dd) dd.classList.remove('open');
+    closeAtlasPanel();
     document.getElementById('hl-panel').classList.add('visible');
     document.body.classList.add('hl-panel-open');
     renderHighlightsPanel();
@@ -8861,6 +8907,57 @@ function shareCtxCopy() {
   function closeHighlightsPanel() {
     document.getElementById('hl-panel').classList.remove('visible');
     document.body.classList.remove('hl-panel-open');
+  }
+
+  // ── Atlas Panel ──────────────────────────────────────────────────────────
+  // atlas.js and its data (basemap + relief, ~0.7 MB) load on first open and are cached by the
+  // service worker, so the map works offline after one visit.
+
+  let atlasInst = null;
+  let atlasScriptPromise = null;
+
+  function loadAtlasScript() {
+    if (window.Atlas) return Promise.resolve();
+    if (!atlasScriptPromise) {
+      atlasScriptPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/atlas.js';
+        s.onload = resolve;
+        s.onerror = () => { atlasScriptPromise = null; s.remove(); reject(new Error('atlas.js failed to load')); };
+        document.head.appendChild(s);
+      });
+    }
+    return atlasScriptPromise;
+  }
+
+  function atlasThemeName() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  }
+
+  async function openAtlasPanel() {
+    const dd = document.getElementById('study-dropdown-menu');
+    if (dd) dd.classList.remove('open');
+    closeHighlightsPanel();
+    document.getElementById('atlas-panel').classList.add('visible');
+    document.body.classList.add('atlas-open');
+    const host = document.getElementById('atlas-map');
+    if (atlasInst) { atlasInst._resize(); return; }
+    host.innerHTML = '<div class="atlas-msg" id="atlas-msg">Loading map…</div>';
+    try {
+      await loadAtlasScript();
+      host.innerHTML = '';
+      atlasInst = new Atlas(host, { base: '/' });
+      atlasInst.theme(atlasThemeName());
+      new MutationObserver(() => atlasInst && atlasInst.theme(atlasThemeName()))
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    } catch (e) {
+      host.innerHTML = '<div class="atlas-msg">The map could not be loaded. Check your connection and try again.</div>';
+    }
+  }
+
+  function closeAtlasPanel() {
+    document.getElementById('atlas-panel').classList.remove('visible');
+    document.body.classList.remove('atlas-open');
   }
 
   function hlFilterChanged() {
