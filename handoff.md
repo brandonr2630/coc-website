@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Sessions 22-24, 26 · SW `coc-bible-v60`*
+*Last updated: 2026-10-18 · Sessions 22-24, 26-27 · SW `coc-bible-v61`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v60`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v61`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -81,8 +81,8 @@ All JSON files live at repo root and are fetched on demand:
 | `plates-schnorr.json` | Schnorr von Carolsfeld plate index (223 entries; 119 are marked `skip:true` because Doré already illustrates the passage; 104 are shown) | 35 KB |
 | `plates/schnorr/*.webp` | *Die Bibel in Bildern* (1860) woodcuts shown as infill: 104 files, mostly lossless full-size bilevel, the rest lossy; all ≤ 190 KB | 8.7 MB total |
 | `atlas.js` | Layered offline map module for the Atlas panel (see Session 26) — loaded on first open, network-first in the worker | 33 KB |
-| `atlas-basemap.json` | Atlas basemap: coast, lakes, rivers for 8-62°E / 10-46°N (Natural Earth 10m, public domain) | 300 KB |
-| `atlas-relief.webp` · `atlas-relief-levant.webp` | Atlas terrain shading: whole region at 40 px/deg, plus a 240 px/deg Levant/Sinai/Nile patch (Natural Earth shaded relief; AWS Terrain Tiles/SRTM) | 184 KB · 207 KB |
+| `atlas-basemap.json` | Atlas basemap: coast, lakes, rivers, Caspian hole for 10°W-80°E / 8-48°N, Spain to India (Natural Earth 10m, public domain) | 550 KB |
+| `atlas-relief.webp` · `atlas-relief-levant.webp` | Atlas terrain shading: whole region at 40 px/deg, plus a 240 px/deg Levant/Sinai/Nile patch (Natural Earth shaded relief; AWS Terrain Tiles/SRTM) | 368 KB · 208 KB |
 | `strongs-data.json` | Strong's lexicon (H/G) — lazy-loaded by the Strong's tab | 2.7 MB |
 | `ubs-data.json` | UBS lexicon senses — lazy-loaded by the UBS tab | 3.6 MB |
 | `dodson-data.json` | Dodson NT Greek lexicon — lazy-loaded by the Dodson tab (G numbers only) | 0.6 MB |
@@ -274,6 +274,14 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 27 — 2026-10-18 · Atlas extent widened
+
+**SW v60 → v61** · branch `feature/atlas-extent`
+
+The atlas bounds grew from 8-62°E / 10-46°N to **10°W-80°E / 8-48°N** so places at the edges of the biblical world fit: Spain (Romans 15:24, 28), India (Esther 1:1, 8:9), Dalmatia (2 Timothy 4:10), Cush/Ethiopia and Sheba to the south, the Adriatic and Rome to the west. `BBOX` in `SCRIPTS/build-atlas-basemap.mjs` and `W_/S_/E_/N_` in `SCRIPTS/build-atlas-relief.py` changed, both data files rebuilt, the Levant patch rebuilt for tone matching (`WORLD` in `build-atlas-relief-levant.py`), and `atlas.js` got the new default bounds, relief extent (`x:-10 y:-54.8588 w:90 h:46.8327`) and three more sea names (Arabian, Aegean, Adriatic). **Bug fixed on the way:** the Caspian Sea was drawn as land because inland seas are holes in Natural Earth's land polygons; the basemap now keeps holes over 0.5 sq deg (`holes`) and the land fill, relief clip and coast use `evenodd`. Basemap is now 550 KB (more rivers: Ganges, Indus, Danube, Nile headwaters and West African rivers also show; trim by name in the script if size matters). Checked in the demo: Iberia, Italy, Adriatic, Indus/India, Caspian. Not rechecked on a phone or the live site.
 
 ---
 
@@ -531,7 +539,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v60
+├── service-worker.js             PWA cache — current version: coc-bible-v61
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
