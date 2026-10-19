@@ -88,6 +88,18 @@
 .atlas .a-layers{position:absolute;left:10px;top:10px;max-width:220px;padding:8px 10px;border-radius:8px;background:var(--atlas-ui);color:var(--atlas-ink);font-size:13px;cursor:default;box-shadow:0 1px 4px #0003}
 .atlas .a-layers label{display:flex;gap:6px;align-items:center;padding:3px 0;cursor:pointer}
 .atlas .a-layers h4{margin:6px 0 2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.65}
+.atlas .a-search{position:absolute;left:10px;top:10px;right:60px;max-width:340px;z-index:3;cursor:default}
+.atlas .a-search input{width:100%;box-sizing:border-box;height:38px;padding:0 34px 0 12px;font:inherit;font-size:14px;border:1px solid #0003;border-radius:8px;background:var(--atlas-ui);color:var(--atlas-ink);outline:none}
+.atlas .a-search input:focus{border-color:var(--atlas-accent)}
+.atlas .a-search .a-x{position:absolute;right:2px;top:2px;width:34px;height:34px;border:0;background:none;color:var(--atlas-ink);font-size:16px;cursor:pointer;opacity:.6;display:none}
+.atlas .a-search.has-text .a-x{display:block}
+.atlas .a-results{list-style:none;margin:4px 0 0;padding:4px 0;max-height:260px;overflow-y:auto;border-radius:8px;background:var(--atlas-ui);color:var(--atlas-ink);box-shadow:0 2px 8px #0004;display:none}
+.atlas .a-results.open{display:block}
+.atlas .a-results li{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;font-size:14px;cursor:pointer}
+.atlas .a-results li.on,.atlas .a-results li:hover{background:#7d7d7d33}
+.atlas .a-results small{opacity:.6;white-space:nowrap}
+.atlas .a-note{position:absolute;left:50%;transform:translateX(-50%);bottom:30px;max-width:calc(100% - 24px);padding:7px 12px;border-radius:8px;background:var(--atlas-ui);color:var(--atlas-ink);font-size:13px;line-height:1.4;box-shadow:0 1px 4px #0003;text-align:center;pointer-events:none;display:none}
+.atlas .a-note.show{display:block}
 .atlas .a-credit{position:absolute;left:8px;bottom:6px;font-size:10px;color:var(--atlas-ink);opacity:.7;background:var(--atlas-ui);padding:1px 5px;border-radius:4px;pointer-events:none}`;
 
   // ---------------------------------------------------------------- emitter
@@ -208,7 +220,8 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
         const k = this.kinds[it.kind] || {};
         const g = svgEl('g', { class: 'a-pin' }, this.g);
         const c = svgEl('circle', { r: k.r || this.r }, g);
-        if (k.color) c.style.fill = k.color;
+        if (k.hollow) { c.style.fill = 'var(--atlas-halo)'; c.style.stroke = k.color; c.style.strokeWidth = '2.5'; }
+        else if (k.color) c.style.fill = k.color;
         this.nodes.set(it.id, g); it._g = g;
       });
     }
@@ -310,6 +323,124 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
     }
   }
 
+
+  // Bible places (OpenBible.info Bible Geocoding Data): src = atlas-places.json from build-atlas-places.py
+  //   places [name, lon, lat, kind, conf, aliases, nalts, nverses]   ch { 'Gen.12': [placeIndex...] }
+  // Shows only what you ask for: showChapter() = the places named in one chapter; pin() = one searched place.
+  const KIND_STYLE = { c: ['#c0392b', 'city or site'], r: ['#8e44ad', 'region'], m: ['#a0522d', 'mountain or hill'], w: ['#2e86c1', 'river, sea or spring'], o: ['#7f8c8d', 'place'] };
+  const CONF_TEXT = ['uncertain location', 'probable location', 'secure location'];
+  const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+  class PlacesLayer extends PointLayer {
+    constructor(id, o = {}) {
+      const kinds = {};
+      for (const k in KIND_STYLE) {
+        kinds[k + '2'] = { color: KIND_STYLE[k][0], r: 5.5 };
+        kinds[k + '1'] = { color: KIND_STYLE[k][0], r: 4.5 };
+        kinds[k + '0'] = { color: KIND_STYLE[k][0], r: 4.5, hollow: true };
+      }
+      super(id, Object.assign({ name: 'Places', kinds }, o));
+      this.all = []; this.ch = {}; this.chapterKey = null; this.pinnedId = null; this.opts = o;
+    }
+    async mount(atlas) {
+      const d = await atlas.load(atlas.url(this.src || 'atlas-places.json'));
+      this.ch = d.ch;
+      this.all = d.places.map((p, i) => ({
+        id: i, label: p[0], lon: p[1], lat: p[2], kindCode: p[3], conf: p[4], aliases: p[5], alts: p[6], nv: p[7] || 0, fid: p[8] || p[0],
+        kind: p[3] + p[4], priority: p[4] * 3 + (p[3] === 'c' ? 2 : p[3] === 'r' ? 0 : 1), _n: norm(p[0]), _a: p[5].map(norm)
+      }));
+      this.items = [];
+      if (atlas.creditEl && atlas.creditEl.textContent.indexOf('OpenBible') < 0) atlas.creditEl.textContent += ' · Places: OpenBible.info (CC BY 4.0)';
+      this._buildUI(atlas);
+      atlas.on('select', e => this._info(e && e.layer === this.id ? e.item : null));
+    }
+    unmount() { if (this.box) this.box.remove(); if (this.note) this.note.remove(); }
+    // ---- what is on the map
+    _visibleIds() {
+      const ids = new Set(this.ch[this.chapterKey] || []);
+      if (this.pinnedId != null) ids.add(this.pinnedId);
+      return [...ids];
+    }
+    _refresh() { this.setItems(this._visibleIds().map(i => this.all[i])); }
+    showChapter(key, o = {}) {                       // key like 'Acts.27'; o.ref = 'Acts 27' for messages
+      this.chapterKey = key; this.pinnedId = null; this.atlas.select(null);
+      this._refresh();
+      if (this.input) { this.input.value = ''; this._results([]); this.box.classList.remove('has-text'); }
+      if (!this.items.length) { this._say('No places are named in ' + (o.ref || 'this chapter') + '.'); return; }
+      this._say('');
+      if (o.fit === false) return;
+      const lons = this.items.map(i => i.lon), lats = this.items.map(i => i.lat);
+      if (this.items.length === 1) this.atlas.flyTo(lons[0], lats[0], 60);
+      else this.atlas.fitBounds([Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)], 50, true, 250);
+    }
+    pin(id) {                                         // show one searched place and fly to it
+      const it = this.all[id]; if (!it) return;
+      this.pinnedId = id; this._refresh(); this._say('');
+      this.atlas.flyTo(it.lon, it.lat, Math.max(60, Math.min(this.atlas.view.s, 250)));
+      this.atlas.select(this.id, id, it);
+    }
+    clearPin() { this.pinnedId = null; this.atlas.select(null); this._refresh(); }
+    search(q) {
+      q = norm(q.trim()); if (!q) return [];
+      const out = [];
+      for (const it of this.all) {
+        let r = it._n === q ? 0 : it._n.startsWith(q) ? 1 : it._a.some(a => a === q) ? 2 : it._a.some(a => a.startsWith(q)) ? 3 : it._n.includes(q) ? 4 : it._a.some(a => a.includes(q)) ? 5 : -1;
+        if (r >= 0) out.push([r, -it.nv, it._n, it]);      // better match first, then the more often mentioned place
+      }
+      out.sort((a, b) => a[0] - b[0] || a[1] - b[1] || (a[2] < b[2] ? -1 : 1));
+      return out.slice(0, 8).map(x => x[3]);
+    }
+    // ---- UI: search box, notice, info line
+    _buildUI(atlas) {
+      const box = this.box = document.createElement('div'); box.className = 'a-search';
+      const input = this.input = document.createElement('input');
+      input.type = 'search'; input.placeholder = 'Search places…'; input.autocomplete = 'off'; input.spellcheck = false;
+      input.setAttribute('aria-label', 'Search for a place'); input.setAttribute('enterkeyhint', 'search');
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'a-x'; x.textContent = '✕'; x.setAttribute('aria-label', 'Clear search');
+      const list = this.list = document.createElement('ul'); list.className = 'a-results'; list.setAttribute('role', 'listbox');
+      box.append(input, x, list); atlas.host.appendChild(box);
+      const note = this.note = document.createElement('div'); note.className = 'a-note'; note.setAttribute('role', 'status'); atlas.host.appendChild(note);
+      let matches = [], active = 0;
+      this._results = ms => {
+        matches = ms; active = 0; list.textContent = '';
+        ms.forEach((it, i) => {
+          const li = document.createElement('li'); li.setAttribute('role', 'option');
+          if (i === 0) li.className = 'on';
+          const a = document.createElement('span'); a.textContent = it.fid;   // 'Babylon 2' tells same-named places apart
+          const b = document.createElement('small'); b.textContent = KIND_STYLE[it.kindCode][1];
+          li.append(a, b);
+          li.addEventListener('pointerdown', e => { e.preventDefault(); choose(it); });
+          list.appendChild(li);
+        });
+        list.classList.toggle('open', ms.length > 0);
+      };
+      const mark = () => [...list.children].forEach((li, i) => li.classList.toggle('on', i === active));
+      const choose = it => { input.value = it.fid; box.classList.add('has-text'); this._results([]); input.blur(); this.pin(it.id); };
+      input.addEventListener('input', () => {
+        box.classList.toggle('has-text', input.value.length > 0);
+        const ms = this.search(input.value); this._results(ms);
+        if (input.value.trim() && !ms.length) this._say('No place matches “' + input.value.trim() + '”.'); else this._say('');
+      });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown' && matches.length) { e.preventDefault(); active = (active + 1) % matches.length; mark(); }
+        else if (e.key === 'ArrowUp' && matches.length) { e.preventDefault(); active = (active + matches.length - 1) % matches.length; mark(); }
+        else if (e.key === 'Enter' && matches.length) { e.preventDefault(); choose(matches[active]); }
+        else if (e.key === 'Escape') { e.stopPropagation(); x.click(); input.blur(); }
+      });
+      input.addEventListener('blur', () => setTimeout(() => list.classList.remove('open'), 120));
+      x.addEventListener('click', () => { input.value = ''; box.classList.remove('has-text'); this._results([]); this._say(''); if (this.pinnedId != null) this.clearPin(); });
+    }
+    _say(text) { if (!this.note) return; this.note.textContent = text; this.note.classList.toggle('show', !!text); }
+    _info(it) {
+      if (!it) { if (this.note && this._infoOn) this._say(''); this._infoOn = false; return; }
+      this._infoOn = true;
+      const extra = it.alts ? ' · ' + it.alts + ' other proposed site' + (it.alts > 1 ? 's' : '') : '';
+      const also = it.aliases.length ? ' (also ' + it.aliases.slice(0, 2).join(', ') + ')' : '';
+      const what = it.kindCode === 'r' ? 'region (pin at its centre)' : KIND_STYLE[it.kindCode][1];
+      this._say(it.label + also + ' — ' + what + ', ' + CONF_TEXT[it.conf] + extra);
+    }
+  }
+
   // ---------------------------------------------------------------- Atlas
   const measureCtx = document.createElement('canvas').getContext('2d');
   const widthCache = new Map();
@@ -346,9 +477,21 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
       this.ready = this.opts.basemap ? Promise.all(Atlas.basemap().map(l => this.addLayer(l))) : Promise.resolve();
     }
     url(p) { return /^(https?:)?\/\//.test(p) || p[0] === '/' ? p : this.opts.base + p; }
-    load(url) {                                       // memoised JSON fetch, shared by layers
-      if (!this._cache.has(url)) this._cache.set(url, fetch(url, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); }));
+    load(url) {                                       // memoised JSON fetch, shared by layers; retries, never caches a failure
+      if (!this._cache.has(url)) this._cache.set(url, this._fetchJson(url, 2).catch(e => { this._cache.delete(url); throw e; }));
       return this._cache.get(url);
+    }
+    async _fetchJson(url, retries) {
+      for (let i = 0; ; i++) {
+        try {
+          const r = await fetch(url, { cache: 'no-cache' });
+          if (!r.ok) throw new Error(url + ' ' + r.status);
+          return await r.json();
+        } catch (e) {
+          if (i >= retries) throw e;
+          await new Promise(res => setTimeout(res, 400 * (i + 1)));
+        }
+      }
     }
     projection() { return { project: (lon, lat) => [projX(lon), projY(lat)], unproject: (x, y) => [x, unprojY(y)] }; }
     project(lon, lat) { return [projX(lon), projY(lat)]; }
@@ -401,16 +544,16 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
       if (!animate || !this.view) { this.view = v; this.invalidate(); return; }
       const a = Object.assign({}, this.view), t0 = performance.now(), dur = typeof animate === 'number' ? animate : 600;
       const step = now => {
-        const k = Math.min(1, (now - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        const k = Math.max(0, Math.min(1, (now - t0) / dur)), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
         this.view = { cx: a.cx + (v.cx - a.cx) * e, cy: a.cy + (v.cy - a.cy) * e, s: a.s * Math.pow(v.s / a.s, e) };
         this.invalidate(); if (k < 1) this._anim = requestAnimationFrame(step);
       };
       this._anim = requestAnimationFrame(step);
     }
     flyTo(lon, lat, s, animate = true) { this.setView({ cx: projX(lon), cy: projY(lat), s: s || this.view.s }, animate); }
-    fitBounds(b, pad = 40, animate = true) {                 // b = [west, south, east, north] in degrees
+    fitBounds(b, pad = 40, animate = true, maxS = Infinity) {                 // b = [west, south, east, north] in degrees
       const x0 = projX(b[0]), x1 = projX(b[2]), y0 = projY(b[3]), y1 = projY(b[1]);
-      const s = Math.min((this.W - 2 * pad) / Math.max(x1 - x0, 1e-6), (this.H - 2 * pad) / Math.max(y1 - y0, 1e-6));
+      const s = Math.min((this.W - 2 * pad) / Math.max(x1 - x0, 1e-6), (this.H - 2 * pad) / Math.max(y1 - y0, 1e-6), maxS);
       this.setView({ cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, s }, animate);
     }
     zoomAt(f, px, py) {
@@ -483,9 +626,9 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
     // ---- input
     _bindInput() {
       const h = this.host, ptrs = new Map(); let last = 0, moved = 0, t0 = 0;
-      h.addEventListener('wheel', e => { e.preventDefault(); const r = h.getBoundingClientRect(); this.zoomAt(Math.exp(-e.deltaY * .0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+      h.addEventListener('wheel', e => { if (e.target.closest && e.target.closest('.a-results')) return; e.preventDefault(); const r = h.getBoundingClientRect(); this.zoomAt(Math.exp(-e.deltaY * .0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
       h.addEventListener('pointerdown', e => {
-        if (e.target.closest('.a-ctl,.a-layers')) return;
+        if (e.target.closest('.a-ctl,.a-layers,.a-search,.a-note')) return;
         h.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); last = 0; if (ptrs.size === 1) { moved = 0; t0 = performance.now(); }
       });
       h.addEventListener('pointermove', e => {
@@ -506,6 +649,7 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
       };
       h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
       h.addEventListener('keydown', e => {
+        if (e.target.closest && e.target.closest('input,textarea')) return;   // typing in the search box
         const v = this.view; if (!v) return; const step = 60 / v.s;
         const m = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
         if (m) { e.preventDefault(); this.setView({ cx: v.cx + m[0], cy: v.cy + m[1] }); }
@@ -558,6 +702,6 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
   }
 
   Atlas.basemap = o => [new LandLayer(), new ReliefLayer(o && o.relief), new WaterLayer(), new NamesLayer(o && o.names)];
-  Object.assign(Atlas, { Layer, ItemLayer, PointLayer, PathLayer, PolygonLayer, LandLayer, ReliefLayer, WaterLayer, NamesLayer });
+  Object.assign(Atlas, { Layer, ItemLayer, PointLayer, PathLayer, PolygonLayer, PlacesLayer, LandLayer, ReliefLayer, WaterLayer, NamesLayer });
   global.Atlas = Atlas;
 })(window);

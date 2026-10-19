@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Sessions 22-24, 26-28 · SW `coc-bible-v62`*
+*Last updated: 2026-10-18 · Sessions 22-24, 26-29 · SW `coc-bible-v63`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v62`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v63`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -81,6 +81,7 @@ All JSON files live at repo root and are fetched on demand:
 | `plates-schnorr.json` | Schnorr von Carolsfeld plate index (223 entries; 119 are marked `skip:true` because Doré already illustrates the passage; 104 are shown) | 35 KB |
 | `plates/schnorr/*.webp` | *Die Bibel in Bildern* (1860) woodcuts shown as infill: 104 files, mostly lossless full-size bilevel, the rest lossy; all ≤ 190 KB | 8.7 MB total |
 | `atlas.js` | Layered offline map module for the Atlas panel (see Session 26) — loaded on first open, network-first in the worker | 33 KB |
+| `atlas-places.json` | Atlas places: 1,275 biblical places with best-guess coordinates, confidence, aliases, and a chapter → places index (OpenBible.info Bible Geocoding Data, CC BY 4.0) | 103 KB |
 | `atlas-basemap.json` | Atlas basemap: coast, lakes, rivers, Caspian hole for 10°W-80°E / 8-48°N, Spain to India (Natural Earth 10m, public domain) | 550 KB |
 | `atlas-relief.webp` · `atlas-relief-levant.webp` | Atlas terrain shading: whole region at 40 px/deg, plus a 240 px/deg Levant/Sinai/Nile patch (Natural Earth shaded relief; AWS Terrain Tiles/SRTM) | 368 KB · 208 KB |
 | `strongs-data.json` | Strong's lexicon (H/G) — lazy-loaded by the Strong's tab | 2.7 MB |
@@ -181,7 +182,8 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 | Highlight tags (multi-tag, filter in panel) | 20 | #70–73 |
 | My Highlights panel (filter by book, colour, tag) | 19–20 | #68, #70, #73 |
 | Google OAuth (PKCE, shows toddsroadcoctt.org) | 17, 20 | #56–57, #72 |
-| Atlas panel: offline basemap + layer framework (no places yet) | 26 | — |
+| Atlas panel: offline basemap + layer framework | 26 | #104-106 |
+| Atlas places: pins follow the chapter being read, place search, enlarge button | 29 | — |
 
 ### Pending — Bible Reader
 
@@ -191,7 +193,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 - [ ] **Verse-level notes** — short personal note per verse in localStorage
 - [ ] **Reading plans** — 365-day / NT-in-90 / custom; daily progress tracker in localStorage
 - [x] ~~**Print stylesheet**~~ — shipped (#97). Applied rules checked in the browser; a real print preview / PDF has not been checked
-- [ ] **Atlas places layer** — the panel shows the basemap only. Next: build `atlas.json` from `openbibleinfo/Bible-Geocoding-Data` (`ancient.jsonl`, CC BY 4.0, credit OpenBible.info) and add a `PointLayer`; then chapter filtering via `layer.setFilter`, journeys (`PathLayer`), regions (`PolygonLayer`)
+- [ ] **Atlas next steps** — verse-level pins (tap a place to see its verses), journeys (`PathLayer`, e.g. Paul's voyages), regions as shapes (`PolygonLayer`, geometry files in the Geocoding data), elevation-tiled relief for sharper zoom (plan in the Session 29 notes), a colour legend, real phone / airplane-mode check
 - [ ] **Search streaming** — full JSON load on first search stalls on slow devices; chunked `setTimeout` yield
 
 ### Pending — Homepage (`index.html`)
@@ -274,6 +276,23 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 29 — 2026-10-18 · Atlas places and search
+
+**SW v62 → v63** · branch `feature/atlas-places`
+
+The atlas now shows the places named in the chapter being read, and has a search box.
+
+- **Chapter follows the reader.** `renderPassage()` calls `atlasSync()` on every navigation (all modes). While the panel is open, `PlacesLayer.showChapter('Acts.27')` replaces the pins with that chapter's places and fits the view (capped at 250 px/deg; one place flies to it at 60). While the panel is closed the change is remembered (`atlasDirty`) and applied on open. The panel title reads "Atlas · Acts 27"; a chapter with no places says so ("No places are named in Genesis 1."). `OSIS_BOOKS` in `bible-reader.html` must stay in the canonical order of `BOOKS`.
+- **Search.** Box at the top of the map: prefix and substring match on names and alternative spellings (Zion, Mount Zion…), ranked by match quality then by how often the place is mentioned; arrow keys + Enter, Esc or ✕ clears. Choosing a result pins it (even if not in the chapter), flies to it and labels it; the line at the bottom of the map says what it is ("Dalmatia — region (pin at its centre), secure location"). The pin is dropped on the next chapter change. Same-named places show as "Babylon 2" etc. in the list.
+- **Pins.** Colour = kind (red city/site, purple region, brown mountain/hill, blue water, grey other); hollow dashed ring = uncertain location (14 places). Tap a pin for the info line, which also says how many other sites scholars propose.
+- **Enlarge button** (⤢) in the panel header: wide panel on desktop (overlays the text), nearly full-height sheet on phones. Needed because the map cannot zoom out past its limits, so a narrow panel cannot show places that are far apart (Esther 1: Ethiopia to India).
+- **Data.** `atlas-places.json` (103 KB) is built by `SCRIPTS/build-atlas-places.py` from `ancient.jsonl` (cache in `SCRIPTS/atlas-cache/geo/`). For each place it takes the highest-scoring identification (`score.time_total`) and its best resolution; confidence = 2 (≥500) / 1 (≥100) / 0; places with no coordinate (7: unknown, not a place…) and places never named in a translation (60) are dropped; 847 chapters have at least one place. Regions and rivers are a single representative point, not their outline. **Credit:** OpenBible.info (CC BY 4.0) is in the map's corner credit.
+- **Bugs fixed on the way.** The fly-to animation could compute a negative progress when rAF timestamps preceded the start time (view zoom collapsed to 0): progress is now clamped to 0..1. `Atlas.load()` now retries twice and no longer caches a failed fetch (one failed basemap download used to leave the land layer empty until reload). Typing in the search box no longer pans/zooms the map (keys) and the dropdown scrolls instead of zooming (wheel).
+- **Parked idea (not built): sharper relief at high zoom.** Tiled hillshade pyramid `relief/{z}/{x}/{y}.webp` from AWS Terrarium tiles (z9 ≈ 300 m/px, z10 150 m, z11 75 m) with per-zoom shading, 2-3 light directions and a faint elevation tint; ~40 MB for z5-z9 key regions + z10 Holy Land (or ~25 MB lighter). New `ReliefTileLayer` over the existing images; worker caches tiles as viewed.
+- **Tested** (local Node static server, real Chrome pane; the Python server dropped large files and made the map look empty): Acts 27, Esther 1 (enlarged: all five places in view), Titus 1, Genesis 1 (empty), John 4, search ("jeru", "dalm", "spa", "rom"), pin cleared on navigation, dark theme, phone width. **Not tested:** a real phone, airplane mode, a screen reader; pins are not keyboard-focusable.
 
 ---
 
@@ -548,7 +567,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v62
+├── service-worker.js             PWA cache — current version: coc-bible-v63
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
