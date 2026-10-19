@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-18 · Sessions 22-24, 26-27 · SW `coc-bible-v61`*
+*Last updated: 2026-10-18 · Sessions 22-24, 26-28 · SW `coc-bible-v62`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v61`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v62`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -274,6 +274,15 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 28 — 2026-10-18 · Atlas menu order and stale-cache fix
+
+**SW v61 → v62** · branch `feature/atlas-polish`
+
+- **Menu:** Atlas now sits above Notes in the Study menu.
+- **Stale-file bug (found verifying PR #105 live).** The host sends `Cache-Control: max-age=1333600` (~15 days) on static files, so after a deploy the browser's HTTP cache kept serving the old `atlas.js` (`transferSize 0`) and the edge limits from #105 did not show. Fixes: the Atlas loader fetches `/atlas.js` with `cache:'no-cache'` and injects it as an inline script; the worker's network-first and cache-miss fetches use `{cache:'no-cache'}` (revalidate, cheap 304); `Atlas.load()` revalidates its JSON. Lesson for any new asset: do not rely on a plain `<script src>`/`fetch` behind that max-age; and when verifying a deploy, compare `transferSize` or fetch with `cache:'no-store'`. Other static assets (plain `<img>` plates, etc.) still sit behind the host's max-age until the worker cache is rebuilt on a version bump.
 
 ---
 
@@ -539,7 +548,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v61
+├── service-worker.js             PWA cache — current version: coc-bible-v62
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons

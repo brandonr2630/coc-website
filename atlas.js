@@ -347,7 +347,7 @@ const landPath = m => m._landD || (m._landD = m.land.concat(m.holes || []).map(r
     }
     url(p) { return /^(https?:)?\/\//.test(p) || p[0] === '/' ? p : this.opts.base + p; }
     load(url) {                                       // memoised JSON fetch, shared by layers
-      if (!this._cache.has(url)) this._cache.set(url, fetch(url).then(r => { if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); }));
+      if (!this._cache.has(url)) this._cache.set(url, fetch(url, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); }));
       return this._cache.get(url);
     }
     projection() { return { project: (lon, lat) => [projX(lon), projY(lat)], unproject: (x, y) => [x, unprojY(y)] }; }

@@ -4,7 +4,7 @@
 //   Local JSONs → cached on first fetch (cache-on-demand)
 //   External APIs (bolls.life, fonts) → network only
 
-const CACHE = 'coc-bible-v61';
+const CACHE = 'coc-bible-v62';
 
 // The page itself must cache or install fails; the rest are best-effort so one
 // missing asset (e.g. a 404 after a partial deploy) cannot block the worker.
@@ -53,7 +53,7 @@ function isNetworkFirst(request, url) {
 }
 
 function networkFirst(request) {
-  const fromNetwork = fetch(request).then(response => {
+  const fromNetwork = fetch(request, { cache: 'no-cache' }).then(response => {
     if (response.ok && request.method === 'GET') {
       const clone = response.clone();
       caches.open(CACHE).then(cache => cache.put(request, clone));
@@ -87,7 +87,8 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
-      return fetch(request).then(response => {
+      // no-cache = revalidate: the host's max-age (~15 days) must not feed stale files into a fresh cache
+      return fetch(request, { cache: 'no-cache' }).then(response => {
         if (response.ok && request.method === 'GET') {
           const clone = response.clone();
           caches.open(CACHE).then(cache => cache.put(request, clone));
