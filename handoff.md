@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-23 · Sessions 22-24, 26-31 · SW `coc-bible-v65`*
+*Last updated: 2026-10-25 · Sessions 22-24, 26-32 · SW `coc-bible-v66`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v65`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v66`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -322,7 +322,7 @@ The atlas now shows the places named in the chapter being read, and has a search
 - **Enlarge button** (⤢) in the panel header: wide panel on desktop (overlays the text), nearly full-height sheet on phones. Needed because the map cannot zoom out past its limits, so a narrow panel cannot show places that are far apart (Esther 1: Ethiopia to India).
 - **Data.** `atlas-places.json` (103 KB) is built by `SCRIPTS/build-atlas-places.py` from `ancient.jsonl` (cache in `SCRIPTS/atlas-cache/geo/`). For each place it takes the highest-scoring identification (`score.time_total`) and its best resolution; confidence = 2 (≥500) / 1 (≥100) / 0; places with no coordinate (7: unknown, not a place…) and places never named in a translation (60) are dropped; 847 chapters have at least one place. Regions and rivers are a single representative point, not their outline. **Credit:** OpenBible.info (CC BY 4.0) is in the map's corner credit.
 - **Bugs fixed on the way.** The fly-to animation could compute a negative progress when rAF timestamps preceded the start time (view zoom collapsed to 0): progress is now clamped to 0..1. `Atlas.load()` now retries twice and no longer caches a failed fetch (one failed basemap download used to leave the land layer empty until reload). Typing in the search box no longer pans/zooms the map (keys) and the dropdown scrolls instead of zooming (wheel).
-- **Open question (user asked for a "widen toggle" after it shipped).** The ⤢ button already exists but is small and faint, so it was missed. Offered, not decided: make it a labelled button ("Wider" / "Narrower") and/or remember the choice in `localStorage` (`lsGet/lsSet`) so the panel opens wide next time.
+- **Widen toggle (resolved 2026-10-25, SW v66).** The ⤢ button is now labelled "Wider" / "Narrower" and the choice is remembered in `localStorage` (`coc-atlas-wide`), applied on first open of the panel. Checked in the browser on desktop width (toggle, labels, aria, persistence across reload); not checked on a real phone.
 - **Working on the atlas (for the next session).** Assets and `atlas.js` live at the repo root; the data pipeline is `SCRIPTS/build-atlas-*.{mjs,py}` (gitignored, local only, caches in `SCRIPTS/atlas-cache/`, ~250 MB + geo data) and `SCRIPTS/atlas-demo.html` is a sample-data demo of the layer API. Rebuild order: `build-atlas-basemap.mjs` → `build-atlas-relief.py` → `build-atlas-relief-levant.py` (tone-matches to the world relief; its `WORLD` extent must match the printed extent) → `build-atlas-places.py`; copy the outputs to the repo root, update the extents printed by the relief scripts in `atlas.js` (`DEFAULT_RELIEF`), bump the service worker. Test locally with a Node static server, not `python -m http.server` (it drops large files in the Browser pane, which looked like an empty map); the pane stalls `requestAnimationFrame` and `ResizeObserver` while hidden, so call `atlas._render()` / `atlas._resize()` in tests. The host's `max-age` (~15 days) applies to static files: verify deploys with `transferSize` or `cache:'no-store'`. Session worktrees live in `.worktrees/` (excluded in `.git/info/exclude`).
 - **Parked idea (not built): sharper relief at high zoom.** Tiled hillshade pyramid `relief/{z}/{x}/{y}.webp` from AWS Terrarium tiles (z9 ≈ 300 m/px, z10 150 m, z11 75 m) with per-zoom shading, 2-3 light directions and a faint elevation tint; ~40 MB for z5-z9 key regions + z10 Holy Land (or ~25 MB lighter). New `ReliefTileLayer` over the existing images; worker caches tiles as viewed.
 - **Tested** (local Node static server, real Chrome pane; the Python server dropped large files and made the map look empty): Acts 27, Esther 1 (enlarged: all five places in view), Titus 1, Genesis 1 (empty), John 4, search ("jeru", "dalm", "spa", "rom"), pin cleared on navigation, dark theme, phone width. **Not tested:** a real phone, airplane mode, a screen reader; pins are not keyboard-focusable.
@@ -600,7 +600,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v65
+├── service-worker.js             PWA cache — current version: coc-bible-v66
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
