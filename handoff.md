@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-23 · Sessions 22-24, 26-30 · SW `coc-bible-v64`*
+*Last updated: 2026-10-23 · Sessions 22-24, 26-31 · SW `coc-bible-v65`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v64`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v65`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -183,6 +183,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 | My Highlights panel (filter by book, colour, tag) | 19–20 | #68, #70, #73 |
 | Google OAuth (PKCE, shows toddsroadcoctt.org) | 17, 20 | #56–57, #72 |
 | Predictive fetching of adjacent chapters (NKJV only) | 30 | #109 |
+| Verses top-align across columns (parallel, interlinear) | 31 | #110 |
 | Atlas panel: offline basemap + layer framework | 26 | #104-106 |
 | Atlas places: pins follow the chapter being read, place search, enlarge button | 29 | — |
 
@@ -277,6 +278,20 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 31 — 2026-10-25 · Verses top-align across columns
+
+**SW v64 → v65** · branch `claude/parallel-row-align`
+
+In parallel and interlinear mode, verse N now starts at the same height in both columns. Before, each column flowed on its own and drifted as text lengths differed.
+
+- **How.** Verse blocks in both columns carry `data-align="<verse>"`. `alignRows(area)` measures every block's top (all reads first), then inserts empty `.align-spacer` divs before the blocks that sit higher, so the shorter side gets blank space under its verse. Verses missing from one column are handled the same way. It runs after the columns are in the page (interlinear: after its async column fills), again when `document.fonts.ready` resolves, and on window resize (150 ms debounce).
+- **Phone.** At 640 px and under the columns stack, so the spacers are removed and nothing else changes.
+- **Commentary mode deliberately not aligned** (owner's call): commentary entries are long and cover verse ranges, so alignment would leave large gaps in the text column. The `data-align` hooks and `alignRows` would work there if that is ever reversed.
+- **Expect gaps in interlinear.** Interlinear verses stack words vertically, so every verse is taller than the translation and the left column has blank space under each one.
+- **Tested** (local Node server, browser pane): KJV | YLT on John 1, John 3 and Psalm 119 (176 verses), Greek interlinear John 3, Hebrew interlinear Genesis 1: every verse top matched within 0 px. Commentary shows no spacers. At 375 px: no spacers, no horizontal overflow; widening back re-aligned. **Not tested:** a real phone, widths between 641 and 900 px on a real tablet, a screen reader (spacers are `aria-hidden`).
 
 ---
 
@@ -585,7 +600,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v64
+├── service-worker.js             PWA cache — current version: coc-bible-v65
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
