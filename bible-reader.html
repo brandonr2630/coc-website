@@ -1561,6 +1561,8 @@
       padding: 12px 14px 10px; border-bottom: 1px solid var(--line);
     }
     .atlas-head-btns { display: flex; align-items: center; gap: 2px; }
+    .atlas-wide-btn { gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--charcoal); border: 1px solid var(--line); margin-right: 4px; }
+    .atlas-wide-btn span:first-child { font-size: 1rem; line-height: 1; }
     .atlas-panel.atlas-wide { width: min(1000px, 72vw); }
     body.atlas-open.atlas-wide .page-wrap { margin-right: 0; }
     .atlas-map { flex: 1; min-height: 0; position: relative; }
@@ -8153,7 +8155,7 @@ const LOGO_B64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAREBEQ
     <div class="atlas-panel-head">
       <span class="hl-panel-title">Atlas</span>
       <span class="atlas-head-btns">
-        <button class="hl-panel-close" id="atlas-wide-btn" onclick="toggleAtlasWide()" aria-label="Enlarge atlas" aria-pressed="false" title="Enlarge">&#10530;</button>
+        <button class="hl-panel-close atlas-wide-btn" id="atlas-wide-btn" onclick="toggleAtlasWide()" aria-label="Make atlas wider" aria-pressed="false" title="Make the atlas wider"><span aria-hidden="true">&#10530;</span><span class="atlas-wide-label">Wider</span></button>
         <button class="hl-panel-close" onclick="closeAtlasPanel()" aria-label="Close atlas">&#10005;</button>
       </span>
     </div>
@@ -9066,6 +9068,7 @@ function shareCtxCopy() {
     const dd = document.getElementById('study-dropdown-menu');
     if (dd) dd.classList.remove('open');
     closeHighlightsPanel();
+    if (!atlasWidePrefApplied) { atlasWidePrefApplied = true; if (lsGet('coc-atlas-wide') === '1') setAtlasWide(true); }
     document.getElementById('atlas-panel').classList.add('visible');
     document.body.classList.add('atlas-open');
     const host = document.getElementById('atlas-map');
@@ -9092,14 +9095,22 @@ function shareCtxCopy() {
   }
 
   // Enlarge: a bigger map fits places that are far apart (Esther 1 spans Ethiopia to India)
-  function toggleAtlasWide() {
-    const on = document.getElementById('atlas-panel').classList.toggle('atlas-wide');
+  // The choice is remembered (localStorage) so the panel opens the same size next time.
+  let atlasWidePrefApplied = false;
+  function setAtlasWide(on) {
+    document.getElementById('atlas-panel').classList.toggle('atlas-wide', on);
     document.body.classList.toggle('atlas-wide', on);
     const b = document.getElementById('atlas-wide-btn');
     b.setAttribute('aria-pressed', String(on));
-    b.setAttribute('aria-label', on ? 'Shrink atlas' : 'Enlarge atlas');
-    b.title = on ? 'Shrink' : 'Enlarge';
+    b.setAttribute('aria-label', on ? 'Make atlas narrower' : 'Make atlas wider');
+    b.title = on ? 'Make the atlas narrower' : 'Make the atlas wider';
+    b.querySelector('.atlas-wide-label').textContent = on ? 'Narrower' : 'Wider';
     if (atlasInst) { atlasInst._resize(); atlasDirty = true; atlasSync(); }
+  }
+  function toggleAtlasWide() {
+    const on = !document.getElementById('atlas-panel').classList.contains('atlas-wide');
+    setAtlasWide(on);
+    lsSet('coc-atlas-wide', on ? '1' : '0');
   }
 
   // The atlas shows the places named in the chapter being read. renderPassage() calls atlasSync()
