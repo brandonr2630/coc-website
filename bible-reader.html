@@ -4784,21 +4784,66 @@ async function processBollsQueue() {
     processBollsQueue();
   }
 }
-function queueBollsRequest(fn) {
+// Prefetch jobs are `low`: they queue behind every reader-initiated request.
+function queueBollsRequest(fn, low, key) {
   return new Promise((resolve, reject) => {
-    bollsRequestQueue.push({ fn, resolve, reject });
+    const job = { fn, resolve, reject, low: !!low, key };
+    if (job.low) {
+      bollsRequestQueue.push(job);
+    } else {
+      const i = bollsRequestQueue.findIndex(j => j.low);
+      if (i === -1) bollsRequestQueue.push(job); else bollsRequestQueue.splice(i, 0, job);
+    }
     processBollsQueue();
   });
 }
+// The reader asked for a chapter that is only waiting as a prefetch: move it to the front of the low jobs.
+function promoteBollsJob(key) {
+  const i = bollsRequestQueue.findIndex(j => j.key === key && j.low);
+  if (i === -1) return;
+  const job = bollsRequestQueue.splice(i, 1)[0];
+  job.low = false;
+  const first = bollsRequestQueue.findIndex(j => j.low);
+  if (first === -1) bollsRequestQueue.push(job); else bollsRequestQueue.splice(first, 0, job);
+}
 
 // ── NKJV — bolls.life API (copyright — cannot self-host) ──
-async function fetchBollsChapter(book, chapter, translation) {
+// Chapters already fetched this session (small LRU) and fetches still in flight, keyed "code:book:chapter".
+const BOLLS_DONE = new Map();
+const BOLLS_DONE_MAX = 40;
+const BOLLS_PENDING = new Map();
+let bollsPrefetchPausedUntil = 0;   // set after a 429 so background fetching backs off
+
+function fetchBollsChapter(book, chapter, translation, opts) {
+  const prefetch = !!(opts && opts.prefetch);
   const bookNum = getBollsBookNum(book);
+  const key = translation + ':' + bookNum + ':' + chapter;
+  if (BOLLS_DONE.has(key)) {
+    const hit = BOLLS_DONE.get(key);
+    BOLLS_DONE.delete(key); BOLLS_DONE.set(key, hit);   // refresh LRU position
+    return Promise.resolve(hit);
+  }
+  if (BOLLS_PENDING.has(key)) {
+    if (!prefetch) promoteBollsJob(key);
+    return BOLLS_PENDING.get(key);
+  }
+  const p = fetchBollsChapterNow(bookNum, chapter, translation, prefetch, key)
+    .then(verses => {
+      BOLLS_DONE.set(key, verses);
+      if (BOLLS_DONE.size > BOLLS_DONE_MAX) BOLLS_DONE.delete(BOLLS_DONE.keys().next().value);
+      return verses;
+    })
+    .finally(() => BOLLS_PENDING.delete(key));
+  BOLLS_PENDING.set(key, p);
+  return p;
+}
+
+async function fetchBollsChapterNow(bookNum, chapter, translation, prefetch, key) {
   const code = BOLLS_CODE[translation] || translation.toUpperCase();
   const url = `https://bolls.life/get-chapter/${code}/${bookNum}/${chapter}/`;
 
   return queueBollsRequest(async () => {
-    let retries = 3;
+    let retries = prefetch ? 1 : 3;   // a background fetch gets one try, never a backoff loop
     while (retries > 0) {
       const res = await fetch(url);
       if (res.ok) {
@@ -4817,6 +4862,7 @@ async function fetchBollsChapter(book, chapter, translation) {
         BIBLE_CACHE[translation][bookNum][chapter] = chCache;
         return verses;
       } else if (res.status === 429) {
+        bollsPrefetchPausedUntil = Date.now() + 60000;
         // Rate limited — wait and retry
         retries--;
         if (retries > 0) {
@@ -4829,7 +4875,38 @@ async function fetchBollsChapter(book, chapter, translation) {
         throw new Error(`bolls API error: ${res.status}`);
       }
     }
-  });
+  }, prefetch, key);
+}
+
+// ── Predictive fetching ──
+// Local translations hold every chapter in memory once their file is loaded, so only API-sourced
+// text (NKJV) needs this. After a chapter renders, quietly fetch the next one, then the previous one
+// (crossing book boundaries) so a swipe or arrow press is instant.
+function adjacentChapters() {
+  const out = [];
+  const idx = BOOKS.indexOf(currentBook);
+  if (currentChapter < currentBook.chapters) out.push({ book: currentBook, chapter: currentChapter + 1 });
+  else if (idx < BOOKS.length - 1) out.push({ book: BOOKS[idx + 1], chapter: 1 });
+  if (currentChapter > 1) out.push({ book: currentBook, chapter: currentChapter - 1 });
+  else if (idx > 0) out.push({ book: BOOKS[idx - 1], chapter: BOOKS[idx - 1].chapters });
+  return out;
+}
+
+function prefetchAdjacentChapters(token) {
+  if (LOCAL_TRANSLATIONS.has(currentTranslation)) return;
+  if (!navigator.onLine || Date.now() < bollsPrefetchPausedUntil) return;
+  const conn = navigator.connection;
+  if (conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || ''))) return;
+  const t = currentTranslation;
+  const run = async () => {
+    for (const a of adjacentChapters()) {
+      if (token !== renderToken || t !== currentTranslation) return;   // reader moved on
+      try { await fetchBollsChapter(a.book, a.chapter, t, { prefetch: true }); }
+      catch (e) { return; }   // offline or rate limited: stop quietly, the reader will fetch on demand
+    }
+  };
+  if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 3000 });
+  else setTimeout(run, 800);
 }
 
 async function fetchChapter(book, chapter, translation) {
@@ -5886,6 +5963,7 @@ async function renderPassage() {
       if (token !== renderToken) return;
     }
     applyHighlightsToPage();
+    prefetchAdjacentChapters(token);
 
     if (highlightVerse) {
       setTimeout(() => scrollToVerse(highlightVerse), 80);
