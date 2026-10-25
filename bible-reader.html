@@ -4350,6 +4350,7 @@ async function renderInterlinearColumn(colEl, bookNum, chapter, lang, edition) {
       const words = filterByEdition(rawWords, edition);
       const block = document.createElement('div');
       block.className = 'interlinear-verse-block';
+      block.dataset.align = vs;
 
       const num = document.createElement('span');
       num.className = 'interlinear-verse-num';
@@ -6324,6 +6325,41 @@ async function loadCommentaryChapter(key, bookName, chapter) {
 }
 
 // ── Render commentary passage ─────────────────────────────────────────────────
+// ── Row alignment for the two-column modes (parallel, interlinear) ──
+// Every verse block carries data-align="<verse>". We measure where each verse starts in both columns
+// and insert blank spacers so verse N starts at the same height in each; the column whose verse is
+// shorter simply gets empty space below it. Reads happen before any writes. Single-column phone
+// layout (<= 640px) has nothing to align, so spacers are only removed there.
+function alignRows(area) {
+  if (!area) return;
+  area.querySelectorAll('.align-spacer').forEach(s => s.remove());
+  const cols = area.querySelectorAll(':scope > .parallel-col');
+  if (cols.length !== 2 || window.matchMedia('(max-width: 640px)').matches) return;
+  const lists = [...cols].map(col => [...col.querySelectorAll('[data-align]')]);
+  const tops = lists.map(list => new Map(list.map(b => [parseInt(b.dataset.align, 10), b.getBoundingClientRect().top])));
+  const verses = [...new Set(lists.flat().map(b => parseInt(b.dataset.align, 10)))].sort((a, b) => a - b);
+  const shift = [0, 0];
+  verses.forEach(n => {
+    const present = [0, 1].filter(i => tops[i].has(n));
+    const target = Math.max(...present.map(i => tops[i].get(n) + shift[i]));
+    present.forEach(i => {
+      const extra = target - (tops[i].get(n) + shift[i]);
+      if (extra < 0.5) return;
+      const spacer = document.createElement('div');
+      spacer.className = 'align-spacer';
+      spacer.setAttribute('aria-hidden', 'true');
+      spacer.style.height = extra + 'px';
+      lists[i].find(b => parseInt(b.dataset.align, 10) === n).before(spacer);
+      shift[i] += extra;
+    });
+  });
+}
+let alignResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(alignResizeTimer);
+  alignResizeTimer = setTimeout(() => alignRows(document.getElementById('verses-area')), 150);
+});
+
 async function renderCommentaryPassage(area, token) {
   area.innerHTML = '<div class="state-msg"><div class="spinner"></div><p>Loading commentary…</p></div>';
   const info    = COMMENTARY_INFO[currentCommentary];
@@ -6479,6 +6515,7 @@ async function renderParallelPassage(area, token) {
       const blockA = document.createElement('div');
       blockA.className = 'parallel-verse-block' + (highlightVerse === v.verse ? ' highlighted' : '');
       blockA.dataset.verse = v.verse;
+      blockA.dataset.align = v.verse;
 
       const numA = document.createElement('sup');
       numA.className = 'parallel-verse-num';
@@ -6525,6 +6562,7 @@ async function renderParallelPassage(area, token) {
       const vB = mapB[v.verse];
       const blockB = document.createElement('div');
       blockB.className = 'parallel-verse-block' + (highlightVerse === v.verse ? ' highlighted' : '');
+      blockB.dataset.align = v.verse;
       const numB = document.createElement('sup');
       numB.className = 'parallel-verse-num';
       numB.textContent = v.verse;
@@ -6540,6 +6578,8 @@ async function renderParallelPassage(area, token) {
     area.appendChild(colA);
     area.appendChild(colB);
 
+    alignRows(area);
+    if (document.fonts) document.fonts.ready.then(() => alignRows(area));
     if (highlightVerse) setTimeout(() => scrollToVerse(highlightVerse), 80);
     else window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -6582,6 +6622,7 @@ async function renderInterlinearPassage(area, token) {
       const block = document.createElement('div');
       block.className = 'parallel-verse-block' + (highlightVerse === v.verse ? ' highlighted' : '');
       block.dataset.verse = v.verse;
+      block.dataset.align = v.verse;
       const num = document.createElement('sup');
       num.className = 'parallel-verse-num';
       num.textContent = v.verse;
@@ -6641,6 +6682,8 @@ async function renderInterlinearPassage(area, token) {
 
     await renderInterlinearColumn(colB, bookNum, currentChapter, lang, edition);
 
+    alignRows(area);
+    if (document.fonts) document.fonts.ready.then(() => alignRows(area));
     if (highlightVerse) setTimeout(() => scrollToVerse(highlightVerse), 80);
     else window.scrollTo({ top: 0, behavior: 'smooth' });
 
