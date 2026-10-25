@@ -182,7 +182,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 | Highlight tags (multi-tag, filter in panel) | 20 | #70–73 |
 | My Highlights panel (filter by book, colour, tag) | 19–20 | #68, #70, #73 |
 | Google OAuth (PKCE, shows toddsroadcoctt.org) | 17, 20 | #56–57, #72 |
-| Predictive fetching of adjacent chapters (NKJV only) | 30 | this PR |
+| Predictive fetching of adjacent chapters (NKJV only) | 30 | #109 |
 | Atlas panel: offline basemap + layer framework | 26 | #104-106 |
 | Atlas places: pins follow the chapter being read, place search, enlarge button | 29 | — |
 
