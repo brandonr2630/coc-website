@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-23 · Sessions 22-24, 26-29 · SW `coc-bible-v63`*
+*Last updated: 2026-10-23 · Sessions 22-24, 26-30 · SW `coc-bible-v64`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v63`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v64`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -182,6 +182,7 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 | Highlight tags (multi-tag, filter in panel) | 20 | #70–73 |
 | My Highlights panel (filter by book, colour, tag) | 19–20 | #68, #70, #73 |
 | Google OAuth (PKCE, shows toddsroadcoctt.org) | 17, 20 | #56–57, #72 |
+| Predictive fetching of adjacent chapters (NKJV only) | 30 | this PR |
 | Atlas panel: offline basemap + layer framework | 26 | #104-106 |
 | Atlas places: pins follow the chapter being read, place search, enlarge button | 29 | — |
 
@@ -276,6 +277,21 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 30 — 2026-10-25 · Predictive fetching of adjacent chapters
+
+**SW v63 → v64** · branch `claude/coc-next`
+
+The session-25 "Predictive Fetching" line in earlier notes had no code behind it on any branch (the only unmerged branch, `feature/predictive-fetching`, held an unrelated Greek root-lemma commit, left alone and not merged), so this is a fresh build.
+
+- **Scope: NKJV only.** Local translations keep every chapter in memory once their file is loaded, so next/previous are already instant. Only NKJV fetches one chapter at a time from bolls.life.
+- **Behaviour.** After `renderPassage()` draws a chapter, `prefetchAdjacentChapters(token)` (idle callback) fetches the next chapter, then the previous one, crossing book boundaries. It stops if the reader moves on, and is skipped when offline, Save-Data or 2g.
+- **Queue.** Reader requests jump ahead of queued prefetches; a prefetch the reader then asks for is promoted (`promoteBollsJob`). A prefetch gets one try and no backoff; any 429 pauses prefetching for 60 s (`bollsPrefetchPausedUntil`).
+- **Cache.** `fetchBollsChapter` now has a per-session LRU (`BOLLS_DONE`, 40 chapters) and merges duplicate in-flight requests (`BOLLS_PENDING`). Before this, NKJV refetched on every visit. In-memory only; NKJV is still never written to the service worker or localStorage.
+- **Tested** (local Node server, browser pane, bolls.life mocked): John 3 prefetched 4 then 2, moving to 4 made 0 requests; John 21 → Acts 1 boundary; reader request jumped three queued prefetches; 429 paused prefetching; KJV made no bolls calls; no console errors. **Not tested:** the real bolls.life API, a phone, the live site. In the pane `requestIdleCallback` fires late (about 3 s, its timeout); real browsers should fire it almost at once.
+- **Greek root-lemma idea (dropped).** Reviewed `0601970` on `feature/predictive-fetching`: only 2 of 5,241 entries in `strongs-lemmas.json` had a family (both listing themselves), the code compared bare numbers (`"942"`) to `"G942"` so it never matched, and stale highlights were not cleared. Not merged. Revisit only with real root-family data.
 
 ---
 
@@ -569,7 +585,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v63
+├── service-worker.js             PWA cache — current version: coc-bible-v64
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
