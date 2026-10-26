@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-25 · Sessions 22-24, 26-32 · SW `coc-bible-v66`*
+*Last updated: 2026-10-26 · Sessions 22-24, 26-34 · SW `coc-bible-v73`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v66`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v73`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -199,6 +199,13 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 - [ ] **Atlas next steps** — verse-level pins (tap a place to see its verses), journeys (`PathLayer`, e.g. Paul's voyages), regions as shapes (`PolygonLayer`, geometry files in the Geocoding data), elevation-tiled relief for sharper zoom (plan in the Session 29 notes), a colour legend, real phone / airplane-mode check
 - [ ] **Search streaming** — full JSON load on first search stalls on slow devices; chunked `setTimeout` yield
 
+- [ ] **Torrey's New Topical Textbook** — public domain (1897, ~620 topics, full KJV verse text under each heading); source XML is `data/00_raw/xml/torrey_ttt.xml` in `neuu-org/bible-topics-dataset`. Not opened yet. Torrey's headings carry his own evangelical, premillennial theology (Spirit baptism, faith-alone language), so read the baptism / Holy Spirit / last-things entries before shipping and label it as Torrey's arrangement
+- [ ] **Nave's reverse lookup** — verse → Nave topics (needs an index built from `nave.json`)
+- [ ] **Translation Words** (unfoldingWord, CC BY-SA 4.0, ~950 short plain-English entries) — would add a modern, phone-friendly dictionary; share-alike applies
+- [ ] **Check ISBE on a phone / real network** — 27 MB, first open took ~6 s on a local server; if it is too slow, split it by first letter
+- [ ] **Look at the hover preview and the six-tab dictionary row on the live site** — both were tested with dispatched events / a desktop panel only, never with a real pointer or a phone
+- [ ] **Hebrew / Greek base-text options** (not started): OSHB, STEPBible TAHOT (CC BY 4.0), SBLGNT, MorphGNT (CC BY-SA), Byzantine Majority Text and TR (public domain). Avoid NA28/UBS5 and OpenGNT (CC BY-NC); verify each licence
+
 ### Pending — Homepage (`index.html`)
 
 - [ ] Hero CTA label: "Service Times" → "Join Us This Sunday"
@@ -211,9 +218,12 @@ Unique constraint on `(user_id, book, chapter, verse)`. Row-Level Security enabl
 
 ### Pending — Translations to Consider
 
-From `seven1m/open-bibles` (all public domain, converter at `SCRIPTS/zefania-to-json.js`):
+From `seven1m/open-bibles` (all public domain, converter at `SCRIPTS/zefania-to-json.js`; the local copy is `open-bibles-temp/`):
+- ~~BSB~~ — shipped session 32 (from the official tables, not this repo's file)
+- **OEB-US / OEB-CW** (Open English Bible, CC0) — best next candidate. Formal-leaning *editing* of older public-domain texts into modern English (NT from the Twentieth Century NT, OT from McFadyen and Kent; Westcott-Hort and WLC). NT still being edited (release 2025.6), no Strong's. Philosophy source: openenglishbible.org/faq
 - **BBE** (Bible in Basic English) — simple vocabulary, good for new readers
-- WEB-BE, OEB-US, OEB-CW, DRA (Catholic/Vulgate-based)
+- WEB-BE, DRA (Catholic/Vulgate-based; includes the deuterocanon, so decide Apocrypha handling first)
+- Other CC options noted, not verified: Free Bible Version, Lexham English Bible (CC BY, check terms)
 
 ---
 
@@ -601,7 +611,7 @@ coc-website/
 ├── index.html                    Landing page
 ├── privacy.html / terms.html      Public policy pages (required by Google OAuth branding; footer-linked from index.html)
 ├── bible-reader.html             Bible study app (~8 700 lines, ~0.5 MB — CSS + HTML + JS)
-├── service-worker.js             PWA cache — current version: coc-bible-v66
+├── service-worker.js             PWA cache — current version: coc-bible-v73
 ├── manifest.json                 PWA manifest
 ├── handoff.md                    This file
 ├── favicon.ico / *.png           Favicons
@@ -610,10 +620,10 @@ coc-website/
 │
 ├── Translation JSONs (deployed, fetched client-side):
 │   ├── kjv.json asv.json web.json ylt.json lsv.json lxxe.json rvr09.json darby.json
-│   ├── kjvs.json asvs.json          (Strong's embedded)
+│   ├── kjvs.json asvs.json bsb.json (Strong's embedded)
 │   ├── hebrew.json greek-nt.json    (Original languages)
 │   ├── adam-clarke.json matthew-henry.json jamieson-fausset-brown.json
-│   ├── eastons.json smiths.json hitchcock.json fausset.json
+│   ├── eastons.json smiths.json hitchcock.json fausset.json nave.json isbe.json
 │   ├── crossrefs.json
 │   └── strongs-data.json ubs-data.json dodson-data.json   (lazy-loaded lexicons)
 ├── plates.json                   WEB+ plate index
@@ -663,14 +673,6 @@ Commit messages currently follow `feat/fix(scope): description`. Adding a short 
 - Table markers dropped by the builder: `-` (untranslated source word), `vvv`, `. . .`. Footnotes and section headings are not carried over. 31,102 verses; matches KJV versification except Esther 10:4–13 (KJV has extra verses).
 - Manuscripts: OT `masoretic`, NT new `na28` entry (Greek interlinear uses the `NA28` edition code).
 - SW bumped to `coc-bible-v67`.
-
----
-
-## Session 33 — Nave's Topical Bible (`nave`)
-
-- `nave.json` (6.1 MB, 5,320 topics, 77,934 scripture references) is built by `SCRIPTS/build-nave.mjs` from the CCEL ThML export of Nave's Topical Bible (1896, public domain), taken from `neuu-org/bible-topics-dataset` (`data/00_raw/xml/nave_bible.xml`, saved locally as `DICTIONARY/nave_bible.xml`). Source credit: Bible Topics Dataset by NEUU, CC BY 4.0.
-- Same `{ KEY: { topic, body } }` shape as the other dictionaries, so it plugs into the Dictionary panel (tab "Nave's", menu entry, chapter-terms list, search, Strong's-panel Dict. tab).
-- Body HTML: `p.nave-l1…l4` for Nave's nested lines; verse references are `a.nave-ref[data-r="Book|chapter|verse"]` (click → `goToXref`, panel closes under 900 px); "See X" are `a.nave-see[data-key]`. The click handler lives next to `dictNavBack()`.
-- Known gap: the CCEL export lacks some topics that other entries point to (about 1,000 of 4,365 "See" links, e.g. `PRIEST, HIGH`). The handler falls back to the part before the comma, then to a prefix search.
-- Parsed `01_parsed` JSON in the NEUU repo truncates sub-heading labels; do not use it, build from the raw XML.
-- Not built: reverse lookup (verse → Nave topics).
+- **Menu labels:** BSB reads "Berean Standard Bible + Strong's" (pill `BSB+S`), matching KJV+S / ASV+S (#113).
+- **Menu order (#115):** English group is ASV+S, KJV+S, BSB+S, NKJV, WEB, then the rest unchanged, in the dropdown, the hidden select and the parallel menu. The default translation is still NKJV; the default parallel translation is still KJV+S.
+- **Strong's hover preview (#114):** hovering a tagged word (KJV+S
