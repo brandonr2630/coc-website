@@ -3334,7 +3334,7 @@
         <button class="parallel-dropdown-item" onclick="selectTranslation('nkjv','New King James Version')">New King James Version</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('kjvs','King James Version + Strong\'s')">King James Version + Strong's</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('asvs','American Standard + Strong\'s')">American Standard + Strong's</button>
-        <button class="parallel-dropdown-item" onclick="selectTranslation('bsb','Berean Standard Bible')">Berean Standard Bible</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('bsb','Berean Standard Bible + Strong\'s')">Berean Standard Bible + Strong's</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('web','World English Bible')">World English Bible</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('webplus','World English Bible +')">World English Bible +</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('lsv','Literal Standard Version')">Literal Standard Version</button>
@@ -3351,7 +3351,7 @@
       <option value="nkjv" selected>New King James Version</option>
       <option value="kjvs">King James Version + Strong's</option>
       <option value="asvs">American Standard + Strong's</option>
-      <option value="bsb">Berean Standard Bible</option>
+      <option value="bsb">Berean Standard Bible + Strong's</option>
       <option value="web">World English Bible</option>
       <option value="webplus">World English Bible +</option>
       <option value="lsv">Literal Standard Version</option>
@@ -3412,7 +3412,7 @@
             <button class="parallel-dropdown-item" onclick="openParallelWith('nkjv')">New King James Version</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('kjvs')">King James Version + Strong's</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('asvs')">American Standard + Strong's</button>
-            <button class="parallel-dropdown-item" onclick="openParallelWith('bsb')">Berean Standard Bible</button>
+            <button class="parallel-dropdown-item" onclick="openParallelWith('bsb')">Berean Standard Bible + Strong's</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('web')">World English Bible</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('lsv')">Literal Standard Version</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('ylt')">Young's Literal Translation</button>
@@ -3724,7 +3724,7 @@ const TRANSLATIONS = {
   darby: 'Darby Bible (1890)',
   kjvs:  "King James Version + Strong's",
   asvs:  "American Standard Version + Strong's",
-  bsb:   'Berean Standard Bible'
+  bsb:   "Berean Standard Bible + Strong's"
 };
 
 const BOOK_ABBR = {
@@ -3757,7 +3757,7 @@ const TRANSLATION_ABBR = {
   darby: 'DARBY',
   kjvs:  'KJV+S',
   asvs:  'ASV+S',
-  bsb:   'BSB'
+  bsb:   'BSB+S'
 };
 
 // NKJV is the only translation still served via bolls.life API (copyright)
@@ -3815,7 +3815,7 @@ const TRANSLATION_INFO = {
     body: `The Reina-Valera is the King James Bible of the Spanish-speaking world — not merely in stature but in spiritual lineage. Its origins lie in the courageous work of Casiodoro de Reina, a former Hieronymite monk who, at great personal peril, produced the first complete Spanish Bible in 1569 while living in exile from the Inquisition. Drawing from the Hebrew Masoretic Text, the Textus Receptus, and the labours of earlier Reformation translators, it was a confessional act as much as a scholarly one. Cipriano de Valera revised it in 1602, and the 1909 edition modernised its language while preserving the formal equivalence character and ecclesiastical gravity of the original. For four centuries it has been the Bible in which the Spanish-speaking church has heard the voice of God.`
   },
   bsb: {
-    full: 'Berean Standard Bible',
+    full: "Berean Standard Bible + Strong's",
     year: 2016,
     body: `The Berean Standard Bible is a modern English translation produced by the Berean Bible Translation Committee under Dr. Gary Hill, first released in 2008 as the Berean Study Bible and renamed in 2020. It aims to be literal yet readable, keeping close to the structure of the original while writing natural English. The Old Testament follows the Masoretic Text (Biblia Hebraica Stuttgartensia and the Leningrad Codex), with the Dead Sea Scrolls, Septuagint and Vulgate consulted where the Hebrew is difficult. The New Testament follows the Nestle-Aland and UBS critical Greek texts, with the Majority Text consulted and variants noted. Inclusive language is used where the context points to a mixed group, such as brothers and sisters; masculine terms for God are kept. It was dedicated to the public domain on 30 April 2023. Every translated word is aligned to its Hebrew or Greek source, so each is tagged here with its Strong's number: tap a word to study the original.`
   },
