@@ -3334,6 +3334,7 @@
         <button class="parallel-dropdown-item" onclick="selectTranslation('nkjv','New King James Version')">New King James Version</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('kjvs','King James Version + Strong\'s')">King James Version + Strong's</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('asvs','American Standard + Strong\'s')">American Standard + Strong's</button>
+        <button class="parallel-dropdown-item" onclick="selectTranslation('bsb','Berean Standard Bible')">Berean Standard Bible</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('web','World English Bible')">World English Bible</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('webplus','World English Bible +')">World English Bible +</button>
         <button class="parallel-dropdown-item" onclick="selectTranslation('lsv','Literal Standard Version')">Literal Standard Version</button>
@@ -3350,6 +3351,7 @@
       <option value="nkjv" selected>New King James Version</option>
       <option value="kjvs">King James Version + Strong's</option>
       <option value="asvs">American Standard + Strong's</option>
+      <option value="bsb">Berean Standard Bible</option>
       <option value="web">World English Bible</option>
       <option value="webplus">World English Bible +</option>
       <option value="lsv">Literal Standard Version</option>
@@ -3410,6 +3412,7 @@
             <button class="parallel-dropdown-item" onclick="openParallelWith('nkjv')">New King James Version</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('kjvs')">King James Version + Strong's</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('asvs')">American Standard + Strong's</button>
+            <button class="parallel-dropdown-item" onclick="openParallelWith('bsb')">Berean Standard Bible</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('web')">World English Bible</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('lsv')">Literal Standard Version</button>
             <button class="parallel-dropdown-item" onclick="openParallelWith('ylt')">Young's Literal Translation</button>
@@ -3720,7 +3723,8 @@ const TRANSLATIONS = {
   lxxe:  'English Septuagint (1851)',
   darby: 'Darby Bible (1890)',
   kjvs:  "King James Version + Strong's",
-  asvs:  "American Standard Version + Strong's"
+  asvs:  "American Standard Version + Strong's",
+  bsb:   'Berean Standard Bible'
 };
 
 const BOOK_ABBR = {
@@ -3752,7 +3756,8 @@ const TRANSLATION_ABBR = {
   lxxe:  'LXXE',
   darby: 'DARBY',
   kjvs:  'KJV+S',
-  asvs:  'ASV+S'
+  asvs:  'ASV+S',
+  bsb:   'BSB'
 };
 
 // NKJV is the only translation still served via bolls.life API (copyright)
@@ -3761,7 +3766,7 @@ const BOLLS_CODE = {
 };
 
 // Translations with Strong's numbers
-const STRONGS_TRANSLATIONS = new Set(['kjvs', 'asvs']);
+const STRONGS_TRANSLATIONS = new Set(['kjvs', 'asvs', 'bsb']);
 
 const TRANSLATION_INFO = {
   nkjv: {
@@ -3808,6 +3813,11 @@ const TRANSLATION_INFO = {
     full: 'Reina-Valera 1909',
     year: 1909,
     body: `The Reina-Valera is the King James Bible of the Spanish-speaking world — not merely in stature but in spiritual lineage. Its origins lie in the courageous work of Casiodoro de Reina, a former Hieronymite monk who, at great personal peril, produced the first complete Spanish Bible in 1569 while living in exile from the Inquisition. Drawing from the Hebrew Masoretic Text, the Textus Receptus, and the labours of earlier Reformation translators, it was a confessional act as much as a scholarly one. Cipriano de Valera revised it in 1602, and the 1909 edition modernised its language while preserving the formal equivalence character and ecclesiastical gravity of the original. For four centuries it has been the Bible in which the Spanish-speaking church has heard the voice of God.`
+  },
+  bsb: {
+    full: 'Berean Standard Bible',
+    year: 2016,
+    body: `The Berean Standard Bible is a modern English translation produced by the Berean Bible Translation Committee under Dr. Gary Hill, first released in 2008 as the Berean Study Bible and renamed in 2020. It aims to be literal yet readable, keeping close to the structure of the original while writing natural English. The Old Testament follows the Masoretic Text (Biblia Hebraica Stuttgartensia and the Leningrad Codex), with the Dead Sea Scrolls, Septuagint and Vulgate consulted where the Hebrew is difficult. The New Testament follows the Nestle-Aland and UBS critical Greek texts, with the Majority Text consulted and variants noted. Inclusive language is used where the context points to a mixed group, such as brothers and sisters; masculine terms for God are kept. It was dedicated to the public domain on 30 April 2023. Every translated word is aligned to its Hebrew or Greek source, so each is tagged here with its Strong's number: tap a word to study the original.`
   },
   darby: {
     full: 'Darby Bible (1890)',
@@ -4238,6 +4248,10 @@ const MANUSCRIPTS = {
     name: 'Westcott-Hort Critical Text',
     body: 'A critical edition of the Greek New Testament published in 1881 by Cambridge scholars Brooke Foss Westcott and Fenton John Anthony Hort. It prioritised the Alexandrian manuscript tradition — principally Codex Sinaiticus (Sinai, 4th c. AD, held at the British Library) and Codex Vaticanus (Vatican Library, 4th c. AD) — judging these to be the earliest and most reliable witnesses. It formed the textual basis of the ASV New Testament and shaped most modern critical editions.'
   },
+  'na28': {
+    name: 'Nestle-Aland / UBS Critical Text',
+    body: 'The Nestle-Aland Novum Testamentum Graece (28th edition, 2012) and the United Bible Societies Greek New Testament are the standard critical editions used by modern translators. They weigh the earliest surviving manuscripts, chiefly the Alexandrian witnesses (Codex Sinaiticus and Codex Vaticanus, 4th c. AD) and the papyri, against the wider manuscript tradition, and note significant variants in an apparatus. Used as the New Testament basis of the Berean Standard Bible.'
+  },
   'byzantine': {
     name: 'Byzantine Majority Text',
     body: 'A Greek New Testament tradition preserved across the majority of surviving manuscripts (over 5,000), reflecting the text as used and transmitted in Eastern Christianity from the 4th century onward. The Robinson-Pierpont edition (2018) is the standard modern critical edition of this tradition. Used as the textual basis of the WEB and LSV New Testaments.'
@@ -4256,6 +4270,7 @@ const TRANSLATION_MANUSCRIPTS = {
   nkjv:  { ot: 'masoretic',     nt: 'textus-receptus' },
   kjvs:  { ot: 'masoretic',     nt: 'textus-receptus' },
   asvs:  { ot: 'masoretic',     nt: 'westcott-hort'   },
+  bsb:   { ot: 'masoretic',     nt: 'na28'            },
   web:   { ot: 'bhs',           nt: 'byzantine'       },
   webplus: { ot: 'bhs',         nt: 'byzantine'       },
   lsv:   { ot: 'bhs',           nt: 'byzantine'       },
@@ -4730,7 +4745,7 @@ function stripHtml(html) {
 
 // ── LOCAL translations (served from /bible/<key>.json) ──
 // NKJV is intentionally excluded — it remains API-sourced via bolls.life (copyright)
-const LOCAL_TRANSLATIONS = new Set(['web','webplus','kjv','asv','ylt','rvr09','lsv','lxxe','darby','kjvs','asvs']);
+const LOCAL_TRANSLATIONS = new Set(['web','webplus','kjv','asv','ylt','rvr09','lsv','lxxe','darby','kjvs','asvs','bsb']);
 
 // A translation whose text comes from another translation's file. WEB+ shares web.json for now;
 // give it its own file later by deleting its entry here (and adding webplus.json).
