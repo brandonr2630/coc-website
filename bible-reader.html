@@ -1393,10 +1393,10 @@
     .dict-entry-body p.nave-l1, .dict-entry-body p.nave-l2 { margin: 0 0 6px; padding-left: 0; }
     .dict-entry-body p.nave-l3 { margin: 0 0 6px; padding-left: 16px; }
     .dict-entry-body p.nave-l4 { margin: 0 0 6px; padding-left: 32px; }
-    .dict-entry-body a.nave-ref, .dict-entry-body a.nave-see {
+    .dict-entry-body a.dict-ref, .dict-entry-body a.dict-see {
       color: var(--green-dark); cursor: pointer; text-decoration: none; border-bottom: 1px dotted var(--green-dark);
     }
-    .dict-entry-body a.nave-ref:hover, .dict-entry-body a.nave-see:hover { background: var(--highlight); }
+    .dict-entry-body a.dict-ref:hover, .dict-entry-body a.dict-see:hover { background: var(--highlight); }
     .dict-open-full-btn {
       display: inline-block; margin-top: 14px;
       font-family: 'Nunito', sans-serif; font-size: 0.78rem; font-weight: 700;
@@ -3426,6 +3426,7 @@
             <button class="parallel-dropdown-item" onclick="closeDictionaryDropdown(); openDictionaryWith('hitchcock')">Hitchcock's Bible Names (1869)</button>
             <button class="parallel-dropdown-item" onclick="closeDictionaryDropdown(); openDictionaryWith('fausset')">Fausset's Bible Dictionary (1888)</button>
             <button class="parallel-dropdown-item" onclick="closeDictionaryDropdown(); openDictionaryWith('nave')">Nave's Topical Bible (1896)</button>
+            <button class="parallel-dropdown-item" onclick="closeDictionaryDropdown(); openDictionaryWith('isbe')">International Standard Bible Encyclopedia (1915)</button>
           </div>
         </div>
       </div>
@@ -4149,7 +4150,7 @@ document.addEventListener('click', e => {
 
   // Nave's Topical Bible links: verse references jump to the passage, "See X" opens that topic
   document.addEventListener('click', async e => {
-    const ref = e.target.closest && e.target.closest('a.nave-ref');
+    const ref = e.target.closest && e.target.closest('a.dict-ref');
     if (ref) {
       e.preventDefault();
       const [book, chapter, verse] = (ref.dataset.r || '').split('|');
@@ -4158,13 +4159,18 @@ document.addEventListener('click', e => {
       if (window.innerWidth < 900) closeDictionaryPanel();
       return;
     }
-    const see = e.target.closest && e.target.closest('a.nave-see');
+    const see = e.target.closest && e.target.closest('a.dict-see');
     if (!see) return;
     e.preventDefault();
     const key = see.dataset.key;
     try {
       const data = await loadDictionaryData(currentDictionary);
-      const hit = data[key] ? key : Object.keys(data).find(k => k.startsWith(key.split(',')[0] + ',')) || (data[key.split(',')[0]] ? key.split(',')[0] : null);
+      const head = key.split(',')[0];
+      const keys = data[key] ? null : Object.keys(data);
+      const hit = data[key] ? key
+        : keys.find(k => k.startsWith(key + ' ('))            // ISBE: "ABI" -> "ABI (1)"
+        || keys.find(k => k.startsWith(head + ','))           // Nave: "PRIEST, HIGH" -> "PRIEST, ..."
+        || (data[head] ? head : null);
       if (hit) { showDictionaryEntry(hit); return; }
     } catch (err) { /* fall through to search */ }
     const input = document.getElementById('dict-search-input');
@@ -4276,11 +4282,11 @@ const COMMENTARY_CACHE   = {};
 const LOCAL_COMMENTARY_FULL = {};
 const LOCAL_COMMENTARIES = new Set(['adam-clarke', 'matthew-henry', 'jamieson-fausset-brown']);
 
-  const LOCAL_DICTIONARIES = new Set(['eastons', 'smiths', 'hitchcock', 'fausset', 'nave']);
+  const LOCAL_DICTIONARIES = new Set(['eastons', 'smiths', 'hitchcock', 'fausset', 'nave', 'isbe']);
   const DICT_CACHE          = {};
-  const DICT_SOURCE_NAMES   = { eastons: "Easton's (1897)", smiths: "Smith's (1863)", hitchcock: "Hitchcock's Names (1869)", fausset: "Fausset's (1888)", nave: "Nave's Topics (1896)" };
+  const DICT_SOURCE_NAMES   = { eastons: "Easton's (1897)", smiths: "Smith's (1863)", hitchcock: "Hitchcock's Names (1869)", fausset: "Fausset's (1888)", nave: "Nave's Topics (1896)", isbe: "Intl. Standard Bible Encyclopedia (1915)" };
   // Short labels for the tab row (full names, with years, stay in DICT_SOURCE_NAMES and as tooltips)
-  const DICT_TAB_LABELS     = { eastons: "Easton's", smiths: "Smith's", hitchcock: "Hitchcock's", fausset: "Fausset's", nave: "Nave's" };
+  const DICT_TAB_LABELS     = { eastons: "Easton's", smiths: "Smith's", hitchcock: "Hitchcock's", fausset: "Fausset's", nave: "Nave's", isbe: "ISBE" };
   let currentDictionary = 'eastons';
   let dictMode          = false;
   let dictSearchTimer   = null;
