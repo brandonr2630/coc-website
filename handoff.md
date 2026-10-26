@@ -56,11 +56,12 @@
 | `darby` | Darby Bible (1890) | `darby.json` | SW + localStorage |
 | `kjvs` | KJV + Strong's numbers | `kjvs.json` | SW + localStorage |
 | `asvs` | ASV + Strong's numbers | `asvs.json` | SW + localStorage |
+| `bsb` | Berean Standard Bible + Strong's numbers (BSB tables, public domain) | `bsb.json` | SW + localStorage |
 | `hebrew` | Hebrew OT (Leningrad Codex) | `hebrew.json` | SW + localStorage |
 | `greek-nt` | Greek NT | `greek-nt.json` | SW + localStorage |
 | `nkjv` | New King James Version | `bolls.life` API | **Never** — copyrighted |
 
-`LOCAL_TRANSLATIONS` = all except `nkjv` · `STRONGS_TRANSLATIONS` = `{kjvs, asvs}`
+`LOCAL_TRANSLATIONS` = all except `nkjv` · `STRONGS_TRANSLATIONS` = `{kjvs, asvs, bsb}`
 
 ### Reference Data
 
@@ -652,3 +653,13 @@ The project `CLAUDE.md` has basic architecture but doesn't point to this file. A
 
 ### 6 — Consider a `changelog:` git trailer
 Commit messages currently follow `feat/fix(scope): description`. Adding a short `Changelog: Session N` trailer to squash-merge commits would make `git log --grep="Changelog:"` produce an instant changelog without any other tooling.
+
+---
+
+## Session 32 — Berean Standard Bible + Strong's (`bsb`)
+
+- `bsb.json` (13.4 MB) is built by `SCRIPTS/build-bsb.mjs` from the official `bsb_tables.tsv` (bereanbible.com, public domain since 2023-04-30; saved locally as `BIBLE TRANSLATIONS/bsb_tables.tsv`). Same `{t, h}` shape as `kjvs.json`, bare Strong's numbers, tag on the last word of each aligned phrase.
+- **Do not use `open-bibles-temp/eng-bsb.usfx.xml`** (eBible's old *Berean Study Bible* export): its Strong's tags are misaligned (Gen 1:1 "God" tagged H8064).
+- Table markers dropped by the builder: `-` (untranslated source word), `vvv`, `. . .`. Footnotes and section headings are not carried over. 31,102 verses; matches KJV versification except Esther 10:4–13 (KJV has extra verses).
+- Manuscripts: OT `masoretic`, NT new `na28` entry (Greek interlinear uses the `NA28` edition code).
+- SW bumped to `coc-bible-v67`.
