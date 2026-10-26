@@ -1259,6 +1259,25 @@
     .strongs-word:hover { background: var(--highlight); }
     .strongs-word.active { background: rgba(125,194,67,0.3); }
 
+    /* Strong's hover preview (mouse only) */
+    .strongs-hover {
+      position: fixed; z-index: 650; max-width: 320px; min-width: 180px;
+      padding: 9px 12px; border-radius: 6px;
+      background: var(--white); color: var(--charcoal);
+      border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+      font-size: 0.82rem; line-height: 1.4; pointer-events: none;
+      opacity: 0; visibility: hidden; transition: opacity 0.12s;
+    }
+    .strongs-hover.visible { opacity: 1; visibility: visible; }
+    .strongs-hover-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-bottom: 3px; }
+    .strongs-hover-num { font-weight: 700; color: var(--green-dark); }
+    .strongs-hover-lex { font-size: 1.05rem; }
+    .strongs-hover-tr { font-style: italic; color: var(--charcoal-light); }
+    .strongs-hover-def {
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .strongs-hover-hint { margin-top: 4px; font-size: 0.72rem; color: var(--charcoal-light); }
+
     .strongs-panel {
       display: none;
       position: fixed; top: 0; right: 0; bottom: 0; z-index: 600;
@@ -4653,6 +4672,77 @@ async function showStrongsPanel(num, wordEl) {
 }
 
 // ── Parse bolls.life Strong's HTML into tokens ──
+// ── Strong's hover preview ──
+// Mouse only: hovering a tagged word shows a short definition; click still opens the full panel.
+// Touch devices have no hover, so they skip this and keep tap-to-open.
+(function initStrongsHover() {
+  if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  let tip = null, timer = null, current = null;
+
+  function ensureTip() {
+    if (tip) return tip;
+    tip = document.createElement('div');
+    tip.className = 'strongs-hover';
+    tip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tip);
+    return tip;
+  }
+  function hide() {
+    clearTimeout(timer);
+    current = null;
+    if (tip) tip.classList.remove('visible');
+  }
+  function add(parent, cls, text) {
+    const el = document.createElement('span');
+    el.className = cls; el.textContent = text; parent.appendChild(el); return el;
+  }
+  function show(word) {
+    if (word.classList.contains('active')) return;   // its full panel is already open
+    const clean = normaliseStrongs(word.dataset.strongs);
+    if (!clean) return;
+    loadLexicon('strongs').then(data => {
+      if (current !== word || !word.isConnected) return;
+      const e = data[clean[0].toUpperCase()]?.[clean];
+      if (!e) return;
+      const t = ensureTip();
+      t.textContent = '';
+      const head = document.createElement('div');
+      head.className = 'strongs-hover-head';
+      add(head, 'strongs-hover-num', clean);
+      if (e.l) add(head, 'strongs-hover-lex', e.l);
+      if (e.x) add(head, 'strongs-hover-tr', e.x);
+      t.appendChild(head);
+      const def = (e.d || e.v || e.k || '').trim();
+      if (def) { const d = document.createElement('div'); d.className = 'strongs-hover-def'; d.textContent = def; t.appendChild(d); }
+      const hint = document.createElement('div'); hint.className = 'strongs-hover-hint'; hint.textContent = 'Click for full entry'; t.appendChild(hint);
+      // place below the word, flipping above / clamping to the viewport
+      t.classList.add('visible');
+      const r = word.getBoundingClientRect();
+      const w = t.offsetWidth, h = t.offsetHeight;
+      let left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+      let top = r.bottom + 6;
+      if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+      t.style.left = left + 'px';
+      t.style.top = top + 'px';
+    }).catch(() => {});
+  }
+
+  document.addEventListener('mouseover', ev => {
+    const word = ev.target.closest && ev.target.closest('.strongs-word');
+    if (!word || word === current) return;
+    hide();
+    current = word;
+    timer = setTimeout(() => show(word), 250);
+  });
+  document.addEventListener('mouseout', ev => {
+    const word = ev.target.closest && ev.target.closest('.strongs-word');
+    if (word && word === current && !word.contains(ev.relatedTarget)) hide();
+  });
+  document.addEventListener('click', hide, true);
+  document.addEventListener('scroll', hide, true);
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape') hide(); });
+})();
+
 function parseStrongsHtml(html) {
   const div = document.createElement('div');
   div.innerHTML = html;
