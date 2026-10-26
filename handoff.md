@@ -663,3 +663,14 @@ Commit messages currently follow `feat/fix(scope): description`. Adding a short 
 - Table markers dropped by the builder: `-` (untranslated source word), `vvv`, `. . .`. Footnotes and section headings are not carried over. 31,102 verses; matches KJV versification except Esther 10:4–13 (KJV has extra verses).
 - Manuscripts: OT `masoretic`, NT new `na28` entry (Greek interlinear uses the `NA28` edition code).
 - SW bumped to `coc-bible-v67`.
+
+---
+
+## Session 33 — Nave's Topical Bible (`nave`)
+
+- `nave.json` (6.1 MB, 5,320 topics, 77,934 scripture references) is built by `SCRIPTS/build-nave.mjs` from the CCEL ThML export of Nave's Topical Bible (1896, public domain), taken from `neuu-org/bible-topics-dataset` (`data/00_raw/xml/nave_bible.xml`, saved locally as `DICTIONARY/nave_bible.xml`). Source credit: Bible Topics Dataset by NEUU, CC BY 4.0.
+- Same `{ KEY: { topic, body } }` shape as the other dictionaries, so it plugs into the Dictionary panel (tab "Nave's", menu entry, chapter-terms list, search, Strong's-panel Dict. tab).
+- Body HTML: `p.nave-l1…l4` for Nave's nested lines; verse references are `a.nave-ref[data-r="Book|chapter|verse"]` (click → `goToXref`, panel closes under 900 px); "See X" are `a.nave-see[data-key]`. The click handler lives next to `dictNavBack()`.
+- Known gap: the CCEL export lacks some topics that other entries point to (about 1,000 of 4,365 "See" links, e.g. `PRIEST, HIGH`). The handler falls back to the part before the comma, then to a prefix search.
+- Parsed `01_parsed` JSON in the NEUU repo truncates sub-heading labels; do not use it, build from the raw XML.
+- Not built: reverse lookup (verse → Nave topics).
