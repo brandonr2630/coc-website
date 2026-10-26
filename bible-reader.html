@@ -1317,13 +1317,11 @@
     }
     /* Tab row: tabs fill left, ✕ pinned right */
     .dict-panel-tabrow {
-      display: flex; align-items: stretch;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); align-items: stretch;
       border-bottom: 1px solid var(--line);
-      overflow-x: auto; scrollbar-width: none;
     }
-    .dict-panel-tabrow::-webkit-scrollbar { display: none; }
     .dict-tab {
-      flex: 1 0 auto;
+      min-width: 0;
       padding: 10px 8px;
       border: none; border-bottom: 3px solid transparent;
       background: none; cursor: pointer;
