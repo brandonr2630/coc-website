@@ -7651,7 +7651,8 @@ async function performSearch() {
     : '<div class="search-loading"><div class="spinner"></div><p>Searching…</p></div>';
 
   // Build word-search regex (only needed when not doing a Strong's search)
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Phrase-friendly: any run of spaces in the query matches any whitespace run in the verse
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
   const pattern = query ? (wholeWord ? new RegExp(`\\b${escaped}\\b`, 'gi') : new RegExp(escaped, 'gi')) : null;
 
   // Load translation if not cached
@@ -7693,7 +7694,8 @@ async function performSearch() {
         if (strongsPat) {
           if (strongsPat.test(text)) results.push({ book, chapter: ch, verse: parseInt(verseNum), text });
         } else {
-          if (pattern.test(text)) results.push({ book, chapter: ch, verse: parseInt(verseNum), text });
+          // Strong's numbers are glued to words in stored text ("the LORD3068 of hosts6635"); strip so phrases match
+          if (pattern.test(text.replace(/([a-zA-Z])\d+/g, '$1'))) results.push({ book, chapter: ch, verse: parseInt(verseNum), text });
           pattern.lastIndex = 0;
         }
       }
