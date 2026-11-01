@@ -7592,16 +7592,18 @@ async function performSearch() {
   // For API-sourced translations (NKJV), search via bolls.life v2/find endpoint
   if (!LOCAL_TRANSLATIONS.has(currentTranslation)) {
     body.innerHTML = '<div class="search-loading"><div class="spinner"></div><p>Searching via bolls.life…</p></div>';
-    const escaped  = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped  = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
     const pattern  = wholeWord ? new RegExp(`\\b${escaped}\\b`, 'gi') : new RegExp(escaped, 'gi');
     const code     = BOLLS_CODE[currentTranslation] || currentTranslation.toUpperCase();
-    const url      = `https://bolls.life/v2/find/${code}?search=${encodeURIComponent(query)}&match_case=false&match_whole=${wholeWord}`;
+    // bolls match_whole=false is unreliable (e.g. "hosts" -> 0 hits), so always ask for whole-word
+    // matches and apply the user's own whole-word / substring choice client-side below.
+    const urlFor   = page => `https://bolls.life/v2/find/${code}?search=${encodeURIComponent(query)}&match_case=false&match_whole=true&page=${page}`;
     try {
-      // Queue the search request to avoid rate limiting
-      const data = await queueBollsRequest(async () => {
+      // Queue each page request to avoid rate limiting
+      const fetchPage = page => queueBollsRequest(async () => {
         let retries = 3;
         while (retries > 0) {
-          const res = await fetch(url);
+          const res = await fetch(urlFor(page));
           if (res.ok) {
             return await res.json();
           } else if (res.status === 429) {
@@ -7617,10 +7619,16 @@ async function performSearch() {
           }
         }
       });
-      // bolls.life returns { total, verses: [{book, chapter, verse, text}] }
+      // bolls.life v2/find returns { total, results: [{book, chapter, verse, text}] }, 128 per page.
       // book is a 1-based integer matching our BOOKS array order
+      let rawVerses = [];
+      for (let page = 1; page <= 20; page++) {
+        const data  = await fetchPage(page);
+        const batch = data.results || data.verses || (Array.isArray(data) ? data : []);
+        rawVerses = rawVerses.concat(batch);
+        if (batch.length < 128) break;
+      }
       const scope     = getSearchScope();
-      const rawVerses = data.verses || (Array.isArray(data) ? data : []);
       const results   = rawVerses
         .map(v => ({
           book:    BOOKS[parseInt(v.book) - 1] || { name: `Book ${v.book}` },
@@ -7628,7 +7636,8 @@ async function performSearch() {
           verse:   v.verse,
           text:    stripHtml(v.text || ''),
         }))
-        .filter(v => v.book && (!scope || scope.includes(v.book.name)));
+        .filter(v => v.book && (!scope || scope.includes(v.book.name)))
+        .filter(v => { pattern.lastIndex = 0; const ok = pattern.test(v.text); pattern.lastIndex = 0; return ok; });
       renderSearchResults(results, query, pattern, currentTranslation, TRANSLATIONS[currentTranslation], '');
     } catch (e) {
       console.error('Search error:', e);
