@@ -7622,11 +7622,18 @@ async function performSearch() {
       // bolls.life v2/find returns { total, results: [{book, chapter, verse, text}] }, 128 per page.
       // book is a 1-based integer matching our BOOKS array order
       let rawVerses = [];
-      for (let page = 1; page <= 20; page++) {
+      // Pages go through the one-at-a-time queue (~1.5s each), so common words take a while:
+      // show progress instead of a bare spinner.
+      let totalPages = 1;
+      for (let page = 1; page <= Math.min(totalPages, 40); page++) {
         const data  = await fetchPage(page);
         const batch = data.results || data.verses || (Array.isArray(data) ? data : []);
         rawVerses = rawVerses.concat(batch);
+        if (page === 1) totalPages = Math.ceil((data.total || 0) / 128) || 1;
         if (batch.length < 128) break;
+        if (page < totalPages) {
+          body.innerHTML = `<div class="search-loading"><div class="spinner"></div><p>Searching via bolls.life… ${rawVerses.length} of about ${data.total} verses loaded</p></div>`;
+        }
       }
       const scope     = getSearchScope();
       const results   = rawVerses
