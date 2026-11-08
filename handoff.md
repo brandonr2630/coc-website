@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-26 · Sessions 22-24, 26-34 · SW `coc-bible-v73`*
+*Last updated: 2026-11-08 · Sessions 22-24, 26-35 · SW `coc-bible-v76`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -289,6 +289,20 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 35 — 2026-11-08 · Local commentaries failed to fetch on phones
+
+**SW v75 → v76** · PR #123
+
+Reported: in Study > Commentary only Tyndale loaded; Adam Clarke, Matthew Henry and JFB showed "Failed to fetch" on a phone.
+
+- **Not reproducible on desktop.** On the live site with the worker active, all three JSONs fetch fine (200, `application/json`, 12.4 / 31.4 / 9.4 MB, 1-3 s), so the files and deploy were not the problem.
+- **Suspected cause (unconfirmed on a phone):** the worker's cache-first path streamed the 9-31 MB files into Cache Storage. On mobile a dropped connection or storage quota fails that, and the `.catch` returns `undefined` for non-navigation requests, which the page sees as a bare `Failed to fetch`. Tyndale/Gill/Keil-Delitzsch are cross-origin helloao calls the worker never touches.
+- **Fix:** `NETWORK_ONLY` in `service-worker.js` now also matches `/(adam-clarke|matthew-henry|jamieson-fausset-brown).json`, so the browser HTTP cache handles them. `loadCommentaryChapter` retries the download 3 times and throws a clearer message. Offline use of those three commentaries is no longer provided by the worker cache.
+- **To verify:** after deploy, reload the reader once or twice on a phone (new worker must activate), then open each of the three commentaries. If it still fails, get the Network tab status for the JSON on that device before touching code.
+- **Seen in passing, not investigated:** live page logs a 404 for `/COC_Logo_2026.png` and a failed `supabase.co/auth/v1/signup` request.
 
 ---
 
