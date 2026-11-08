@@ -4,7 +4,7 @@
 //   Local JSONs → cached on first fetch (cache-on-demand)
 //   External APIs (bolls.life, fonts) → network only
 
-const CACHE = 'coc-bible-v75';
+const CACHE = 'coc-bible-v76';
 
 // The page itself must cache or install fails; the rest are best-effort so one
 // missing asset (e.g. a 404 after a partial deploy) cannot block the worker.
@@ -21,7 +21,10 @@ const SHELL = [
 ];
 
 // Never cache — requires live network
-const NETWORK_ONLY = /bolls\.life|fonts\.googleapis\.com|fonts\.gstatic\.com/;
+// Also the big commentary JSONs (9-31 MB): streaming them through the worker into Cache Storage fails on
+// phones (dropped connection or storage quota) and surfaces as a bare "Failed to fetch". The browser's
+// HTTP cache handles them fine.
+const NETWORK_ONLY = /bolls\.life|fonts\.googleapis\.com|fonts\.gstatic\.com|\/(adam-clarke|matthew-henry|jamieson-fausset-brown)\.json$/;
 
 self.addEventListener('install', event => {
   event.waitUntil(

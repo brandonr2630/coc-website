@@ -6441,13 +6441,25 @@ async function loadCommentaryChapter(key, bookName, chapter) {
   if (LOCAL_COMMENTARIES.has(key)) {
     // Load local JSON file once per session, then slice the needed chapter
     if (!LOCAL_COMMENTARY_FULL[key]) {
-      const res = await fetch(`/${key}.json`);
-      if (!res.ok) throw new Error(`Failed to load ${key} commentary (${res.status})`);
-      const ct = res.headers.get('content-type') || '';
-      if (!ct.includes('json') && !ct.includes('octet')) {
-        throw new Error(`Unexpected response loading ${key} commentary`);
+      // 9-31 MB files: retry, since a mobile connection can drop mid-download
+      let lastErr;
+      for (let attempt = 0; attempt < 3 && !LOCAL_COMMENTARY_FULL[key]; attempt++) {
+        try {
+          const res = await fetch(`/${key}.json`);
+          if (!res.ok) throw new Error(`Failed to load ${key} commentary (${res.status})`);
+          const ct = res.headers.get('content-type') || '';
+          if (!ct.includes('json') && !ct.includes('octet')) {
+            throw new Error(`Unexpected response loading ${key} commentary`);
+          }
+          LOCAL_COMMENTARY_FULL[key] = await res.json();
+        } catch (e) {
+          lastErr = e;
+          await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+        }
       }
-      LOCAL_COMMENTARY_FULL[key] = await res.json();
+      if (!LOCAL_COMMENTARY_FULL[key]) {
+        throw new Error(`Couldn't download the ${key.replace(/-/g, ' ')} commentary (large file) — check your connection and try again.`);
+      }
     }
     const verses = LOCAL_COMMENTARY_FULL[key]?.[bookName]?.[String(chapter)] || {};
     COMMENTARY_CACHE[cacheKey] = verses;
