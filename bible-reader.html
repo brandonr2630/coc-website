@@ -798,7 +798,9 @@
       background: var(--white); border: 1.5px solid var(--line);
       border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.14);
       z-index: 600; min-width: 200px; max-width: min(280px, calc(100vw - 20px));
+      overscroll-behavior: contain; /* scrolling a menu must not chain to the page behind */
     }
+    #book-dropdown-list { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
     #study-dropdown-menu, #settings-dropdown-menu { left: auto; right: 0; transform: none; }
     .pill-dropdown.open { display: block; }
 
@@ -6512,7 +6514,11 @@ function alignRows(area) {
   });
 }
 let alignResizeTimer = null;
+let _alignLastWidth = window.innerWidth;
 window.addEventListener('resize', () => {
+  // Height-only resizes (mobile toolbar collapsing while scrolling) don't change wrapping.
+  if (window.innerWidth === _alignLastWidth) return;
+  _alignLastWidth = window.innerWidth;
   clearTimeout(alignResizeTimer);
   alignResizeTimer = setTimeout(() => alignRows(document.getElementById('verses-area')), 150);
 });
@@ -7991,10 +7997,18 @@ window.addEventListener('scroll', updateFloatingBar, { passive: true });
 
 
 // Re-populate book select with abbreviations on resize
+// Only when the abbreviation breakpoint flips: tablets fire resize on every
+// scroll (browser toolbar collapse) and rebuilding the list resets its scroll.
 let _bookResizeTimer;
+let _bookAbbrState = window.innerWidth <= 540;
 window.addEventListener('resize', () => {
   clearTimeout(_bookResizeTimer);
-  _bookResizeTimer = setTimeout(populateBookSelect, 150);
+  _bookResizeTimer = setTimeout(() => {
+    const now = window.innerWidth <= 540;
+    if (now === _bookAbbrState) return;
+    _bookAbbrState = now;
+    populateBookSelect();
+  }, 150);
 });
 // ── Hamburger ──
 const hamburger = document.getElementById('hamburger');
