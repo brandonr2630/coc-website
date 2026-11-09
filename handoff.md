@@ -1,6 +1,6 @@
 # COC Website — Handoff
 
-*Last updated: 2026-10-26 · Sessions 22-24, 26-34 · SW `coc-bible-v73`*
+*Last updated: 2026-11-09 · Sessions 22-24, 26-35 · SW `coc-bible-v77`*
 
 > ⚠️ **Supabase pauses when idle.** `COC Website` was `INACTIVE` (paused) on 2026-10-18 and was restored the same day (status `COMING_UP`). If highlights or sign-in stop working, check project status first (Supabase dashboard → Restore project).
 
@@ -14,7 +14,7 @@
 | Bible reader | `https://toddsroadcoctt.org/bible-reader.html` |
 | GitHub repo | `brandonr2630/coc-website` |
 | Deploy | Push to `master` via PR → GitHub Actions → reusable workflow in `brandonr2630/projects` → **SSH/rsync** to GreenGeeks (changed files only; `handoff.md`, `CLAUDE.md`, `.github/` are never deployed). Deploy dir `/home/terranre/public_html/toddsroadcoctt` |
-| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v73`** |
+| Service worker | `service-worker.js` line 7 · **current: `coc-bible-v77`** |
 | Supabase project | `COC Website` · ID `bxdenfhpmbsxvaqoxyei` · region `us-east-1` |
 | GreenGeeks secrets | `SSH_PRIVATE_KEY`, `SSH_HOST`, `SSH_PORT`, `CPANEL_USER` (`terranre`). The old Fileman-API secrets (`CPANEL_API_TOKEN`, `CPANEL_HOST`) are no longer used — the WAF blocked that API. |
 | Google OAuth | Cloud project `coc-website` · Client `Web client 1` · flow: **PKCE** · **published to production 2026-10-18** (no longer in testing mode) |
@@ -289,6 +289,18 @@ Then in `bible-reader.html`:
 ## Sessions
 
 Sessions are listed newest-first. Each entry captures what shipped; root-cause detail lives in git commit messages and PR descriptions.
+
+---
+
+### Session 35 — 2026-11-09 · Page jump while scrolling with pill menu open (tablet)
+
+**SW v76 → v77** · branch `claude/bible-reader-scroll-jump-58bf1f` · PR #125
+
+Owner reported that on a tablet, with a bottom-pill dropdown (book navigator) open, scrolling made the verse text behind it jump.
+
+- **Likely causes (not reproduced locally).** Tablet browsers fire `resize` while scrolling (toolbar collapse). Two resize handlers reacted: one rebuilt the book list every time (resetting its scroll), the other re-ran `alignRows`. Pill dropdowns also had no `overscroll-behavior`, so menu scrolling could chain to the page.
+- **Fix.** The book-list rebuild now runs only when the 540 px abbreviation breakpoint flips. `alignRows` re-runs only when `innerWidth` changes (height-only resizes ignored). `.pill-dropdown` and `#book-dropdown-list` get `overscroll-behavior: contain`; the list also gets `touch-action: pan-y`.
+- **Not tested on a real tablet.** If the jump persists, note whether it happens scrolling the page or the list, and in single or parallel view; next suspects are `html { scroll-behavior: smooth }` and the fixed pill's `backdrop-filter`.
 
 ---
 
